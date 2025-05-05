@@ -7,9 +7,8 @@ import os
 import json
 from pathlib import Path
 
-from ..config import data_config
-from ..plugin.db import redis_client, db_engine
-from ..plugin.common import util
+from config import data_config
+from plugin.db import redis_client
 
 # -------------------------------- 本地图库 --------------------------------
 

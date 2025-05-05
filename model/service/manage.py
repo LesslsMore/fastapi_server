@@ -2,7 +2,7 @@ from typing import List
 from json import dumps, loads
 from plugin.db.redis_client import init_redis_conn
 from config import data_config
-from ..system.manage import BasicConfig, Banner
+from model.system.manage import BasicConfig, Banner
 
 def save_site_basic(config: BasicConfig):
     data = config.json(ensure_ascii=False)

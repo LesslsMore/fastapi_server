@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
-from .movies import MovieUrlInfo, MovieDetail
+from model.system.movies import MovieUrlInfo, MovieDetail
 
 # 搜索标签请求参数
 class SearchTagsVO(BaseModel):
