@@ -55,6 +55,8 @@ def get_basic_info_by_key(key: str) -> Optional[MovieBasicInfo]:
     redis = redis_client or init_redis_conn()
     data = redis.get(key)
     if data:
+    #     	// 执行本地图片匹配
+	# ReplaceBasicDetailPic(&basic)
         return MovieBasicInfo.parse_raw(data)
     return None
 

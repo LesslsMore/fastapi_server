@@ -46,7 +46,7 @@ class IndexLogic:
         # 2. 首页内容
         content = []
         for c in tree.children:
-            page = Page(page_size=14, current=1)
+            page = Page(pageSize=14, current=1)
             if c.children:
                 movies = get_movie_list_by_pid(c.id, page)
                 hot_movies = get_hot_movie_by_pid(c.id, page)
@@ -94,7 +94,7 @@ class IndexLogic:
         根据关键字和分页参数检索影片基本信息列表
         :param keyword: 检索关键字
         :param page: 当前页码
-        :param page_size: 每页数量
+        :param pageSize: 每页数量
         :return: 影片基本信息列表
         """
         from model.service.search import search_film_keyword
@@ -106,8 +106,8 @@ class IndexLogic:
             bl.append(get_basic_info_by_key(MOVIE_BASIC_INFO_KEY % (s.cid, s.mid)))
         return bl
 
-    def get_film_category(self, id: int, id_type: str, page: int, page_size: int) -> List[Dict[str, Any]]:
-        page_obj = Page(page_size=page_size, current=page)
+    def get_film_category(self, id: int, id_type: str, page: int, pageSize: int) -> List[Dict[str, Any]]:
+        page_obj = Page(pageSize=pageSize, current=page)
         if id_type == "pid":
             return [m.dict() for m in MovieBasicInfo.get_movie_list_by_pid(self.db, id, page_obj)]
         elif id_type == "cid":
@@ -160,8 +160,8 @@ class IndexLogic:
                     break
         return play_list
 
-    def get_films_by_tags(self, tags: Dict[str, Any], page: int, page_size: int) -> List[Dict[str, Any]]:
-        page_obj = Page(page_size=page_size, current=page)
+    def get_films_by_tags(self, tags: Dict[str, Any], page: int, pageSize: int) -> List[Dict[str, Any]]:
+        page_obj = Page(pageSize=pageSize, current=page)
         sl = get_search_infos_by_tags(tags, page_obj)
         return get_basic_info_by_search_infos(sl)
         
@@ -173,8 +173,8 @@ class IndexLogic:
         """
         return get_search_tag(pid)
 
-    def get_film_classify(self, pid: int, page: int, page_size: int) -> Dict[str, Any]:
-        page_obj = Page(**{"page_size": page_size, "current": page})
+    def get_film_classify(self, pid: int, page: int, pageSize: int) -> Dict[str, Any]:
+        page_obj = Page(**{"pageSize": pageSize, "current": page})
         return {
             "news": get_movie_list_by_sort(0, pid, page_obj),
             "top": get_movie_list_by_sort(1, pid, page_obj),
@@ -214,10 +214,10 @@ class IndexLogic:
         :return: 相关影片的基本信息列表
         """
         search = SearchInfo(
-            cid=getattr(detail, "cid", None),
-            name=getattr(detail, "name", None),
-            class_tag=getattr(detail, "class_tag", None),
-            area=getattr(detail, "area", None),
-            language=getattr(detail, "language", None)
+            cid=detail["cid"],
+            name=detail["name"],
+            class_tag=detail['descriptor']["classTag"],
+            area=detail['descriptor']["area"],
+            language=detail['descriptor']["language"]
         )
         return get_relate_movie_basic_info(search, page)

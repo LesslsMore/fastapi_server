@@ -7,15 +7,15 @@ SUCCESS = 0
 FAILED = -1
 
 class Page(BaseModel):
-    page_size: int = None
+    pageSize: int = None
     current: int = None
     total: int = None
-    page_count: int = None
+    pageCount: int = None
 
-    @computed_field
-    @property
-    def pageCount(self) -> int:
-        return (self.total + self.page_size - 1) // self.page_size if self.page_size > 0 else 0
+    # @computed_field
+    # @property
+    # def pageCount(self) -> int:
+    #     return (self.total + self.pageSize - 1) // self.pageSize if self.pageSize > 0 else 0
 
 class PagingData(BaseModel):
     list: List[Any]

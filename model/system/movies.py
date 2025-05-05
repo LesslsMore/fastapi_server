@@ -40,8 +40,8 @@ class MovieBasicInfo(BaseModel):
     cid: int
     pid: Optional[int] = None
     name: str
-    sub_title: Optional[str] = None
-    c_name: Optional[str] = None
+    subTitle: Optional[str] = None
+    cName: Optional[str] = None
     state: Optional[str] = None
     picture: Optional[str] = None
     actor: Optional[str] = None

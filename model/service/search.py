@@ -192,44 +192,44 @@ def get_search_infos_by_tags(st: dict, page: Page) -> Optional[List[SearchInfo]]
         query = select(SearchInfo)
         
         # 处理各标签条件
-        if st.get('pid'):
-            query = query.where(SearchInfo.pid == st['pid'])
-        if st.get('cid'):
-            query = query.where(SearchInfo.cid == st['cid'])
-        if st.get('year'):
-            query = query.where(SearchInfo.year == st['year'])
+        if st.get('Pid'):
+            query = query.where(SearchInfo.pid == st['Pid'])
+        if st.get('Cid'):
+            query = query.where(SearchInfo.cid == st['Cid'])
+        if st.get('Year'):
+            query = query.where(SearchInfo.year == st['Year'])
             
         # 处理特殊标签条件
-        if st.get('area') == '其它':
-            tags = get_tags_by_title(st['pid'], 'Area')
+        if st.get('Area') == '其它':
+            tags = get_tags_by_title(st['Pid'], 'Area')
             exclude_areas = [t.split(':')[1] for t in tags]
             query = query.where(SearchInfo.area.not_in(exclude_areas))
-        elif st.get('area'):
-            query = query.where(SearchInfo.area == st['area'])
+        elif st.get('Area'):
+            query = query.where(SearchInfo.area == st['Area'])
             
-        if st.get('language') == '其它':
-            tags = get_tags_by_title(st['pid'], 'Language')
+        if st.get('Language') == '其它':
+            tags = get_tags_by_title(st['Pid'], 'Language')
             exclude_langs = [t.split(':')[1] for t in tags]
             query = query.where(SearchInfo.language.not_in(exclude_langs))
-        elif st.get('language'):
-            query = query.where(SearchInfo.language == st['language'])
+        elif st.get('Language'):
+            query = query.where(SearchInfo.language == st['Language'])
             
-        if st.get('plot') == '其它':
-            tags = get_tags_by_title(st['pid'], 'Plot')
+        if st.get('Plot') == '其它':
+            tags = get_tags_by_title(st['Pid'], 'Plot')
             exclude_plots = [t.split(':')[1] for t in tags]
             for plot in exclude_plots:
                 query = query.where(SearchInfo.class_tag.not_like(f'%{plot}%'))
-        elif st.get('plot'):
-            query = query.where(SearchInfo.class_tag.like(f'%{st["plot"]}%'))
+        elif st.get('Plot'):
+            query = query.where(SearchInfo.class_tag.like(f'%{st["Plot"]}%'))
             
         # 处理排序
-        if st.get('sort') == 'release_stamp':
+        if st.get('Sort') == 'release_stamp':
             query = query.order_by(SearchInfo.year.desc(), SearchInfo.release_stamp.desc())
-        elif st.get('sort'):
-            query = query.order_by(getattr(SearchInfo, st['sort']).desc())
+        elif st.get('Sort'):
+            query = query.order_by(getattr(SearchInfo, st['Sort']).desc())
             
         # 添加分页
-        query = query.offset((page.current - 1) * page.page_size).limit(page.page_size)
+        query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         
         search_infos = session.exec(query).all()
         return search_infos
@@ -268,7 +268,7 @@ def get_search_tag(pid: int) -> dict:
     result = {}
     
     # 获取标题信息
-    key = SEARCH_TITLE.format(pid)
+    key = SEARCH_TITLE % (pid)
     titles = redis.hgetall(key)
     result["titles"] = titles
     
@@ -301,7 +301,7 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
                 if c.show:
                     tags.append(f"{c.name}:{c.id}")
     elif t in ["Plot", "Area", "Language", "Year", "Initial", "Sort"]:
-        tag_key = SEARCH_TAG.format(pid, t)
+        tag_key = SEARCH_TAG % (pid, t)
         if t == "Plot":
             tags = redis.zrevrange(tag_key, 0, 10)
         elif t == "Area":
@@ -325,11 +325,11 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
         # 计算总数
         count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.pid == pid)).one()
         page.total = count
-        page.page_count = (page.total + page.page_size - 1) // page.page_size
+        page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
         
         # 查询数据
         query = select(SearchInfo).where(SearchInfo.pid == pid).order_by(SearchInfo.update_stamp.desc())\
-            .offset((page.current - 1) * page.page_size).limit(page.page_size)
+            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         search_infos = session.exec(query).all()
         
         return get_basic_info_by_search_infos(search_infos)
@@ -349,11 +349,11 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
         # 计算总数
         count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
         page.total = count
-        page.page_count = (page.total + page.page_size - 1) // page.page_size
+        page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
         
         # 查询数据
         query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc())\
-            .offset((page.current - 1) * page.page_size).limit(page.page_size)
+            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         search_infos = session.exec(query).all()
         
         return get_basic_info_by_search_infos(search_infos)
@@ -377,7 +377,7 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
             SearchInfo.pid == pid,
             SearchInfo.update_stamp > t.timestamp()
         ).order_by(SearchInfo.year.desc(), SearchInfo.hits.desc())\
-            .offset((page.current - 1) * page.page_size).limit(page.page_size)
+            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         
         return session.exec(query).all()
     except Exception as e:
@@ -400,7 +400,7 @@ def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
             SearchInfo.cid == cid,
             SearchInfo.update_stamp > t.timestamp()
         ).order_by(SearchInfo.year.desc(), SearchInfo.hits.desc())\
-            .offset((page.current - 1) * page.page_size).limit(page.page_size)
+            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         
         return session.exec(query).all()
     except Exception as e:
@@ -427,7 +427,7 @@ def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[Lis
         query = query.order_by(SearchInfo.update_stamp.desc())
         
     # 添加分页限制
-    query = query.offset((page.current - 1) * page.page_size).limit(page.page_size)
+    query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
     
     try:
         session = get_db()
@@ -569,8 +569,10 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
     from sqlmodel import or_, select
     try:
         session = get_db()
+        # 确保分页参数 current 至少为 1
+        page.current = max(1, page.current)
         # 处理影片名称，去除季、数字、剧场版等
-        name = re.sub(r'(第.{1,3}季.*)|([0-9]{1,3})|(剧场版)|(\s\S*$)|(之.*)|([\p{P}\p{S}].*)', '', search.name)
+        name = re.sub(r'(第.{1,3}季.*)|([0-9]{1,3})|(剧场版)|([\s\S]*$)|(之.*)|([^u4e00-u9fa5\w].*)', '', search.name)
         # 如果处理后长度没变且大于10，做截断
         if len(name) == len(search.name) and len(name) > 10:
             name = name[:((len(name) // 5) * 3)]
@@ -596,7 +598,7 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
         if tag_conditions:
             query = query.where(or_(*tag_conditions))
         # 分页
-        query = query.offset((page.current - 1) * page.page_size).limit(page.page_size)
+        query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         search_infos = session.exec(query).all()
         return get_basic_info_by_search_infos(search_infos)
     except Exception as e:
@@ -624,7 +626,7 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
             )
         ).one()
         page.total = count
-        page.page_count = (page.total + page.page_size - 1) // page.page_size
+        page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
         # 查询满足条件的数据
         query = (
             select(SearchInfo)
@@ -635,8 +637,8 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
                 )
             )
             .order_by(SearchInfo.year.desc(), SearchInfo.update_stamp.desc())
-            .offset((page.current - 1) * page.page_size)
-            .limit(page.page_size)
+            .offset((page.current - 1) * page.pageSize)
+            .limit(page.pageSize)
         )
         search_list = session.exec(query).all()
         return search_list

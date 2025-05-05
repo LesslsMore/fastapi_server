@@ -37,7 +37,7 @@ def categories_info(logic: IndexLogic = Depends(get_logic)):
 @router.get("/filmDetail")
 def film_detail(id: int = Query(...), logic: IndexLogic = Depends(get_logic)):
     detail = logic.get_film_detail(id)
-    page = Page(**{"page_size": 14, "current": 0})
+    page = Page(**{"pageSize": 14, "current": 0})
     relate = logic.relate_movie(detail, page)
     return response.success({"detail": detail, "relate": relate}, "影片详情信息获取成功")
 
@@ -49,18 +49,19 @@ def film_play_info(
     logic: IndexLogic = Depends(get_logic)
 ):
     detail = logic.get_film_detail(id)
-    play_from = playFrom or (detail["list"][0]["id"] if detail.get("list") else "")
+    if len(playFrom) <= 1 and len(detail["list"]) > 0:
+        playFrom = detail["list"][0]["id"]
     current_play = None
     for v in detail.get("list", []):
-        if v["id"] == play_from:
+        if v["id"] == playFrom:
             current_play = v["linkList"][episode] if episode < len(v["linkList"]) else None
             break
-    page = Page(**{"page_size": 14, "current": 0})
+    page = Page(**{"pageSize": 14, "current": 0})
     relate = logic.relate_movie(detail, page)
     return response.success({
         "detail": detail,
         "current": current_play,
-        "currentPlayFrom": play_from,
+        "currentPlayFrom": playFrom,
         "currentEpisode": episode,
         "relate": relate
     }, "影片播放信息获取成功")
@@ -71,10 +72,10 @@ def search_film(
     current: int = Query(1),
     logic: IndexLogic = Depends(get_logic)
 ):
-    page_size = 10
-    page = Page(**{"page_size": 10, "current": current})
+    pageSize = 10
+    page = Page(**{"pageSize": 10, "current": current})
     bl = logic.search_film_info(keyword.strip(), page)
-    page = {"page_size": page_size, "current": current, "total": len(bl)}
+    page = {"pageSize": pageSize, "current": current, "total": len(bl)}
     if page["total"] <= 0:
         return response.failed("暂无相关影片信息")
     return response.success({"list": bl, "page": page}, "影片搜索成功")
@@ -85,7 +86,7 @@ def film_classify(
     logic: IndexLogic = Depends(get_logic)
 ):
     title = logic.get_pid_category(Pid)
-    page = {"page_size": 21, "current": 1}
+    page = {"pageSize": 21, "current": 1}
     content = logic.get_film_classify(Pid, 1, 21)
     return response.success({"title": title, "content": content}, "分类影片信息获取成功")
 
@@ -102,19 +103,20 @@ def film_tag_search(
     logic: IndexLogic = Depends(get_logic)
 ):
     params = {
-        "Pid": Pid,
-        "Cid": Category,
+        "Pid": str(Pid),
+        "Cid": str(Category) if Category else "",
         "Plot": Plot,
         "Area": Area,
         "Language": Language,
-        "Year": Year,
+        "Year": str(Year) if Year else "",
         "Sort": Sort
     }
-    page_size = 49
-    page = {"page_size": page_size, "current": current}
-    film_list = logic.get_films_by_tags(params, current, page_size)
+    pageSize = 49
+    page = {"pageSize": pageSize, "current": current}
+    film_list = logic.get_films_by_tags(params, current, pageSize)
     title = logic.get_pid_category(Pid) if logic.get_pid_category(Pid) else ""
     search = logic.search_tags(Pid)
+    params['Category'] = params.pop('Cid')
     return response.success({
         "title": title,
         "list": film_list,
