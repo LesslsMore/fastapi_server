@@ -1,17 +1,19 @@
 import redis
-from config import data_config
+from config import data_config, config
 
 redis_client = None
 
 def init_redis_conn():
     global redis_client
     if redis_client is None:
-        host, port = data_config.REDIS_ADDR.split(":")
+        cfg = config['redis']
+        host = cfg['host']
+        port = cfg['port']
         redis_client = redis.Redis(
             host=host,
             port=int(port),
-            password=data_config.REDIS_PASSWORD,
-            db=data_config.REDIS_DB_NO,
+            password=cfg['password'],
+            db=cfg['db_no'],
             socket_connect_timeout=10,
             socket_timeout=10,
             decode_responses=True

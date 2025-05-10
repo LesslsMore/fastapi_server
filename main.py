@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 
+from config import config
 from plugin.db.redis_client import init_redis_conn
 from plugin.db.mysql import init_mysql
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,4 +31,4 @@ app.add_middleware(
 )
 
 if __name__ == "__main__": 
-	uvicorn.run(app, host="0.0.0.0", port=8000)
+	uvicorn.run(app, host="0.0.0.0", port=config['port'])
