@@ -4,13 +4,16 @@ from sqlmodel import SQLModel, Field
 import json
 from pydantic import BaseModel
 
+
 class SourceGrade(int, Enum):
     MasterCollect = 0
     SlaveCollect = 1
 
+
 class CollectResultModel(int, Enum):
     JsonResult = 0
     XmlResult = 1
+
 
 class ResourceType(int, Enum):
     CollectVideo = 0
@@ -29,13 +32,15 @@ class ResourceType(int, Enum):
         }
         return action_map.get(self, "detail")
 
+
 class FilmSource(BaseModel):
     id: str = None
     name: str = None
     uri: str = None
-    result_model: CollectResultModel = None
+    resultModel: CollectResultModel = None
     grade: SourceGrade = None
-    sync_pictures: bool = None
-    collect_type: ResourceType = None
+    syncPictures: bool = None
+    collectType: ResourceType = None
+    type_id: Optional[int] = -1  # 修改为Optional[int]以处理None值
     state: bool = None
-    interval: int = None
+    interval: Optional[int] = 0

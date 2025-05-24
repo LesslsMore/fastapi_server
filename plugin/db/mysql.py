@@ -10,11 +10,17 @@ from sqlmodel import Session
 # 全局数据库引擎变量
 db_engine: Optional[Engine] = None
 
+import os
+
 def init_mysql():
     global db_engine
     if db_engine is None:
-        mysql = config['mysql']
-        db_url = f"mysql+pymysql://{mysql['user']}:{mysql['password']}@{mysql['host']}:{mysql['port']}/{mysql['db']}?charset=utf8mb4"
+        mysql_url = os.environ.get("MYSQL_URL")
+        if mysql_url:
+            db_url = mysql_url
+        else:
+            mysql = config['mysql']
+            db_url = f"mysql+pymysql://{mysql['user']}:{mysql['password']}@{mysql['host']}:{mysql['port']}/{mysql['db']}?charset=utf8mb4"
         db_engine = create_engine(db_url, echo=True, pool_pre_ping=True)
 
 # 获取数据库引擎的依赖

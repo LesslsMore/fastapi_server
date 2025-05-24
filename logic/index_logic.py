@@ -16,7 +16,7 @@ from plugin.db.redis_client import redis_client, init_redis_conn
 from config.data_config import INDEX_CACHE_KEY
 
 from model.service.movies import get_detail_by_key, generate_hash_key
-from plugin.db.mysql import get_db_engine, get_db
+from plugin.db.postgres import get_db
 from model.system.collect_source import FilmSource, SourceGrade
 from model.service.collect_source import get_collect_source_list_by_grade
 from model.system.virtual_object import PlayLinkVo
@@ -33,10 +33,10 @@ class IndexLogic:
         # 首页数据处理逻辑
         redis = redis_client or init_redis_conn()
 
-        cache_key = INDEX_CACHE_KEY
-        info = redis.get(cache_key)
+
+        info = redis.get(INDEX_CACHE_KEY)
         if info:
-            return eval(info)
+            return json.loads(info)
         info = {}
         # 1. 分类信息
         tree = CategoryTree(**{"id": 0, "name":"分类信息"})
@@ -62,7 +62,7 @@ class IndexLogic:
         info["content"] = content
         # 3. 轮播
         info["banners"] = [json.loads(b.model_dump_json()) for b in get_banners()]
-        redis.set(cache_key, str(info), ex=3600)
+        redis.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
         return info
 
 
@@ -87,7 +87,11 @@ class IndexLogic:
 
     def get_nav_category(self) -> List[Dict[str, Any]]:
         tree = get_category_tree()
-        return [Category(**c.model_dump()).model_dump() for c in tree.children if c.show]
+        cl = []
+        for c in tree.children:
+            if c.show:
+                cl.append(c.model_dump())
+        return cl
 
     def search_film_info(self, keyword: str, page: Page) -> list:
         """

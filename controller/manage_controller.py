@@ -1,10 +1,17 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
+
+from controller.collect_controller import collectController
+from controller.spider_controller import spiderController
+from controller.user_controller import userController
 from logic.manage_logic import ManageLogic
 from model.system.manage import BasicConfig, Banner
 from model.system import response
 from typing import List, Optional
 
-router = APIRouter()
+router = APIRouter(prefix='/manage')
+router.include_router(collectController)
+router.include_router(spiderController)
+router.include_router(userController)
 
 def get_logic():
     return ManageLogic

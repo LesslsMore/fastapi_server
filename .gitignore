@@ -2,3 +2,5 @@
 config/config.pro.yml
 config/config.yml
 .idea/
+/plugin/cms-spider-py/
+/config/.env.win

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
+
+from logic.manage_logic import ManageLogic
 from model.system.response import Page
 from logic.index_logic import IndexLogic
 from model.system import response
@@ -22,10 +24,10 @@ def index_cache_del(logic: IndexLogic = Depends(get_logic)):
     logic.clear_index_cache()
     return response.success_only_msg("首页缓存数据已清除!!!")
 
-# @router.get("/config/basic")
-# def site_basic_config(logic: IndexLogic = Depends(get_logic)):
-#     data = logic.get_site_basic_config()
-#     return response.success(data, "基础配置信息获取成功")
+@router.get("/config/basic")
+def site_basic_config(logic: IndexLogic = Depends(get_logic)):
+    data = ManageLogic.get_site_basic_config()
+    return response.success(data, "基础配置信息获取成功")
 
 @router.get("/navCategory")
 def categories_info(logic: IndexLogic = Depends(get_logic)):

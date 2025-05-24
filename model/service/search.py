@@ -1,32 +1,31 @@
 from typing import List, Optional, Any
 from sqlmodel import SQLModel
 import json
-from plugin.db.redis_client import redis_client, init_redis_conn
+from plugin.db.redis_client import redis_client, init_redis_conn, get_redis_client
 from sqlalchemy import create_engine, text
-from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG, MOVIE_BASIC_INFO_KEY, MOVIE_DETAIL_KEY
+from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG, MOVIE_BASIC_INFO_KEY
 import re
 from datetime import datetime, timedelta
 from model.system.movies import MovieBasicInfo, MovieUrlInfo
 from model.system.search import SearchInfo
-from model.service.movies import get_basic_info_by_search_infos
+
 from typing import List, Optional
 from sqlmodel import Session, select, func, desc, or_, and_
 from fastapi import Depends
-from plugin.db.mysql import get_db_engine, get_db
-from plugin.db.mysql import db_engine
+from plugin.db.postgres import get_db
 from model.system.response import Page
 
-# 批量保存检索信息到redis
-def rdb_save_search_info(list_: List[SQLModel]):
-    members = []
-    for s in list_:
-        member = json.dumps(s.dict(), ensure_ascii=False)
-        members.append({
-            'score': float(s.mid),
-            'member': member
-        })
-    if members:
-        redis_client.zadd(SEARCH_INFO_TEMP, {m['member']: m['score'] for m in members})
+
+def get_basic_info_by_search_infos(infos: List[SearchInfo]) -> List[MovieBasicInfo]:
+    redis_client = get_redis_client() or init_redis_conn()
+    result = []
+    for info in infos:
+        key = MOVIE_BASIC_INFO_KEY % (info.cid, info.mid)
+        data = redis_client.get(key)
+        if data:
+            basic = MovieBasicInfo.parse_raw(data)
+            result.append(basic)
+    return result
 
 # 删除所有库存数据
 def film_zero(db_engine):
@@ -52,120 +51,24 @@ def del_mt_play(keys: List[str]):
     if keys:
         redis_client.delete(*keys)
 
-# 标签处理相关
-def save_search_tag(search: SQLModel):
-    key = SEARCH_TITLE.format(search.pid)
-    search_map = redis_client.hgetall(key)
-    if not search_map:
-        search_map = {
-            "Category": "类型",
-            "Plot": "剧情",
-            "Area": "地区",
-            "Language": "语言",
-            "Year": "年份",
-            "Initial": "首字母",
-            "Sort": "排序"
-        }
-        redis_client.hmset(key, search_map)
-    for k in search_map:
-        tag_key = SEARCH_TAG.format(search.pid, k)
-        tag_count = redis_client.zcard(tag_key)
-        if k == "Category" and tag_count == 0:
-            from .categories import get_children_tree
-            children = get_children_tree(search.pid)
-            if children:
-                for t in children:
-                    redis_client.zadd(tag_key, {f"{t.name}:{t.id}": -t.id})
-        elif k == "Year" and tag_count == 0:
-            current_year = datetime.now().year
-            for i in range(12):
-                y = current_year - i
-                redis_client.zadd(tag_key, {f"{y}:{y}": y})
-        elif k == "Initial" and tag_count == 0:
-            for i in range(65, 91):
-                c = chr(i)
-                redis_client.zadd(tag_key, {f"{c}:{c}": 90 - i})
-        elif k == "Sort" and tag_count == 0:
-            tags = {
-                "时间排序:update_stamp": 3,
-                "人气排序:hits": 2,
-                "评分排序:score": 1,
-                "最新上映:release_stamp": 0
-            }
-            redis_client.zadd(tag_key, tags)
-        elif k == "Plot":
-            handle_search_tags(search.class_tag, tag_key)
-        elif k == "Area":
-            handle_search_tags(search.area, tag_key)
-        elif k == "Language":
-            handle_search_tags(search.language, tag_key)
 
-# 处理标签字符串
-def handle_search_tags(pre_tags: Optional[str], k: str):
-    if not pre_tags:
-        return
-    pre_tags = re.sub(r"[\s\n\r]+", "", pre_tags)
-    def add_tag(tag):
-        score = redis_client.zscore(k, f"{tag}:{tag}") or 0
-        redis_client.zadd(k, {f"{tag}:{tag}": score + 1})
-    if "/" in pre_tags:
-        for t in pre_tags.split("/"):
-            add_tag(t)
-    elif "," in pre_tags:
-        for t in pre_tags.split(","):
-            add_tag(t)
-    elif "，" in pre_tags:
-        for t in pre_tags.split("，"):
-            add_tag(t)
-    elif "、" in pre_tags:
-        for t in pre_tags.split("、"):
-            add_tag(t)
-    else:
-        if pre_tags == "其它":
-            redis_client.zadd(k, {"其它:其它": 0})
-        elif pre_tags:
-            add_tag(pre_tags)
 
 # 批量处理标签
 def batch_handle_search_tag(infos: List[SQLModel]):
     for info in infos:
         save_search_tag(info)
 
-# 批量保存影片search信息
-def batch_save(db_engine, list_: List[SQLModel]):
-    with db_engine.begin() as conn:
-        for s in list_:
-            conn.execute(text(
-                """
-                INSERT INTO search_info (mid, cid, pid, name, sub_title, c_name, class_tag, area, language, year, initial, score, update_stamp, hits, state, remarks, release_stamp)
-                VALUES (:mid, :cid, :pid, :name, :sub_title, :c_name, :class_tag, :area, :language, :year, :initial, :score, :update_stamp, :hits, :state, :remarks, :release_stamp)
-                """), s.dict())
-        batch_handle_search_tag(list_)
-
-# 批量保存或更新
-def batch_save_or_update(db_engine, list_: List[SQLModel]):
-    with db_engine.begin() as conn:
-        for s in list_:
-            result = conn.execute(text("SELECT COUNT(*) FROM search_info WHERE mid=:mid"), {"mid": s.mid})
-            count = result.scalar()
-            if count > 0:
-                conn.execute(text(
-                    """
-                    UPDATE search_info SET update_stamp=:update_stamp, hits=:hits, state=:state, remarks=:remarks, score=:score, release_stamp=:release_stamp WHERE mid=:mid
-                    """), s.dict())
-            else:
-                conn.execute(text(
-                    """
-                    INSERT INTO search_info (mid, cid, pid, name, sub_title, c_name, class_tag, area, language, year, initial, score, update_stamp, hits, state, remarks, release_stamp)
-                    VALUES (:mid, :cid, :pid, :name, :sub_title, :c_name, :class_tag, :area, :language, :year, :initial, :score, :update_stamp, :hits, :state, :remarks, :release_stamp)
-                    """), s.dict())
-            save_search_tag(s)
-
-# 判断是否存在search表
-def exist_search_table(db_engine):
-    with db_engine.connect() as conn:
-        result = conn.execute(text("SHOW TABLES LIKE 'search_info'"))
-        return result.first() is not None
+def exist_search_table(session: Session) -> bool:
+    """
+    判断是否存在Search Table
+    """
+    result = session.execute("""
+    SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'search_info'
+    )
+    """).fetchone()
+    return result[0]
 
 # 判断是否存在影片检索信息
 def exist_search_info(db_engine, mid: int):
@@ -236,7 +139,7 @@ def get_search_infos_by_tags(st: dict, page: Page) -> Optional[List[SearchInfo]]
     except Exception as e:
         print(f"查询失败: {e}")
         return None
-        
+
 def handle_tag_str(title: str, tags: List[str]) -> List[dict]:
     """
     处理标签字符串格式转换
@@ -290,7 +193,7 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
     :param t: 标题类型(Category/Plot/Area/Language/Year/Initial/Sort)
     :return: 标签列表
     """
-    redis = redis_client or init_redis_conn()
+    redis_client = get_redis_client() or init_redis_conn()
     tags = []
     # 过滤分类tag
     if t == "Category":
@@ -303,13 +206,13 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
     elif t in ["Plot", "Area", "Language", "Year", "Initial", "Sort"]:
         tag_key = SEARCH_TAG % (pid, t)
         if t == "Plot":
-            tags = redis.zrevrange(tag_key, 0, 10)
+            tags = redis_client.zrevrange(tag_key, 0, 10)
         elif t == "Area":
-            tags = redis.zrevrange(tag_key, 0, 11)
+            tags = redis_client.zrevrange(tag_key, 0, 11)
         elif t == "Language":
-            tags = redis.zrevrange(tag_key, 0, 6)
+            tags = redis_client.zrevrange(tag_key, 0, 6)
         else:
-            tags = redis.zrevrange(tag_key, 0, -1)
+            tags = redis_client.zrevrange(tag_key, 0, -1)
     return tags
 
 
@@ -645,3 +548,184 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
     except Exception as e:
         print(f"查询失败: {e}")
         return None
+
+
+def save_search_info(search_info: SearchInfo) -> None:
+    # Save search information to the database
+    session = get_db()
+    if not exist_search_info(search_info.mid):
+        session.add(search_info)
+        session.commit()
+        batch_handle_search_tag([search_info])
+    else:
+        session.query(SearchInfo).filter(SearchInfo.mid == search_info.mid).update({
+            SearchInfo.update_stamp: search_info.update_stamp,
+            SearchInfo.hits: search_info.hits,
+            SearchInfo.state: search_info.state,
+            SearchInfo.remarks: search_info.remarks,
+            SearchInfo.score: search_info.score,
+            SearchInfo.release_stamp: search_info.release_stamp
+        })
+        session.commit()
+
+def sync_search_info(model: int) -> None:
+    if model == 0:
+        reset_search_table(get_db())
+        search_info_to_mdb(model)
+        add_search_index()
+    elif model == 1:
+        search_info_to_mdb(model)
+
+
+def exist_search_info(mid: int) -> bool:
+    # Check if search information exists in the database
+    session = get_db()
+    count = session.query(SearchInfo).filter(SearchInfo.mid == mid).count()
+    return count > 0
+
+
+def truncate_search_table() -> None:
+    # Truncate the search_info table
+    session = get_db()
+    session.execute('TRUNCATE TABLE search_info')
+    session.commit()
+
+
+# Additional functions can be implemented similarly based on the Go code
+def search_info_to_mdb(model: int) -> None:
+    redis_client = get_redis_client() or init_redis_conn()
+    count = redis_client.zcard(SEARCH_INFO_TEMP)
+    if count <= 0:
+        return
+
+    list_ = redis_client.zpopmax(SEARCH_INFO_TEMP, count)
+    if not list_:
+        return
+
+    sl = []
+    for member, score in list_:
+        info = SearchInfo(**json.loads(member))
+        sl.append(info)
+
+    if model == 0:
+        batch_save(sl)
+    elif model == 1:
+        batch_save_or_update(sl)
+
+    search_info_to_mdb(model)
+
+
+def batch_save(list_: List[SearchInfo]) -> None:
+    session = get_db()
+    try:
+        session.bulk_save_objects(list_)
+        batch_handle_search_tag(list_)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print(f"批量保存失败: {e}")
+
+def batch_save_or_update(list_: List[SearchInfo]) -> None:
+    session = get_db()
+    try:
+        for info in list_:
+            existing_info = session.exec(select(SearchInfo).where(SearchInfo.mid == info.mid)).first()
+            if existing_info:
+                existing_info.update_stamp = info.update_stamp
+                existing_info.hits = info.hits
+                existing_info.state = info.state
+                existing_info.remarks = info.remarks
+                existing_info.score = info.score
+                existing_info.release_stamp = info.release_stamp
+            else:
+                session.add(info)
+                batch_handle_search_tag([info])
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print(f"批量保存或更新失败: {e}")
+
+
+def add_search_index() -> None:
+    session = get_db()
+    with session.begin():
+        session.exec(text("CREATE UNIQUE INDEX idx_mid ON search_info (mid)"))
+        session.exec(text("CREATE INDEX idx_time ON search_info (update_stamp DESC)"))
+        session.exec(text("CREATE INDEX idx_hits ON search_info (hits DESC)"))
+        session.exec(text("CREATE INDEX idx_score ON search_info (score DESC)"))
+        session.exec(text("CREATE INDEX idx_release ON search_info (release_stamp DESC)"))
+        session.exec(text("CREATE INDEX idx_year ON search_info (year DESC)"))
+
+
+def handle_search_tags(pre_tags: str, k: str):
+    redis_client = get_redis_client() or init_redis_conn()
+    # 先处理字符串中的空白符 然后对处理前的tag字符串进行分割
+    pre_tags = re.sub(r'[\s\n\r]+', '', pre_tags)
+    def f(sep: str):
+        for t in pre_tags.split(sep):
+            # 获取 tag对应的score
+            score = redis_client.zscore(k, f"{t}:{t}") or 0
+            # 在原score的基础上+1 重新存入redis中
+            redis_client.zadd(k, {f"{t}:{t}": score + 1})
+    if '/' in pre_tags:
+        f('/')
+    elif ',' in pre_tags:
+        f(',')
+    elif '，' in pre_tags:
+        f('，')
+    elif '、' in pre_tags:
+        f('、')
+    else:
+        # 获取 tag对应的score
+        if len(pre_tags) == 0:
+            pass
+        elif pre_tags == "其它":
+            redis_client.zadd(k, {f"{pre_tags}:{pre_tags}": 0})
+        else:
+            score = redis_client.zscore(k, f"{pre_tags}:{pre_tags}") or 0
+            redis_client.zadd(k, {f"{pre_tags}:{pre_tags}": score + 1})
+
+def save_search_tag(search: SearchInfo):
+    redis_client = get_redis_client() or init_redis_conn()
+    key = SEARCH_TITLE % (search.pid)
+    search_map = redis_client.hgetall(key)
+    if not search_map:
+        search_map = {
+            "Category": "类型",
+            "Plot": "剧情",
+            "Area": "地区",
+            "Language": "语言",
+            "Year": "年份",
+            "Initial": "首字母",
+            "Sort": "排序"
+        }
+        redis_client.hmset(key, search_map)
+
+    for k in search_map.keys():
+        tag_key = SEARCH_TAG % (search.pid, k)
+        tag_count = redis_client.zcard(tag_key)
+        if k == "Category" and tag_count == 0:
+            from .categories import get_children_tree
+            for t in get_children_tree(search.pid):
+                redis_client.zadd(tag_key, {f"{t.name}:{t.id}": -t.id})
+        elif k == "Year" and tag_count == 0:
+            current_year = datetime.now().year
+            for i in range(12):
+                redis_client.zadd(tag_key, {f"{current_year-i}:{current_year-i}": current_year-i})
+        elif k == "Initial" and tag_count == 0:
+            for i in range(65, 91):
+                redis_client.zadd(tag_key, {f"{chr(i)}:{chr(i)}": 90-i})
+        elif k == "Sort" and tag_count == 0:
+            tags = [
+                (3, "时间排序:update_stamp"),
+                (2, "人气排序:hits"),
+                (1, "评分排序:score"),
+                (0, "最新上映:release_stamp")
+            ]
+            redis_client.zadd(tag_key, dict(tags))
+        elif k == "Plot":
+            handle_search_tags(search.class_tag, tag_key)
+        elif k == "Area":
+            handle_search_tags(search.area, tag_key)
+        elif k == "Language":
+            handle_search_tags(search.language, tag_key)
