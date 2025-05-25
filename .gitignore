@@ -4,3 +4,4 @@ config/config.yml
 .idea/
 /plugin/cms-spider-py/
 /config/.env.win
+/config/.env.vercel

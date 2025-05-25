@@ -22,3 +22,4 @@ def load_dotenv(dotenv_path=None):
 
 config = load_config()
 load_dotenv('config/.env.win')
+# load_dotenv('config/.env.vercel')

@@ -5,11 +5,16 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+from controller.collect_controller import collectController
+from controller.index_controller import indexController
+from controller.manage_controller import manageController
+from controller.spider_controller import spiderController
+from controller.user_controller import userController
 from plugin.db import close_redis
 from plugin.init.db_init import table_init
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
-from controller import index_controller, manage_controller
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +26,7 @@ async def lifespan(app: FastAPI):
     # Clean up the ML models and release the resources
     close_redis()
 
+
 app = FastAPI(lifespan=lifespan)
 
 
@@ -29,11 +35,11 @@ def ping():
     return {"message": "pong"}
 
 
-app.include_router(index_controller.router)
-app.include_router(manage_controller.router)
-
-
-
+app.include_router(indexController)
+app.include_router(manageController)
+manageController.include_router(collectController)
+manageController.include_router(spiderController)
+manageController.include_router(userController)
 
 app.add_middleware(
     CORSMiddleware,

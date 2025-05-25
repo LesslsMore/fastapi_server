@@ -8,11 +8,13 @@ from typing import Optional, List
 
 spiderController = APIRouter(prefix='/spider')
 
+
 class CollectParams(BaseModel):
     time: int
     batch: bool = False
     ids: Optional[List[str]] = None
     id: Optional[str] = None
+
 
 @spiderController.post("/start")
 def star_spider(params: CollectParams):
