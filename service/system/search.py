@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional, Any
 from sqlmodel import SQLModel
 import json
-from plugin.db import redis_client, init_redis_conn, get_redis_client, pg_engine
+from plugin.db import redis_client, pg_engine
 from sqlalchemy import create_engine, text, update
 from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG, MOVIE_BASIC_INFO_KEY
 import re
@@ -19,7 +19,6 @@ from service.system.categories import get_children_tree
 
 
 def get_basic_info_by_search_infos(infos: List[SearchInfo]) -> List[MovieBasicInfo]:
-    redis_client = get_redis_client() or init_redis_conn()
     result = []
     for info in infos:
         key = MOVIE_BASIC_INFO_KEY % (info.cid, info.mid)
@@ -39,16 +38,16 @@ def film_zero():
         keys = redis_client.keys(pattern)
         if keys:
             redis_client.delete(*keys)
-    with Session(pg_engine) as conn:
-        conn.execute(text('TRUNCATE TABLE search_info'))
-        conn.commit()
+    session = get_db()
+    session.execute(text('TRUNCATE TABLE search_info'))
+    session.commit()
 
 
 # 重置Search表
-def reset_search_table(db_engine):
-    with db_engine.connect() as conn:
-        conn.execute(text('DROP TABLE IF EXISTS search_info'))
-        conn.commit()
+def reset_search_table():
+    session = get_db()
+    session.execute(text('DROP TABLE IF EXISTS search_info'))
+    session.commit()
 
 
 # 清空附加播放源信息
@@ -63,10 +62,11 @@ def batch_handle_search_tag(infos: List[SQLModel]):
         save_search_tag(info)
 
 
-def exist_search_table(session: Session) -> bool:
+def exist_search_table() -> bool:
     """
     判断是否存在Search Table
     """
+    session = get_db()
     result = session.execute("""
     SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -77,17 +77,17 @@ def exist_search_table(session: Session) -> bool:
 
 
 # 判断是否存在影片检索信息
-def exist_search_info(db_engine, mid: int):
-    with db_engine.connect() as conn:
-        result = conn.execute(text("SELECT COUNT(*) FROM search_info WHERE mid=:mid"), {"mid": mid})
-        return result.scalar() > 0
+def exist_search_info(mid: int):
+    session = get_db()
+    result = session.execute(text("SELECT COUNT(*) FROM search_info WHERE mid=:mid"), {"mid": mid})
+    return result.scalar() > 0
 
 
 # 截断search_info表
-def truncate_search_table(db_engine):
-    with db_engine.connect() as conn:
-        conn.execute(text('TRUNCATE TABLE search_info'))
-        conn.commit()
+def truncate_search_table():
+    session = get_db()
+    session.execute(text('TRUNCATE TABLE search_info'))
+    session.commit()
 
 
 # 影片检索相关的其他函数
@@ -177,12 +177,11 @@ def get_search_tag(pid: int) -> dict:
     :param pid: 分类ID
     :return: 包含标签信息的字典
     """
-    redis = redis_client or init_redis_conn()
     result = {}
 
     # 获取标题信息
     key = SEARCH_TITLE % (pid)
-    titles = redis.hgetall(key)
+    titles = redis_client.hgetall(key)
     result["titles"] = titles
 
     # 处理标签信息
@@ -204,7 +203,6 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
     :param t: 标题类型(Category/Plot/Area/Language/Year/Initial/Sort)
     :return: 标签列表
     """
-    redis_client = get_redis_client() or init_redis_conn()
     tags = []
     # 过滤分类tag
     if t == "Category":
@@ -384,8 +382,7 @@ def get_cache_data(key: str) -> Optional[Any]:
     :return: 缓存数据
     """
     try:
-        redis = redis_client or init_redis_conn()
-        data = redis.get(key)
+        data = redis_client.get(key)
         if data:
             try:
                 return json.loads(data)
@@ -406,13 +403,12 @@ def data_cache(key: str, data: Any, expire: int = 0) -> bool:
     :return: 是否缓存成功
     """
     try:
-        redis = redis_client or init_redis_conn()
         if isinstance(data, (dict, list)):
             data = json.dumps(data, ensure_ascii=False)
         if expire > 0:
-            redis.setex(key, expire, data)
+            redis_client.setex(key, expire, data)
         else:
-            redis.set(key, data)
+            redis_client.set(key, data)
         return True
     except Exception as e:
         print(f"缓存数据失败: {e}")
@@ -426,8 +422,7 @@ def get_cache_data(key: str) -> Optional[Any]:
     :return: 缓存数据
     """
     try:
-        redis = redis_client or init_redis_conn()
-        data = redis.get(key)
+        data = redis_client.get(key)
         if data:
             try:
                 return json.loads(data)
@@ -446,8 +441,7 @@ def remove_cache(key: str) -> bool:
     :return: 是否删除成功
     """
     try:
-        redis = redis_client or init_redis_conn()
-        return redis.delete(key) > 0
+        return redis_client.delete(key) > 0
     except Exception as e:
         print(f"删除缓存数据失败: {e}")
         return False
@@ -585,7 +579,7 @@ def save_search_info(search_info: SearchInfo) -> None:
 
 def sync_search_info(model: int) -> None:
     if model == 0:
-        reset_search_table(get_db())
+        reset_search_table()
         search_info_to_mdb(model)
         add_search_index()
     elif model == 1:
@@ -608,7 +602,6 @@ def truncate_search_table() -> None:
 
 # Additional functions can be implemented similarly based on the Go code
 def search_info_to_mdb(model: int) -> None:
-    redis_client = get_redis_client() or init_redis_conn()
     count = redis_client.zcard(SEARCH_INFO_TEMP)
     if count <= 0:
         return
@@ -643,46 +636,45 @@ def batch_save(list_: List[SearchInfo]) -> None:
 
 
 def batch_save_or_update(list_: List[SearchInfo]) -> None:
-    with Session(pg_engine) as session:
-        for info in list_:
-            existing_info = session.exec(select(SearchInfo).where(SearchInfo.mid == info.mid)).first()
-            if existing_info:
-                try:
-                    session.exec(
-                        update(SearchInfo)
-                        .where(SearchInfo.mid == info.mid)
-                        .values(
-                            update_stamp=info.update_stamp,
-                            hits=info.hits,
-                            state=info.state,
-                            remarks=info.remarks,
-                            score=info.score,
-                            release_stamp=info.release_stamp
-                        )
+    session = get_db()
+    for info in list_:
+        existing_info = session.exec(select(SearchInfo).where(SearchInfo.mid == info.mid)).first()
+        if existing_info:
+            try:
+                session.exec(
+                    update(SearchInfo)
+                    .where(SearchInfo.mid == info.mid)
+                    .values(
+                        update_stamp=info.update_stamp,
+                        hits=info.hits,
+                        state=info.state,
+                        remarks=info.remarks,
+                        score=info.score,
+                        release_stamp=info.release_stamp
                     )
-                except Exception as e:
-                    session.rollback()
-                    logging.error(f"batch_save_or_update: {e}")
-            else:
-                try:
-                    session.add(info)
-                    batch_handle_search_tag([info])
-                except Exception as e:
-                    session.rollback()
-                    logging.error(f"batch_handle_search_tag: {e}")
-        session.commit()
+                )
+            except Exception as e:
+                session.rollback()
+                logging.error(f"batch_save_or_update: {e}")
+        else:
+            try:
+                session.add(info)
+                batch_handle_search_tag([info])
+            except Exception as e:
+                session.rollback()
+                logging.error(f"batch_handle_search_tag: {e}")
+    session.commit()
 
 
 
 def add_search_index() -> None:
     session = get_db()
-    with session.begin():
-        session.exec(text("CREATE UNIQUE INDEX idx_mid ON search_info (mid)"))
-        session.exec(text("CREATE INDEX idx_time ON search_info (update_stamp DESC)"))
-        session.exec(text("CREATE INDEX idx_hits ON search_info (hits DESC)"))
-        session.exec(text("CREATE INDEX idx_score ON search_info (score DESC)"))
-        session.exec(text("CREATE INDEX idx_release ON search_info (release_stamp DESC)"))
-        session.exec(text("CREATE INDEX idx_year ON search_info (year DESC)"))
+    session.exec(text("CREATE UNIQUE INDEX idx_mid ON search_info (mid)"))
+    session.exec(text("CREATE INDEX idx_time ON search_info (update_stamp DESC)"))
+    session.exec(text("CREATE INDEX idx_hits ON search_info (hits DESC)"))
+    session.exec(text("CREATE INDEX idx_score ON search_info (score DESC)"))
+    session.exec(text("CREATE INDEX idx_release ON search_info (release_stamp DESC)"))
+    session.exec(text("CREATE INDEX idx_year ON search_info (year DESC)"))
 
 
 def handle_search_tags(pre_tags: str, k: str):
