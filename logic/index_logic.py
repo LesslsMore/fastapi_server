@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from sqlmodel import select
 import json
 from model.system.categories import CategoryTree
+from service.collect.movie_dao import get_movie_basic_info, get_movie_detail
 from service.system.categories import get_category_tree
 
 from model.system.movies import MovieBasicInfo, MovieDetail
@@ -9,17 +10,15 @@ from model.system.response import Page
 from model.system.search import SearchInfo
 from plugin.db import redis_client
 from config.data_config import INDEX_CACHE_KEY
-from plugin.db import get_db
+from plugin.db import get_session
 from model.system.collect_source import SourceGrade
 from service.system.collect_source import get_collect_source_list_by_grade
 from model.system.virtual_object import PlayLinkVo
 from service.system.manage import get_banners
-from service.system.movies import generate_hash_key, get_detail_by_key
+from service.system.movies import generate_hash_key
 from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
     get_hot_movie_by_cid, get_multiple_play, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, \
-    get_movie_list_by_sort, get_relate_movie_basic_info
-
-from config.data_config import MOVIE_BASIC_INFO_KEY
+    get_movie_list_by_sort, get_relate_movie_basic_info, search_film_keyword, get_search_info
 import re
 
 
@@ -98,11 +97,13 @@ class IndexLogic:
         :return: 影片基本信息列表
         """
 
-        sl = search_film_keyword(keyword, page)
-        bl = []
-        for s in sl:
-            bl.append(get_basic_info_by_key(MOVIE_BASIC_INFO_KEY % (s.cid, s.mid)))
-        return bl
+        search_info_list = search_film_keyword(keyword, page)
+        movie_basic_info_list = []
+        for search_info in search_info_list:
+            movie_basic_info = get_movie_basic_info(search_info)
+            if movie_basic_info:
+                movie_basic_info_list.append(movie_basic_info)
+        return movie_basic_info_list
 
     @staticmethod
     def get_film_category(id: int, id_type: str, page: int, pageSize: int) -> List[Dict[str, Any]]:
@@ -191,38 +192,37 @@ class IndexLogic:
         :param id: 影片ID
         :return: 包含影片详情和播放源的字典
         """
-        # 通过ID获取影片搜索信息
-        session = get_db()
-        search = session.exec(
-            select(SearchInfo).where(SearchInfo.mid == id)
-        ).first()
-        if not search:
+        search_info = get_search_info(id)
+        if not search_info:
             return {}
             
         # 获取Redis中的完整影视信息
-        detail = get_detail_by_key(f"MovieDetail:Cid{search.cid}:Id{search.mid}")
-        if not detail:
+
+        movie_detail = get_movie_detail(search_info)
+        if not movie_detail:
             return {}
             
         # 查找其他站点的播放源
-        play_list = IndexLogic.multiple_source(detail)
-        res = detail.model_dump()
+        play_list = IndexLogic.multiple_source(movie_detail)
+        res = movie_detail.model_dump()
         res["list"] = play_list
         return res
 
+
+
     @staticmethod
-    def relate_movie(detail: MovieDetail, page: Page) -> List[MovieBasicInfo]:
+    def relate_movie(movie_detail: MovieDetail, page: Page) -> List[MovieBasicInfo]:
         """
         根据当前影片信息匹配相关影片
-        :param detail: 影片详情对象
+        :param movie_detail: 影片详情对象
         :param page: 分页参数对象
         :return: 相关影片的基本信息列表
         """
         search = SearchInfo(
-            cid=detail["cid"],
-            name=detail["name"],
-            class_tag=detail['descriptor']["classTag"],
-            area=detail['descriptor']["area"],
-            language=detail['descriptor']["language"]
+            cid=movie_detail.cid,
+            name=movie_detail.name,
+            class_tag=movie_detail.descriptor.classTag,
+            area=movie_detail.descriptor.area,
+            language=movie_detail.descriptor.language,
         )
         return get_relate_movie_basic_info(search, page)

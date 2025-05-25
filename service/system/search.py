@@ -4,7 +4,7 @@ from sqlmodel import SQLModel
 import json
 from plugin.db import redis_client, pg_engine
 from sqlalchemy import create_engine, text, update
-from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG, MOVIE_BASIC_INFO_KEY
+from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG
 import re
 from datetime import datetime, timedelta
 from model.system.movies import MovieBasicInfo, MovieUrlInfo
@@ -13,20 +13,19 @@ from model.system.search import SearchInfo
 from typing import List, Optional
 from sqlmodel import Session, select, func, desc, or_, and_
 from fastapi import Depends
-from plugin.db import get_db
+from plugin.db import get_session
 from model.system.response import Page
+from service.collect.movie_dao import get_movie_basic_info
 from service.system.categories import get_children_tree
 
 
-def get_basic_info_by_search_infos(infos: List[SearchInfo]) -> List[MovieBasicInfo]:
-    result = []
-    for info in infos:
-        key = MOVIE_BASIC_INFO_KEY % (info.cid, info.mid)
-        data = redis_client.get(key)
-        if data:
-            basic = MovieBasicInfo.parse_raw(data)
-            result.append(basic)
-    return result
+def get_basic_info_by_search_infos(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
+    movie_basic_info_list = []
+    for search_info in search_info_list:
+        movie_basic_info = get_movie_basic_info(search_info)
+        if movie_basic_info:
+            movie_basic_info_list.append(movie_basic_info)
+    return movie_basic_info_list
 
 
 # 删除所有库存数据
@@ -38,14 +37,14 @@ def film_zero():
         keys = redis_client.keys(pattern)
         if keys:
             redis_client.delete(*keys)
-    session = get_db()
+    session = get_session()
     session.execute(text('TRUNCATE TABLE search_info'))
     session.commit()
 
 
 # 重置Search表
 def reset_search_table():
-    session = get_db()
+    session = get_session()
     session.execute(text('DROP TABLE IF EXISTS search_info'))
     session.commit()
 
@@ -57,16 +56,16 @@ def del_mt_play(keys: List[str]):
 
 
 # 批量处理标签
-def batch_handle_search_tag(infos: List[SQLModel]):
-    for info in infos:
-        save_search_tag(info)
+def batch_handle_search_tag(search_info_list: List[SearchInfo]):
+    for search_info in search_info_list:
+        save_search_tag(search_info)
 
 
 def exist_search_table() -> bool:
     """
     判断是否存在Search Table
     """
-    session = get_db()
+    session = get_session()
     result = session.execute("""
     SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -78,14 +77,14 @@ def exist_search_table() -> bool:
 
 # 判断是否存在影片检索信息
 def exist_search_info(mid: int):
-    session = get_db()
+    session = get_session()
     result = session.execute(text("SELECT COUNT(*) FROM search_info WHERE mid=:mid"), {"mid": mid})
     return result.scalar() > 0
 
 
 # 截断search_info表
 def truncate_search_table():
-    session = get_db()
+    session = get_session()
     session.execute(text('TRUNCATE TABLE search_info'))
     session.commit()
 
@@ -99,7 +98,7 @@ def get_search_infos_by_tags(st: dict, page: Page) -> Optional[List[SearchInfo]]
     :return: 符合条件的SearchInfo列表
     """
     try:
-        session = get_db()
+        session = get_session()
         query = select(SearchInfo)
 
         # 处理各标签条件
@@ -233,7 +232,7 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :return: 影片基本信息列表
     """
     try:
-        session = get_db()
+        session = get_session()
         # 计算总数
         count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.pid == pid)).one()
         page.total = count
@@ -258,7 +257,7 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :return: 影片基本信息列表
     """
     try:
-        session = get_db()
+        session = get_session()
         # 计算总数
         count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
         page.total = count
@@ -283,7 +282,7 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
     :return: 搜索信息列表
     """
     try:
-        session = get_db()
+        session = get_session()
         # 当前时间偏移一个月
         t = datetime.now() - timedelta(days=30)
 
@@ -307,7 +306,7 @@ def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
     :return: 搜索信息列表
     """
     try:
-        session = get_db()
+        session = get_session()
         # 当前时间偏移一个月
         t = datetime.now() - timedelta(days=30)
 
@@ -346,7 +345,7 @@ def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[Lis
     query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
 
     try:
-        session = get_db()
+        session = get_session()
         search_infos = session.exec(query).all()
         return get_basic_info_by_search_infos(search_infos)
     except Exception as e:
@@ -479,7 +478,7 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
     import re
     from sqlmodel import or_, select
     try:
-        session = get_db()
+        session = get_session()
         # 确保分页参数 current 至少为 1
         page.current = max(1, page.current)
         # 处理影片名称，去除季、数字、剧场版等
@@ -525,7 +524,7 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
     :return: SearchInfo列表
     """
     try:
-        session = get_db()
+        session = get_session()
         # 统计满足条件的数据量
         count = session.exec(
             select(func.count()).select_from(SearchInfo)
@@ -560,7 +559,7 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
 
 def save_search_info(search_info: SearchInfo) -> None:
     # Save search information to the database
-    session = get_db()
+    session = get_session()
     if not exist_search_info(search_info.mid):
         session.add(search_info)
         session.commit()
@@ -588,14 +587,14 @@ def sync_search_info(model: int) -> None:
 
 def exist_search_info(mid: int) -> bool:
     # Check if search information exists in the database
-    session = get_db()
+    session = get_session()
     count = session.query(SearchInfo).filter(SearchInfo.mid == mid).count()
     return count > 0
 
 
 def truncate_search_table() -> None:
     # Truncate the search_info table
-    session = get_db()
+    session = get_session()
     session.execute('TRUNCATE TABLE search_info')
     session.commit()
 
@@ -623,11 +622,11 @@ def search_info_to_mdb(model: int) -> None:
     search_info_to_mdb(model)
 
 
-def batch_save(list_: List[SearchInfo]) -> None:
-    session = get_db()
+def batch_save(search_info_list: List[SearchInfo]) -> None:
+    session = get_session()
     try:
-        session.bulk_save_objects(list_)
-        batch_handle_search_tag(list_)
+        session.bulk_save_objects(search_info_list)
+        batch_handle_search_tag(search_info_list)
         session.commit()
     except Exception as e:
         session.rollback()
@@ -636,7 +635,7 @@ def batch_save(list_: List[SearchInfo]) -> None:
 
 
 def batch_save_or_update(list_: List[SearchInfo]) -> None:
-    session = get_db()
+    session = get_session()
     for info in list_:
         existing_info = session.exec(select(SearchInfo).where(SearchInfo.mid == info.mid)).first()
         if existing_info:
@@ -666,9 +665,8 @@ def batch_save_or_update(list_: List[SearchInfo]) -> None:
     session.commit()
 
 
-
 def add_search_index() -> None:
-    session = get_db()
+    session = get_session()
     session.exec(text("CREATE UNIQUE INDEX idx_mid ON search_info (mid)"))
     session.exec(text("CREATE INDEX idx_time ON search_info (update_stamp DESC)"))
     session.exec(text("CREATE INDEX idx_hits ON search_info (hits DESC)"))
@@ -707,48 +705,60 @@ def handle_search_tags(pre_tags: str, k: str):
             redis_client.zadd(k, {f"{pre_tags}:{pre_tags}": score + 1})
 
 
-def save_search_tag(search: SearchInfo):
-    key = SEARCH_TITLE % (search.pid)
-    search_map = redis_client.hgetall(key)
-    if not search_map:
-        search_map = {
-            "Category": "类型",
-            "Plot": "剧情",
-            "Area": "地区",
-            "Language": "语言",
-            "Year": "年份",
-            "Initial": "首字母",
-            "Sort": "排序"
-        }
-        redis_client.hmset(key, search_map)
+def get_search_info(id):
+    # 通过ID获取影片搜索信息
+    session = get_session()
+    search_info = session.exec(
+        select(SearchInfo).where(SearchInfo.mid == id)
+    ).first()
+    return search_info
 
-    for k in search_map.keys():
-        tag_key = SEARCH_TAG % (search.pid, k)
-        tag_count = redis_client.zcard(tag_key)
-        if k == "Category" and tag_count == 0:
-            for t in get_children_tree(search.pid):
-                redis_client.zadd(tag_key, {f"{t.name}:{t.id}": -t.id})
-        elif k == "Year" and tag_count == 0:
-            current_year = datetime.now().year
-            for i in range(12):
-                redis_client.zadd(tag_key, {f"{current_year - i}:{current_year - i}": current_year - i})
-        elif k == "Initial" and tag_count == 0:
-            for i in range(65, 91):
-                redis_client.zadd(tag_key, {f"{chr(i)}:{chr(i)}": 90 - i})
-        elif k == "Sort" and tag_count == 0:
-            tags = [
-                (3, "时间排序:update_stamp"),
-                (2, "人气排序:hits"),
-                (1, "评分排序:score"),
-                (0, "最新上映:release_stamp")
-            ]
-            mapping = {}
-            for score, member in tags:
-                mapping[member] = score
-            redis_client.zadd(tag_key, mapping=mapping)
-        elif k == "Plot":
-            handle_search_tags(search.class_tag, tag_key)
-        elif k == "Area":
-            handle_search_tags(search.area, tag_key)
-        elif k == "Language":
-            handle_search_tags(search.language, tag_key)
+
+def save_search_tag(search: SearchInfo):
+    try:
+        key = SEARCH_TITLE % (search.pid)
+        search_map = redis_client.hgetall(key)
+        if not search_map:
+            search_map = {
+                "Category": "类型",
+                "Plot": "剧情",
+                "Area": "地区",
+                "Language": "语言",
+                "Year": "年份",
+                "Initial": "首字母",
+                "Sort": "排序"
+            }
+            redis_client.hmset(key, search_map)
+
+        for k in search_map.keys():
+            tag_key = SEARCH_TAG % (search.pid, k)
+            tag_count = redis_client.zcard(tag_key)
+            if k == "Category" and tag_count == 0:
+                for t in get_children_tree(search.pid):
+                    redis_client.zadd(tag_key, {f"{t.name}:{t.id}": -t.id})
+            elif k == "Year" and tag_count == 0:
+                current_year = datetime.now().year
+                for i in range(12):
+                    redis_client.zadd(tag_key, {f"{current_year - i}:{current_year - i}": current_year - i})
+            elif k == "Initial" and tag_count == 0:
+                for i in range(65, 91):
+                    redis_client.zadd(tag_key, {f"{chr(i)}:{chr(i)}": 90 - i})
+            elif k == "Sort" and tag_count == 0:
+                tags = [
+                    (3, "时间排序:update_stamp"),
+                    (2, "人气排序:hits"),
+                    (1, "评分排序:score"),
+                    (0, "最新上映:release_stamp")
+                ]
+                mapping = {}
+                for score, member in tags:
+                    mapping[member] = score
+                redis_client.zadd(tag_key, mapping=mapping)
+            elif k == "Plot":
+                handle_search_tags(search.class_tag, tag_key)
+            elif k == "Area":
+                handle_search_tags(search.area, tag_key)
+            elif k == "Language":
+                handle_search_tags(search.language, tag_key)
+    except Exception as e:
+        logging.error('save_search_tag: {}', e)

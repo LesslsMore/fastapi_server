@@ -1,4 +1,4 @@
-from service.collect.film_detail import batch_save_original_detail, convert_film_details
+from service.collect.film_detail import batch_save_film_detail, convert_film_details
 from service.collect.film_list import save_film_class
 from model.system.collect_source import FilmSource, CollectResultModel
 
@@ -31,12 +31,12 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
     try:
         detail_page = json.loads(resp_bytes)
         # detail_page 应包含 'list' 字段，对应 FilmDetailLPage 结构
-        detail_list = detail_page.get('list', [])
+        film_detail_list = detail_page.get('list', [])
         # 保存原始详情到 redis
-        batch_save_original_detail([FilmDetail(**item) for item in detail_list])
+        batch_save_film_detail([FilmDetail(**item) for item in film_detail_list])
         # 转换为业务 MovieDetail
-        movie_list = convert_film_details([FilmDetail(**item) for item in detail_list])
-        return movie_list, None
+        movie_detail_list = convert_film_details([FilmDetail(**item) for item in film_detail_list])
+        return movie_detail_list, None
     except Exception as e:
         return [], f'解析失败: {e}'
 
@@ -59,14 +59,14 @@ def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str,
         raise Exception(f'解析分页数失败: {e}')
 
 
-def get_category_tree(fs: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
+def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
     """
     获取影视分类树，对应Go GetCategoryTree。
     """
     params = params.copy() if params else {}
     params['ac'] = 'list'
     params['pg'] = '1'
-    resp_bytes = api_get(fs.uri, params, headers, timeout)
+    resp_bytes = api_get(film_source.uri, params, headers, timeout)
     if not resp_bytes:
         raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
     try:
@@ -139,15 +139,15 @@ def film_detail_retry(uri: str, params: Dict[str, Any], retry: int = 1, headers:
     return []
 
 
-def collect_api_test(fs: FilmSource) -> None:
+def collect_api_test(film_source: FilmSource) -> None:
     """
     测试采集接口是否可用，参考Go版CollectApiTest实现。
     :param s: FilmSource对象或dict，需包含uri、collect_type、result_model等字段
     :raises Exception: 若接口不可用或数据格式不符则抛出异常
     """
-    uri = fs.uri
-    collect_type = fs.collectType
-    result_model = fs.resultModel
+    uri = film_source.uri
+    collect_type = film_source.collectType
+    result_model = film_source.resultModel
     # if not uri or not collect_type or not result_model:
     #     raise Exception("参数缺失，无法测试采集接口")
     params = {

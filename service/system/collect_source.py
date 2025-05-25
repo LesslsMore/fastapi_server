@@ -13,11 +13,11 @@ def get_collect_source(sl: List[str]) -> List[FilmSource]:
     :param sl: 字符串列表
     :return: FilmSource对象列表
     """
-    l = []
+    film_source_list = []
     for s in sl:
-        f = FilmSource(**json.loads(s))
-        l.append(f)
-    return l
+        film_source = FilmSource(**json.loads(s))
+        film_source_list.append(film_source)
+    return film_source_list
 
 def get_collect_source_list() -> List[FilmSource]:
     """
@@ -56,17 +56,17 @@ def get_collect_source_list_by_grade(grade: SourceGrade) -> List[FilmSource]:
     return get_collect_source(zl)
 
 
-def add_collect_source(s: FilmSource) -> (bool, str):
+def add_collect_source(film_source: FilmSource) -> (bool, str):
     """
     添加采集站信息，若已存在则返回错误
     """
     for v in get_collect_source_list():
-        if v.uri == s.uri:
+        if v.uri == film_source.uri:
             return False, "当前采集站点信息已存在, 请勿重复添加"
     # 生成唯一ID
-    s.id = generate_salt()
-    data = s.model_dump_json()
-    redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(s.grade.value)})
+    film_source.id = generate_salt()
+    data = film_source.model_dump_json()
+    redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(film_source.grade.value)})
     return True, "添加成功"
 
 def del_collect_resource(id: str) -> bool:
@@ -121,14 +121,14 @@ def save_collect_source_list(source_list: List[FilmSource]) -> bool:
         return False
 
 
-def update_collect_source(s: FilmSource) -> bool:
+def update_collect_source(film_source: FilmSource) -> bool:
     for v in get_collect_source_list():
-        if v.id != s.id and v.uri == s.uri:
+        if v.id != film_source.id and v.uri == film_source.uri:
             return False, "当前采集站链接已存在其他站点中, 请勿重复添加"
-        elif v.id == s.id:
+        elif v.id == film_source.id:
             # 删除当前旧的采集信息
-            del_collect_resource(s.id)
+            del_collect_resource(film_source.id)
             # 将新的采集信息存入list中
-            data = s.model_dump_json()
-            redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(s.grade.value)})
+            data = film_source.model_dump_json()
+            redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(film_source.grade.value)})
     return True, ""

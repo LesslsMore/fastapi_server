@@ -5,8 +5,8 @@ import hashlib
 import re
 import json
 
-from config.data_config import SEARCH_INFO_TEMP, MOVIE_BASIC_INFO_KEY, MOVIE_DETAIL_KEY, MULTIPLE_SITE_DETAIL, \
-    FILM_EXPIRED
+from config.data_config import SEARCH_INFO_TEMP, MULTIPLE_SITE_DETAIL
+from service.collect.movie_dao import set_movie_basic_info, set_movie_detail, convert_movie_basic_info
 from service.system.search import save_search_tag
 from model.system.search import SearchInfo
 from plugin.db import redis_client
@@ -22,67 +22,6 @@ def generate_hash_key(key: Union[str, int]) -> str:
     h = hashlib.md5()
     h.update(m_name.encode("utf-8"))
     return h.hexdigest()
-
-
-def save_details(list_: List[MovieDetail]) -> None:
-    """
-    保存影片详情信息到Redis中
-    :param list_: MovieDetail对象列表
-    """
-    for detail in list_:
-        key = MOVIE_DETAIL_KEY % (detail.cid, detail.id)
-        redis_client.set(key, detail.json(), ex=FILM_EXPIRED)
-        try:
-            save_movie_basic_info(detail)
-        except Exception as e:
-            logging.error('save_movie_basic_info: {}', e)
-        try:
-            search_info = convert_search_info(detail)
-            save_search_tag(search_info)
-        except Exception as e:
-            logging.error('save_search_tag: {}', e)
-
-    try:
-        batch_save_search_info(list_)
-    except Exception as e:
-        logging.error('batch_save_search_info: {}', e)
-
-
-def save_movie_basic_info(detail: MovieDetail):
-    basic = MovieBasicInfo(
-        id=detail.id,
-        cid=detail.cid,
-        pid=detail.pid,
-        name=detail.name,
-        sub_title=detail.descriptor.subTitle,
-        c_name=detail.descriptor.cName,
-        state=detail.descriptor.state,
-        picture=detail.picture,
-        actor=detail.descriptor.actor,
-        director=detail.descriptor.director,
-        blurb=detail.descriptor.blurb,
-        remarks=detail.descriptor.remarks,
-        area=detail.descriptor.area,
-        year=detail.descriptor.year
-    )
-    key = MOVIE_BASIC_INFO_KEY % (detail.cid, detail.id)
-    redis_client.set(key, basic.json(), ex=FILM_EXPIRED)
-
-
-def get_basic_info_by_key(key: str) -> Optional[MovieBasicInfo]:
-    data = redis_client.get(key)
-    if data:
-        #     	// 执行本地图片匹配
-        # ReplaceBasicDetailPic(&basic)
-        return MovieBasicInfo.parse_raw(data)
-    return None
-
-
-def get_detail_by_key(key: str) -> Optional[MovieDetail]:
-    data = redis_client.get(key)
-    if data:
-        return MovieDetail.parse_raw(data)
-    return None
 
 
 def save_site_play_list(site_id: str, details: List[MovieDetail]):
@@ -103,9 +42,13 @@ def save_site_play_list(site_id: str, details: List[MovieDetail]):
         print(f"save_site_play_list Error: {e}")
 
 
-def batch_save_search_info(details: List[MovieDetail]) -> None:
-    info_list = [convert_search_info(detail) for detail in details]
-    rdb_save_search_info(info_list)
+def batch_save_search_info(movie_detail_list: List[MovieDetail]) -> None:
+    try:
+        search_info_list = [convert_search_info(movie_detail) for movie_detail in movie_detail_list]
+        rdb_save_search_info(search_info_list)
+    except Exception as e:
+        logging.error('batch_save_search_info: {}', e)
+
 
 def convert_search_info(detail: MovieDetail) -> SearchInfo:
     score = float(detail.descriptor.dbScore) if detail.descriptor.dbScore else 0.0
@@ -139,31 +82,31 @@ def convert_search_info(detail: MovieDetail) -> SearchInfo:
     )
 
 
-
-
-def rdb_save_search_info(list: List[SearchInfo]):
+def rdb_save_search_info(search_info_list: List[SearchInfo]):
     """
     批量保存检索信息到Redis
-    :param list: SearchInfo对象列表
+    :param search_info_list: SearchInfo对象列表
     """
     members = []
-    for s in list:
-        member = s.model_dump_json()
-        members.append((s.mid, member))
+    for search_info in search_info_list:
+        member = search_info.model_dump_json()
+        members.append((search_info.mid, member))
     redis_client.zadd(SEARCH_INFO_TEMP, {member: score for score, member in members})
 
 
-def save_detail(detail: MovieDetail) -> Optional[Exception]:
+def save_movie_detail(movie_detail: MovieDetail) -> Optional[Exception]:
     """
     保存单部影片详情信息到Redis中，功能与Go版 SaveDetail 保持一致
-    :param detail: MovieDetail对象
+    :param movie_detail: MovieDetail对象
     :return: 异常对象或None
     """
     try:
-        key = MOVIE_DETAIL_KEY % (detail.cid, detail.id)
-        redis_client.set(key, detail.json(), ex=FILM_EXPIRED)
-        save_movie_basic_info(detail)
-        search_info = convert_search_info(detail)
+        set_movie_detail(movie_detail)
+
+        movie_basic_info = convert_movie_basic_info(movie_detail)
+        set_movie_basic_info(movie_basic_info)
+
+        search_info = convert_search_info(movie_detail)
         save_search_tag(search_info)
         # 保存影片检索信息到searchTable（如有需要可调用 batch_save_search_info 或单条保存）
         # 这里假设有 save_search_info 单条保存函数，否则可忽略
@@ -172,3 +115,14 @@ def save_detail(detail: MovieDetail) -> Optional[Exception]:
     except Exception as e:
         logging.error(f'save_detail error: {e}')
         return e
+
+
+def save_movie_detail_list(movie_detail_list: List[MovieDetail]) -> None:
+    """
+    保存影片详情信息到Redis中
+    :param movie_detail_list: MovieDetail对象列表
+    """
+    for movie_detail in movie_detail_list:
+        save_movie_detail(movie_detail)
+
+    batch_save_search_info(movie_detail_list)

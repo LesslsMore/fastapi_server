@@ -7,8 +7,11 @@ from plugin.db import redis_client
 
 
 def save_category_tree(tree: CategoryTree) -> None:
-    data = tree.json()
-    redis_client.set(CATEGORY_TREE_KEY, data, ex=FILM_EXPIRED)
+    try:
+        data = tree.json()
+        redis_client.set(CATEGORY_TREE_KEY, data, ex=FILM_EXPIRED)
+    except Exception as err:
+        print(f"SaveCategoryTree Error: {err}")
 
 
 def get_category_tree() -> Optional[CategoryTree]:

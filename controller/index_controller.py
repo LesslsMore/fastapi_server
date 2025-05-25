@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
 from logic.manage_logic import ManageLogic
+from model.system.movies import MovieDetail
 from model.system.response import Page
 from logic.index_logic import IndexLogic
 from model.system import response
@@ -37,7 +38,7 @@ def categories_info():
 def film_detail(id: int = Query(...)):
     detail = IndexLogic.get_film_detail(id)
     page = Page(**{"pageSize": 14, "current": 0})
-    relate = IndexLogic.relate_movie(detail, page)
+    relate = IndexLogic.relate_movie(MovieDetail(**detail), page)
     return response.success({"detail": detail, "relate": relate}, "影片详情信息获取成功")
 
 @indexController.get("/filmPlayInfo")
@@ -55,7 +56,7 @@ def film_play_info(
             current_play = v["linkList"][episode] if episode < len(v["linkList"]) else None
             break
     page = Page(**{"pageSize": 14, "current": 0})
-    relate = IndexLogic.relate_movie(detail, page)
+    relate = IndexLogic.relate_movie(MovieDetail(**detail), page)
     return response.success({
         "detail": detail,
         "current": current_play,
