@@ -4,9 +4,10 @@ from config.config import load_config, load_dotenv
 from plugin.db.postgres import init_postgres
 from plugin.db.redis_client import init_redis_conn
 
-config = load_config()
+# config = load_config()
 # load_dotenv('../config/.env.win')
-load_dotenv('config/.env.win')
+# load_dotenv('config/.env.win')
+# load_dotenv('config/.env.render')
 # load_dotenv('config/.env.vercel')
 pg_engine = init_postgres()
 redis_client = init_redis_conn()
