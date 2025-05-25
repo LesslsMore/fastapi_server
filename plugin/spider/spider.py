@@ -1,10 +1,10 @@
 from service.system.collect_source import FindCollectSourceById, get_collect_source_list, find_collect_source_by_id
 
-from model.system.collect_source import SourceGrade, ResourceType
+from model.system.collect_source import SourceGrade, ResourceType, FilmSource
 from service.system.categories import exists_category_tree, save_category_tree
 
 import time
-
+import logging
 
 from model.system.failure_record import FailureRecord
 from datetime import datetime
@@ -12,11 +12,11 @@ from datetime import datetime
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 from service.system.failure_record import save_failure_record
 # from service.system.file_upload import save_virtual_pic
-from service.system.movies import save_site_play_list
+from service.system.movies import save_site_play_list, save_details, save_detail
 from service.system.search import sync_search_info, film_zero
 
 
-def collect_film(fs, h: int, pg: int):
+def collect_film(fs: FilmSource, h: int, pg: int):
     """
     影视详情采集（单一源分页全采集），兼容Go collectFilm主流程。
     :param fs: FilmSource对象，需包含uri、typeId、grade、syncPictures等字段
@@ -48,26 +48,27 @@ def collect_film(fs, h: int, pg: int):
         print(f"GetMovieDetail Error: {err}")
         return
     # 通过采集站 Grade 类型, 执行不同的存储逻辑
-    if getattr(fs, 'grade', 0) == SourceGrade.MasterCollect:
+    if fs.grade == SourceGrade.MasterCollect:
         # 主站点  保存完整影片详情信息到 redis
 
         try:
             save_details(movie_list)
         except Exception as e:
             print(f"SaveDetails Error: {e}")
+            logging.error('save_details: %s', e)
         # if getattr(fs, 'syncPictures', False):
         #     try:
         #         from plugin.common.conver.Collect import convert_virtual_picture
         #         save_virtual_pic(convert_virtual_picture(movie_list))
         #     except Exception as e:
         #         print(f"SaveVirtualPic Error: {e}")
-    elif getattr(fs, 'grade', 0) == SourceGrade.SlaveCollect:
+    elif fs.grade == SourceGrade.SlaveCollect:
         # 附属站点 仅保存影片播放信息到redis
 
         try:
             save_site_play_list(fs.id, movie_list)
         except Exception as e:
-            print(f"SaveDetails Error: {e}")
+            print(f"save_site_play_list Error: {e}")
 
 
 def handle_collect(id: str, h: int):
@@ -141,7 +142,7 @@ def handle_collect(id: str, h: int):
     return None
 
 
-def collect_film_by_id(ids: str, fs):
+def collect_film_by_id(ids: str, fs: FilmSource):
     """
     采集指定ID的影片信息，兼容Go collectFilmById。
     """
@@ -149,24 +150,19 @@ def collect_film_by_id(ids: str, fs):
     params = {'pg': '1', 'ids': ids}
     movie_list, err = get_film_detail(uri, params)
     if err or not movie_list:
-        print(f"GetMovieDetail Error: {err}")
+        print(f"get_film_detail Error: {err}")
         return
-    # if getattr(fs, 'grade', 0) == SourceGrade.MasterCollect:
-    #
-    #     try:
-    #         save_detail(movie_list[0])
-    #     except Exception as e:
-    #         print(f"SaveDetails Error: {e}")
-    #     if getattr(fs, 'syncPictures', False):
-    #         try:
-    #             save_virtual_pic(convert_virtual_picture(movie_list))
-    #         except Exception as e:
-    #             print(f"SaveVirtualPic Error: {e}")
-    elif getattr(fs, 'grade', 0) == SourceGrade.SlaveCollect:
-        try:
-            save_site_play_list(fs.id, movie_list)
-        except Exception as e:
-            print(f"SaveDetails Error: {e}")
+    if fs.grade == SourceGrade.MasterCollect:
+        save_detail(movie_list[0])
+
+        # if getattr(fs, 'syncPictures', False):
+        #     try:
+        #         save_virtual_pic(convert_virtual_picture(movie_list))
+        #     except Exception as e:
+        #         print(f"SaveVirtualPic Error: {e}")
+    elif fs.grade == SourceGrade.SlaveCollect:
+        save_site_play_list(fs.id, movie_list)
+
 
 
 def concurrent_page_spider(capacity: int, fs, h: int, collect_func):

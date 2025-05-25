@@ -29,7 +29,7 @@ def batch_save_original_detail(dl: List[FilmDetail]):
 def save_original_detail(fd: FilmDetail):
     data = fd.json(ensure_ascii=False)
     # redis = redis_client or init_redis_conn()
-    redis_client.set(ORIGINAL_FILM_DETAIL_KEY.format(fd.vod_id), data, ex=RESOURCE_EXPIRED)
+    redis_client.set(ORIGINAL_FILM_DETAIL_KEY % (fd.vod_id), data, ex=RESOURCE_EXPIRED)
 
 # 保存未处理的完整影片详情信息到mysql（伪实现）
 def save_original_detail2mysql(fd: FilmDetail):
@@ -40,7 +40,7 @@ def save_original_detail2mysql(fd: FilmDetail):
 
 # 根据ID获取原始影片详情数据
 def get_original_detail_by_id(id: int) -> Optional[FilmDetail]:
-    data = redis_client.get(ORIGINAL_FILM_DETAIL_KEY.format(id))
+    data = redis_client.get(ORIGINAL_FILM_DETAIL_KEY % (id))
     if not data:
         return None
     try:

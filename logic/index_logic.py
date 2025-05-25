@@ -20,6 +20,7 @@ from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, g
     get_movie_list_by_sort, get_relate_movie_basic_info
 
 from config.data_config import MOVIE_BASIC_INFO_KEY
+import re
 
 
 class IndexLogic:
@@ -139,7 +140,7 @@ class IndexLogic:
         if getattr(detail.descriptor, "dbId", 0) > 0:
             names.add(generate_hash_key(detail.descriptor.dbId))
         names.add(generate_hash_key(detail.name))
-        import re
+
         names.add(generate_hash_key(re.sub(r"第一季$", "", detail.name)))
         if detail.descriptor.subTitle:
             for sep in [",", "/"]:

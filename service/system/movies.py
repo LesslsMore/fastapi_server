@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import List, Optional, Union
 import hashlib
@@ -28,14 +29,23 @@ def save_details(list_: List[MovieDetail]) -> None:
     保存影片详情信息到Redis中
     :param list_: MovieDetail对象列表
     """
-    redis_client = get_redis_client() or init_redis_conn()
     for detail in list_:
         key = MOVIE_DETAIL_KEY % (detail.cid, detail.id)
         redis_client.set(key, detail.json(), ex=FILM_EXPIRED)
-        save_movie_basic_info(detail)
-        search_info = convert_search_info(detail)
-        save_search_tag(search_info)
-    batch_save_search_info(list_)
+        try:
+            save_movie_basic_info(detail)
+        except Exception as e:
+            logging.error('save_movie_basic_info: {}', e)
+        try:
+            search_info = convert_search_info(detail)
+            save_search_tag(search_info)
+        except Exception as e:
+            logging.error('save_search_tag: {}', e)
+
+    try:
+        batch_save_search_info(list_)
+    except Exception as e:
+        logging.error('batch_save_search_info: {}', e)
 
 
 def save_movie_basic_info(detail: MovieDetail):
@@ -79,18 +89,21 @@ def get_detail_by_key(key: str) -> Optional[MovieDetail]:
 
 
 def save_site_play_list(site_id: str, details: List[MovieDetail]):
-    redis_client = get_redis_client() or init_redis_conn()
-    res = {}
-    for d in details:
-        if d.playList and len(d.playList) > 0:
-            data = json.dumps([item.dict() for item in d.playList[0]])
-            if d.descriptor.cName and "解说" in d.descriptor.cName:
-                continue
-            if d.descriptor.dbId:
-                res[generate_hash_key(d.descriptor.dbId)] = data
-            res[generate_hash_key(d.name)] = data
-    if res:
-        redis_client.hmset(MULTIPLE_SITE_DETAIL % site_id, res)
+    try:
+        res = {}
+        for d in details:
+            if d.playList and len(d.playList) > 0:
+                data = json.dumps([item.dict() for item in d.playList[0]])
+                if d.descriptor.cName and "解说" in d.descriptor.cName:
+                    continue
+                if d.descriptor.dbId:
+                    res[generate_hash_key(d.descriptor.dbId)] = data
+                res[generate_hash_key(d.name)] = data
+        if res:
+            redis_client.hmset(MULTIPLE_SITE_DETAIL % site_id, res)
+
+    except Exception as e:
+        print(f"save_site_play_list Error: {e}")
 
 
 def batch_save_search_info(details: List[MovieDetail]) -> None:
@@ -105,7 +118,8 @@ def convert_search_info(detail: MovieDetail) -> SearchInfo:
         year_match = re.search(r"[1-9][0-9]{3}", detail.descriptor.releaseDate)
         year = int(year_match.group()) if year_match else 0
     except Exception as e:
-        print(f"SaveDetails Error: {e}")
+        print(f"convert_search_info Error: {e}")
+        logging.error(f"convert_search_info Error: {e}")
 
     return SearchInfo(
         mid=detail.id,
@@ -135,9 +149,29 @@ def rdb_save_search_info(list: List[SearchInfo]):
     批量保存检索信息到Redis
     :param list: SearchInfo对象列表
     """
-    redis_client = get_redis_client() or init_redis_conn()
     members = []
     for s in list:
         member = s.model_dump_json()
         members.append((s.mid, member))
     redis_client.zadd(SEARCH_INFO_TEMP, {member: score for score, member in members})
+
+
+def save_detail(detail: MovieDetail) -> Optional[Exception]:
+    """
+    保存单部影片详情信息到Redis中，功能与Go版 SaveDetail 保持一致
+    :param detail: MovieDetail对象
+    :return: 异常对象或None
+    """
+    try:
+        key = MOVIE_DETAIL_KEY % (detail.cid, detail.id)
+        redis_client.set(key, detail.json(), ex=FILM_EXPIRED)
+        save_movie_basic_info(detail)
+        search_info = convert_search_info(detail)
+        save_search_tag(search_info)
+        # 保存影片检索信息到searchTable（如有需要可调用 batch_save_search_info 或单条保存）
+        # 这里假设有 save_search_info 单条保存函数，否则可忽略
+        # save_search_info(search_info)
+        return None
+    except Exception as e:
+        logging.error(f'save_detail error: {e}')
+        return e

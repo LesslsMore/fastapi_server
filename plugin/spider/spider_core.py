@@ -29,7 +29,6 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
     if not resp_bytes:
         return [], '请求失败或无响应'
     try:
-        import json
         detail_page = json.loads(resp_bytes)
         # detail_page 应包含 'list' 字段，对应 FilmDetailLPage 结构
         detail_list = detail_page.get('list', [])
