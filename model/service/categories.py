@@ -1,11 +1,9 @@
 from typing import List, Optional
 import json
-from model.system.categories import CategoryTree
-from plugin.db.redis_client import redis_client, init_redis_conn
-from config import data_config
 
-CATEGORY_TREE_KEY = getattr(data_config, 'CATEGORY_TREE_KEY', 'film:category:tree')
-FILM_EXPIRED = getattr(data_config, 'FILM_EXPIRED', 3600 * 24 * 7)  # 默认一周
+from config.data_config import CATEGORY_TREE_KEY, FILM_EXPIRED
+from model.system.categories import CategoryTree
+from plugin.db import redis_client, init_redis_conn
 
 def save_category_tree(tree: CategoryTree) -> None:
     redis = redis_client or init_redis_conn()

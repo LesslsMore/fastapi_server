@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
 from datetime import datetime
 
+
 # SearchInfo 数据模型
 class SearchInfo(SQLModel, table=True):
     __tablename__ = 'search'
@@ -27,6 +28,7 @@ class SearchInfo(SQLModel, table=True):
     state: Optional[str] = None
     remarks: Optional[str] = None
     release_stamp: Optional[int] = None
+
 
 class Tag(BaseModel):
     name: str

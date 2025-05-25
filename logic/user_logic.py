@@ -2,7 +2,8 @@ from model.service.user_service import get_user_by_id
 from model.system.user import User
 
 class UserLogic:
-    def get_user_info(self, id: int) -> dict:
+    @staticmethod
+    def get_user_info(id: int) -> dict:
         # 通过用户ID查询对应的用户信息
         user = get_user_by_id(id)
         if user:

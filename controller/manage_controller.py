@@ -13,8 +13,7 @@ router.include_router(collectController)
 router.include_router(spiderController)
 router.include_router(userController)
 
-def get_logic():
-    return ManageLogic
+
 
 # /manage/index
 @router.get("/index")

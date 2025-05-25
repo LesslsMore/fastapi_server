@@ -18,6 +18,7 @@ from datetime import datetime
 
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 
+
 def collect_film(fs, h: int, pg: int):
     """
     影视详情采集（单一源分页全采集），兼容Go collectFilm主流程。

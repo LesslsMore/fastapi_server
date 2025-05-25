@@ -1,8 +1,11 @@
 from typing import List, Optional
 from sqlmodel import Session, select
 from model.system.failure_record import FailureRecord
-from plugin.db.postgres import get_db
+
 from datetime import datetime
+
+from plugin.db import get_db
+
 
 def create_failure_record_table():
     session = get_db()

@@ -4,7 +4,7 @@ from typing import Optional
 
 from model.system.user import User
 from plugin.common.util.string_util import generate_salt, password_encrypt
-from plugin.db.postgres import get_db, pg_engine
+from plugin.db import get_db, pg_engine
 import logging
 from sqlmodel import select
 

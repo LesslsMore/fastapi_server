@@ -8,7 +8,7 @@ from config.data_config import SEARCH_INFO_TEMP, MOVIE_BASIC_INFO_KEY, MOVIE_DET
     FILM_EXPIRED
 from model.service.search import save_search_tag
 from model.system.search import SearchInfo
-from plugin.db.redis_client import redis_client, init_redis_conn, get_redis_client
+from plugin.db import redis_client, init_redis_conn, get_redis_client
 from model.system.movies import MovieDetail, MovieBasicInfo, MovieDescriptor, MovieUrlInfo
 
 

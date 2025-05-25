@@ -1,6 +1,6 @@
 from typing import List
 from json import dumps, loads
-from plugin.db.redis_client import init_redis_conn, get_redis_client
+from plugin.db import init_redis_conn, get_redis_client
 from config import data_config
 from model.system.manage import BasicConfig, Banner
 

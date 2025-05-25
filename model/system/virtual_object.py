@@ -2,6 +2,7 @@ from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
 from model.system.movies import MovieUrlInfo, MovieDetail
 
+
 # 搜索标签请求参数
 class SearchTagsVO(BaseModel):
     pid: int
@@ -12,6 +13,7 @@ class SearchTagsVO(BaseModel):
     year: Optional[int] = None
     sort: Optional[str] = None
 
+
 # 影视更新任务请求参数
 class FilmCronVo(BaseModel):
     ids: List[str]
@@ -21,21 +23,26 @@ class FilmCronVo(BaseModel):
     state: bool
     remark: Optional[str] = None
 
+
 # 定时任务数据response
 class CronTaskVo(BaseModel):
     preV: Optional[str] = None  # 上次执行时间
     next: Optional[str] = None  # 下次执行时间
+
 
 # 影视采集任务添加时需要的options
 class FilmTaskOptions(BaseModel):
     id: str
     name: str
 
+
 class Option(BaseModel):
     name: str
     value: Any
 
+
 OptionGroup = Dict[str, List[Option]]
+
 
 # 数据采集所需要的参数
 class CollectParams(BaseModel):
@@ -43,6 +50,7 @@ class CollectParams(BaseModel):
     ids: Optional[List[str]] = None
     time: Optional[int] = None
     batch: Optional[bool] = None
+
 
 # 影片信息搜索参数
 class SearchVo(BaseModel):
@@ -57,16 +65,19 @@ class SearchVo(BaseModel):
     beginTime: Optional[int] = None
     endTime: Optional[int] = None
 
+
 # 多站点播放链接数据列表
 class PlayLinkVo(BaseModel):
     id: str
     name: str
     linkList: List[MovieUrlInfo]
 
+
 # 影片详情数据, 播放源合并版
 class MovieDetailVo(BaseModel):
     movie_detail: MovieDetail
     list: List[PlayLinkVo]
+
 
 # 用户信息返回对象
 class UserInfoVo(BaseModel):
@@ -77,6 +88,7 @@ class UserInfoVo(BaseModel):
     nickName: Optional[str] = None
     avatar: Optional[str] = None
     status: Optional[int] = None
+
 
 # 采集记录请求参数
 class RecordRequestVo(BaseModel):

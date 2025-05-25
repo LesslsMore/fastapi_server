@@ -12,11 +12,11 @@ from model.service.manage import get_banners
 from model.system.search import SearchInfo
 from model.service.search import get_relate_movie_basic_info, get_multiple_play, get_movie_list_by_sort, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, get_movie_list_by_pid, get_movie_list_by_cid, get_hot_movie_by_pid, get_hot_movie_by_cid
 
-from plugin.db.redis_client import redis_client, init_redis_conn
+from plugin.db import redis_client, init_redis_conn
 from config.data_config import INDEX_CACHE_KEY
 
 from model.service.movies import get_detail_by_key, generate_hash_key
-from plugin.db.postgres import get_db
+from plugin.db import get_db
 from model.system.collect_source import FilmSource, SourceGrade
 from model.service.collect_source import get_collect_source_list_by_grade
 from model.system.virtual_object import PlayLinkVo
@@ -25,16 +25,10 @@ from model.system.virtual_object import PlayLinkVo
 
 
 class IndexLogic:
-    def __init__(self, db_session: Session, redis_client: redis.Redis):
-        self.db = db_session
-        self.redis = redis_client
-        
-    def index_page(self) -> Dict[str, Any]:
+    @staticmethod
+    def index_page() -> Dict[str, Any]:
         # 首页数据处理逻辑
-        redis = redis_client or init_redis_conn()
-
-
-        info = redis.get(INDEX_CACHE_KEY)
+        info = redis_client.get(INDEX_CACHE_KEY)
         if info:
             return json.loads(info)
         info = {}
@@ -62,15 +56,16 @@ class IndexLogic:
         info["content"] = content
         # 3. 轮播
         info["banners"] = [json.loads(b.model_dump_json()) for b in get_banners()]
-        redis.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
+        redis_client.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
         return info
 
 
+    @staticmethod
+    def clear_index_cache():
+        redis_client.delete("index_page_cache")
 
-    def clear_index_cache(self):
-        self.redis.delete("index_page_cache")
-
-    def get_category_info(self) -> Dict[str, Any]:
+    @staticmethod
+    def get_category_info() -> Dict[str, Any]:
         nav = {}
         tree = get_category_tree()
         for t in tree.children:
@@ -85,7 +80,8 @@ class IndexLogic:
                 nav["variety"] = t.dict()
         return nav
 
-    def get_nav_category(self) -> List[Dict[str, Any]]:
+    @staticmethod
+    def get_nav_category() -> List[Dict[str, Any]]:
         tree = get_category_tree()
         cl = []
         for c in tree.children:
@@ -93,7 +89,8 @@ class IndexLogic:
                 cl.append(c.model_dump())
         return cl
 
-    def search_film_info(self, keyword: str, page: Page) -> list:
+    @staticmethod
+    def search_film_info(keyword: str, page: Page) -> list:
         """
         根据关键字和分页参数检索影片基本信息列表
         :param keyword: 检索关键字
@@ -110,15 +107,17 @@ class IndexLogic:
             bl.append(get_basic_info_by_key(MOVIE_BASIC_INFO_KEY % (s.cid, s.mid)))
         return bl
 
-    def get_film_category(self, id: int, id_type: str, page: int, pageSize: int) -> List[Dict[str, Any]]:
+    @staticmethod
+    def get_film_category(id: int, id_type: str, page: int, pageSize: int) -> List[Dict[str, Any]]:
         page_obj = Page(pageSize=pageSize, current=page)
         if id_type == "pid":
-            return [m.dict() for m in MovieBasicInfo.get_movie_list_by_pid(self.db, id, page_obj)]
+            return [m.dict() for m in get_movie_list_by_pid(id, page_obj)]
         elif id_type == "cid":
-            return [m.dict() for m in MovieBasicInfo.get_movie_list_by_cid(self.db, id, page_obj)]
+            return [m.dict() for m in get_movie_list_by_cid(id, page_obj)]
         return []
 
-    def get_pid_category(self, pid: int) -> Optional[Dict[str, Any]]:
+    @staticmethod
+    def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
         tree = get_category_tree()
         for t in tree.children:
             if t.id == pid:
@@ -129,7 +128,8 @@ class IndexLogic:
     # def search_tags(self, pid: int) -> Dict[str, Any]:
     #     return SearchTagsVO.get_search_tag(self.db, pid)
 
-    def multiple_source(self, detail: MovieDetail) -> List[Dict[str, Any]]:
+    @staticmethod
+    def multiple_source(detail: MovieDetail) -> List[Dict[str, Any]]:
         master = get_collect_source_list_by_grade(SourceGrade.MasterCollect)
 
         play_list = [
@@ -164,28 +164,31 @@ class IndexLogic:
                     break
         return play_list
 
-    def get_films_by_tags(self, tags: Dict[str, Any], page: int, pageSize: int) -> List[Dict[str, Any]]:
+    @staticmethod
+    def get_films_by_tags(tags: Dict[str, Any], page: int, pageSize: int) -> List[Dict[str, Any]]:
         page_obj = Page(pageSize=pageSize, current=page)
         sl = get_search_infos_by_tags(tags, page_obj)
         return get_basic_info_by_search_infos(sl)
-        
-    def search_tags(self, pid: int) -> Dict[str, Any]:
+
+    @staticmethod
+    def search_tags(pid: int) -> Dict[str, Any]:
         """
         通过pid获取对应分类的搜索标签
         :param pid: 分类ID
         :return: 包含搜索标签的字典
         """
         return get_search_tag(pid)
-
-    def get_film_classify(self, pid: int, page: int, pageSize: int) -> Dict[str, Any]:
+    @staticmethod
+    def get_film_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:
         page_obj = Page(**{"pageSize": pageSize, "current": page})
         return {
             "news": get_movie_list_by_sort(0, pid, page_obj),
             "top": get_movie_list_by_sort(1, pid, page_obj),
             "recent": get_movie_list_by_sort(2, pid, page_obj)
         }
-        
-    def get_film_detail(self, id: int) -> Dict[str, Any]:
+
+    @staticmethod
+    def get_film_detail(id: int) -> Dict[str, Any]:
         """
         获取影片详情信息
         :param id: 影片ID
@@ -205,12 +208,13 @@ class IndexLogic:
             return {}
             
         # 查找其他站点的播放源
-        play_list = self.multiple_source(detail)
+        play_list = IndexLogic.multiple_source(detail)
         res = detail.model_dump()
         res["list"] = play_list
         return res
 
-    def relate_movie(self, detail: MovieDetail, page: Page) -> List[MovieBasicInfo]:
+    @staticmethod
+    def relate_movie(detail: MovieDetail, page: Page) -> List[MovieBasicInfo]:
         """
         根据当前影片信息匹配相关影片
         :param detail: 影片详情对象

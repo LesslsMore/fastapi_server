@@ -1,7 +1,7 @@
 from typing import List, Optional, Any
 from sqlmodel import SQLModel
 import json
-from plugin.db.redis_client import redis_client, init_redis_conn, get_redis_client
+from plugin.db import redis_client, init_redis_conn, get_redis_client
 from sqlalchemy import create_engine, text
 from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG, MOVIE_BASIC_INFO_KEY
 import re
@@ -12,7 +12,7 @@ from model.system.search import SearchInfo
 from typing import List, Optional
 from sqlmodel import Session, select, func, desc, or_, and_
 from fastapi import Depends
-from plugin.db.postgres import get_db
+from plugin.db import get_db
 from model.system.response import Page
 
 
@@ -350,13 +350,12 @@ def data_cache(key: str, data: Any, expire: int = 0) -> bool:
     :return: 是否缓存成功
     """
     try:
-        redis = redis_client or init_redis_conn()
         if isinstance(data, (dict, list)):
             data = json.dumps(data, ensure_ascii=False)
         if expire > 0:
-            redis.setex(key, expire, data)
+            redis_client.setex(key, expire, data)
         else:
-            redis.set(key, data)
+            redis_client.set(key, data)
         return True
     except Exception as e:
         print(f"缓存数据失败: {e}")

@@ -6,9 +6,9 @@ from typing import List
 import json
 from typing import List, Optional
 from model.system.film_detail import FilmDetail
-from plugin.db.redis_client import redis_client, init_redis_conn, get_redis_client
+from plugin.db import pg_engine
 from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
-from plugin.db.postgres import get_db
+from plugin.db import get_db, redis_client, get_redis_client
 import requests
 from typing import Dict, Any, Optional
 from sqlalchemy.dialects.postgresql import insert
@@ -36,15 +36,14 @@ def save_original_detail(fd: FilmDetail):
 
 # 保存未处理的完整影片详情信息到mysql（伪实现）
 def save_original_detail2mysql(fd: FilmDetail):
-    session = get_db()
-    # 假设 FilmDetail 已继承 SQLModel 并映射表结构，否则需补充
-    session.bulk_save_objects(fd)
-    session.commit()
+    with Session(pg_engine) as session:
+        # 假设 FilmDetail 已继承 SQLModel 并映射表结构，否则需补充
+        session.bulk_save_objects(fd)
+        session.commit()
 
 # 根据ID获取原始影片详情数据
 def get_original_detail_by_id(id: int) -> Optional[FilmDetail]:
-    redis = get_redis_client() or init_redis_conn()
-    data = redis.get(ORIGINAL_FILM_DETAIL_KEY.format(id))
+    data = redis_client.get(ORIGINAL_FILM_DETAIL_KEY.format(id))
     if not data:
         return None
     try:

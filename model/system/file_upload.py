@@ -1,14 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
-from fastapi import HTTPException
-import re
-import os
-import json
-from pathlib import Path
 
-from config import data_config
-from plugin.db import redis_client
 
 
 class FileInfo(BaseModel):

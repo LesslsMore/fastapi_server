@@ -2,15 +2,11 @@ import json
 from redis import Redis
 from typing import List
 
-from config.privide_config import FILM_CLASS_KEY
+from config.privide_config import FILM_CLASS_KEY, RESOURCE_EXPIRED
 from model.system.film_list import FilmClass
-from plugin.db.redis_client import get_redis_client, init_redis_conn
+from plugin.db import get_redis_client, init_redis_conn
 
-# Assuming Redis is already configured and connected
-# redis_client = Redis()
 
-# FILM_CLASS_KEY = 'film_class_key'
-RESOURCE_EXPIRED = 3600  # Example expiration time in seconds
 
 
 def save_film_class(list: List[FilmClass]) -> None:

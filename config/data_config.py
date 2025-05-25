@@ -1,5 +1,5 @@
 import datetime
-from config import config
+
 
 # -------------------------System Config-----------------------------------
 LISTENER_PORT = "3601"

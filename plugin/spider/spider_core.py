@@ -1,6 +1,6 @@
 from model.service.film_detail import batch_save_original_detail, convert_film_details
 from model.service.film_list import save_film_class
-from model.system.collect_source import FilmSource
+from model.system.collect_source import FilmSource, CollectResultModel
 from model.system.movies import MovieDetail, MovieDescriptor, MovieUrlInfo
 from typing import List
 
@@ -8,8 +8,6 @@ import json
 from typing import List, Optional
 from model.system.film_detail import FilmDetail
 from plugin.common.conver.collect import gen_category_tree
-from plugin.db.redis_client import redis_client, init_redis_conn
-from plugin.db.postgres import get_db
 import requests
 from typing import Dict, Any, Optional
 
@@ -144,18 +142,6 @@ def film_detail_retry(uri: str, params: Dict[str, Any], retry: int = 1, headers:
             return movie_list
     return []
 
-class ResultModel:
-    JsonResult = 0
-    XmlResult = 1
-
-
-
-
-
-# 站点类型常量
-MASTER_COLLECT = 1
-SLAVE_COLLECT = 2
-COLLECT_VIDEO = 1
 
 def collect_api_test(fs: FilmSource) -> None:
     """
@@ -179,12 +165,12 @@ def collect_api_test(fs: FilmSource) -> None:
     except Exception as e:
         raise Exception(f"测试失败, 请求响应异常: {e}")
     # 判断返回类型
-    if result_model == ResultModel.JsonResult or str(result_model) == '0':
+    if result_model == CollectResultModel.JsonResult or str(result_model) == '0':
         try:
             json.loads(content)
         except Exception as e:
             raise Exception(f"测试失败, 返回数据异常, JSON序列化失败: {e}")
-    elif result_model == ResultModel.XmlResult or str(result_model) == '1':
+    elif result_model == CollectResultModel.XmlResult or str(result_model) == '1':
         try:
             ET.fromstring(content)
         except Exception as e:

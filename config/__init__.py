@@ -21,3 +21,4 @@ def load_dotenv(dotenv_path=None):
     dotenv.load_dotenv(dotenv_path)
 
 config = load_config()
+load_dotenv('config/.env.win')

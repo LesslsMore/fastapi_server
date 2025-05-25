@@ -1,7 +1,7 @@
 from typing import Any, List
 from fastapi import status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 SUCCESS = 0
 FAILED = -1

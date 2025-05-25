@@ -2,9 +2,9 @@ from typing import List, Optional
 import json
 from model.system.collect_source import FilmSource, SourceGrade
 from plugin.common.util.string_util import generate_salt
-from plugin.db.redis_client import redis_client, init_redis_conn, get_redis_client
+from plugin.db import init_redis_conn, redis_client, get_redis_client
 from config.data_config import FILM_SOURCE_LIST_KEY
-from plugin.spider.spider_core import collect_api_test
+
 
 
 def get_collect_source(sl: List[str]) -> List[FilmSource]:
