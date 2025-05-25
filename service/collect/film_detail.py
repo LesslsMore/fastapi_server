@@ -33,10 +33,10 @@ def save_original_detail(fd: FilmDetail):
 
 # 保存未处理的完整影片详情信息到mysql（伪实现）
 def save_original_detail2mysql(fd: FilmDetail):
-    with Session(pg_engine) as session:
-        # 假设 FilmDetail 已继承 SQLModel 并映射表结构，否则需补充
-        session.bulk_save_objects(fd)
-        session.commit()
+    session = get_db()
+    # 假设 FilmDetail 已继承 SQLModel 并映射表结构，否则需补充
+    session.bulk_save_objects(fd)
+    session.commit()
 
 # 根据ID获取原始影片详情数据
 def get_original_detail_by_id(id: int) -> Optional[FilmDetail]:
@@ -134,10 +134,11 @@ def create_film_detail_table():
     FilmDetail.metadata.create_all(session.get_bind())
 
 
-def exist_film_detail_table(session: Session) -> bool:
+def exist_film_detail_table() -> bool:
     """
     判断是否存在FilmDetail Table
     """
+    session = get_db()
     result = session.execute(text("""
     SELECT EXISTS (
         SELECT FROM information_schema.tables 

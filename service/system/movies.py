@@ -9,7 +9,7 @@ from config.data_config import SEARCH_INFO_TEMP, MOVIE_BASIC_INFO_KEY, MOVIE_DET
     FILM_EXPIRED
 from service.system.search import save_search_tag
 from model.system.search import SearchInfo
-from plugin.db import redis_client, init_redis_conn, get_redis_client
+from plugin.db import redis_client
 from model.system.movies import MovieDetail, MovieBasicInfo
 
 
@@ -66,13 +66,11 @@ def save_movie_basic_info(detail: MovieDetail):
         year=detail.descriptor.year
     )
     key = MOVIE_BASIC_INFO_KEY % (detail.cid, detail.id)
-    redis_client = get_redis_client() or init_redis_conn()
     redis_client.set(key, basic.json(), ex=FILM_EXPIRED)
 
 
 def get_basic_info_by_key(key: str) -> Optional[MovieBasicInfo]:
-    redis = redis_client or init_redis_conn()
-    data = redis.get(key)
+    data = redis_client.get(key)
     if data:
         #     	// 执行本地图片匹配
         # ReplaceBasicDetailPic(&basic)
@@ -81,8 +79,7 @@ def get_basic_info_by_key(key: str) -> Optional[MovieBasicInfo]:
 
 
 def get_detail_by_key(key: str) -> Optional[MovieDetail]:
-    redis = redis_client or init_redis_conn()
-    data = redis.get(key)
+    data = redis_client.get(key)
     if data:
         return MovieDetail.parse_raw(data)
     return None

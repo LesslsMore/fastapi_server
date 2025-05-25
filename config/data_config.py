@@ -11,7 +11,6 @@ FILM_PICTURE_ACCESS = "/api/upload/pic/poster/"
 # -------------------------Redis Key-----------------------------------
 CATEGORY_TREE_KEY = "CategoryTree"
 FILM_EXPIRED = datetime.timedelta(days=365*10)
-MOVIE_LIST_INFO_KEY = "MovieList:Cid%d"
 MOVIE_DETAIL_KEY = "MovieDetail:Cid%d:Id%d"
 MOVIE_BASIC_INFO_KEY = "MovieBasicInfo:Cid%d:Id%d"
 MULTIPLE_SITE_DETAIL = "MultipleSource:%s"

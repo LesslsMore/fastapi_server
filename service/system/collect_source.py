@@ -2,7 +2,7 @@ from typing import List, Optional
 import json
 from model.system.collect_source import FilmSource, SourceGrade
 from plugin.common.util.string_util import generate_salt
-from plugin.db import init_redis_conn, redis_client, get_redis_client
+from plugin.db import redis_client
 from config.data_config import FILM_SOURCE_LIST_KEY
 
 
@@ -26,7 +26,6 @@ def get_collect_source_list() -> List[FilmSource]:
     :return: FilmSource对象列表
     """
     # 查询指定score范围的采集站点信息
-    redis_client = get_redis_client() or init_redis_conn()
     zl = redis_client.zrange(FILM_SOURCE_LIST_KEY, 0, -1)
     return get_collect_source(zl)
 
@@ -53,8 +52,7 @@ def get_collect_source_list_by_grade(grade: SourceGrade) -> List[FilmSource]:
     # 将grade转换为字符串作为score范围
     score = str(grade.value)
     # 查询指定score范围的采集站点信息
-    redis = redis_client or init_redis_conn()
-    zl = redis.zrangebyscore(FILM_SOURCE_LIST_KEY, min=score, max=score)
+    zl = redis_client.zrangebyscore(FILM_SOURCE_LIST_KEY, min=score, max=score)
     return get_collect_source(zl)
 
 
@@ -67,16 +65,14 @@ def add_collect_source(s: FilmSource) -> (bool, str):
             return False, "当前采集站点信息已存在, 请勿重复添加"
     # 生成唯一ID
     s.id = generate_salt()
-    redis = redis_client or init_redis_conn()
     data = json.dumps(s.__dict__, ensure_ascii=False)
-    redis.zadd(FILM_SOURCE_LIST_KEY, {data: int(s.grade.value)})
+    redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(s.grade.value)})
     return True, "添加成功"
 
 def del_collect_resource(id: str) -> bool:
     """
     通过Id删除对应的采集站点信息
     """
-    redis_client = get_redis_client() or init_redis_conn()
     for v in get_collect_source_list():
         if v.id == id:
             data = v.model_dump_json()
@@ -88,15 +84,13 @@ def clear_all_collect_source():
     """
     删除所有采集站信息
     """
-    redis = redis_client or init_redis_conn()
-    redis.delete(FILM_SOURCE_LIST_KEY)
+    redis_client.delete(FILM_SOURCE_LIST_KEY)
 
 def exist_collect_source_list() -> bool:
     """
     查询是否已经存在站点list相关数据
     """
-    redis = redis_client or init_redis_conn()
-    return redis.exists(FILM_SOURCE_LIST_KEY) != 0
+    return redis_client.exists(FILM_SOURCE_LIST_KEY) != 0
 
 
 def save_collect_source_list(source_list: List[FilmSource]) -> bool:
@@ -105,7 +99,6 @@ def save_collect_source_list(source_list: List[FilmSource]) -> bool:
     :param source_list: FilmSource对象列表
     :return: 是否成功
     """
-    redis = redis_client or init_redis_conn()
     mapping = {}
     for source in source_list:
         # 将FilmSource对象转换为字典，然后序列化为JSON字符串
@@ -121,7 +114,7 @@ def save_collect_source_list(source_list: List[FilmSource]) -> bool:
 
     try:
         # 使用 mapping 参数传递给 zadd
-        redis.zadd(FILM_SOURCE_LIST_KEY, mapping=mapping)
+        redis_client.zadd(FILM_SOURCE_LIST_KEY, mapping=mapping)
         return True
     except Exception as e:
         print(f"保存采集站列表到Redis失败: {e}")
@@ -129,7 +122,6 @@ def save_collect_source_list(source_list: List[FilmSource]) -> bool:
 
 
 def update_collect_source(s: FilmSource) -> bool:
-    redis_client = get_redis_client() or init_redis_conn()
     for v in get_collect_source_list():
         if v.id != s.id and v.uri == s.uri:
             return False, "当前采集站链接已存在其他站点中, 请勿重复添加"

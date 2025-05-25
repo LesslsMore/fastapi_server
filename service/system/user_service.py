@@ -10,28 +10,29 @@ from sqlmodel import select
 
 # 创建用户表
 def create_user_table():
-    with Session(pg_engine) as session:
-        if not exist_user_table(session):
-            session.execute(
-                '''CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                user_name VARCHAR(255),
-                password VARCHAR(255),
-                salt VARCHAR(255),
-                email VARCHAR(255),
-                gender INT,
-                nick_name VARCHAR(255),
-                avatar VARCHAR(255),
-                status INT,
-                reserve1 VARCHAR(255),
-                reserve2 VARCHAR(255),
-                reserve3 VARCHAR(255)
-            )'''
-            )
-            session.commit()
+    session = get_db()
+    if not exist_user_table():
+        session.execute(
+            '''CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            user_name VARCHAR(255),
+            password VARCHAR(255),
+            salt VARCHAR(255),
+            email VARCHAR(255),
+            gender INT,
+            nick_name VARCHAR(255),
+            avatar VARCHAR(255),
+            status INT,
+            reserve1 VARCHAR(255),
+            reserve2 VARCHAR(255),
+            reserve3 VARCHAR(255)
+        )'''
+        )
+        session.commit()
 
 # 判断用户表是否存在
-def exist_user_table(session: Session) -> bool:
+def exist_user_table() -> bool:
+    session = get_db()
     result = session.execute(text("SELECT to_regclass('users')")).fetchone()
     return result[0] is not None
 
@@ -58,7 +59,8 @@ def init_admin_account():
     session.commit()
 
 # 根据用户名或邮箱获取用户信息
-def get_user_by_name_or_email(session: Session, user_name: str) -> Optional[User]:
+def get_user_by_name_or_email(user_name: str) -> Optional[User]:
+    session = get_db()
     result = session.execute(text("SELECT * FROM users WHERE user_name = :user_name OR email = :user_name"), {"user_name": user_name}).fetchone()
     if result:
         return User(**result)
@@ -74,7 +76,8 @@ def get_user_by_id(id: int) -> Optional[User]:
     return None
 
 # 更新用户信息
-def update_user_info(session: Session, u: User):
+def update_user_info(u: User):
+    session = get_db()
     session.execute(text("UPDATE users SET password = :password, email = :email, nick_name = :nick_name, status = :status WHERE id = :id"), {
         "password": u.password,
         "email": u.email,
