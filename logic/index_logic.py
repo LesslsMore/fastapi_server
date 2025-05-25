@@ -1,27 +1,25 @@
 from typing import List, Dict, Any, Optional
-from sqlmodel import Session, select
-import redis
+from sqlmodel import select
 import json
-from model.system.categories import Category, CategoryTree
-from model.service.categories import get_category_tree
+from model.system.categories import CategoryTree
+from service.system.categories import get_category_tree
 
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
-from model.system.manage import Banner
-from model.service.manage import get_banners
 from model.system.search import SearchInfo
-from model.service.search import get_relate_movie_basic_info, get_multiple_play, get_movie_list_by_sort, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, get_movie_list_by_pid, get_movie_list_by_cid, get_hot_movie_by_pid, get_hot_movie_by_cid
-
-from plugin.db import redis_client, init_redis_conn
+from plugin.db import redis_client
 from config.data_config import INDEX_CACHE_KEY
-
-from model.service.movies import get_detail_by_key, generate_hash_key
 from plugin.db import get_db
-from model.system.collect_source import FilmSource, SourceGrade
-from model.service.collect_source import get_collect_source_list_by_grade
+from model.system.collect_source import SourceGrade
+from service.system.collect_source import get_collect_source_list_by_grade
 from model.system.virtual_object import PlayLinkVo
+from service.system.manage import get_banners
+from service.system.movies import generate_hash_key, get_detail_by_key
+from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
+    get_hot_movie_by_cid, get_multiple_play, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, \
+    get_movie_list_by_sort, get_relate_movie_basic_info
 
-
+from config.data_config import MOVIE_BASIC_INFO_KEY
 
 
 class IndexLogic:
@@ -98,9 +96,7 @@ class IndexLogic:
         :param pageSize: 每页数量
         :return: 影片基本信息列表
         """
-        from model.service.search import search_film_keyword
-        from model.service.movies import get_basic_info_by_key
-        from config.data_config import MOVIE_BASIC_INFO_KEY
+
         sl = search_film_keyword(keyword, page)
         bl = []
         for s in sl:

@@ -1,6 +1,7 @@
 from typing import List
 from model.system.manage import BasicConfig, Banner
-from model.service.manage import get_site_basic, save_site_basic, get_banners, save_banners
+from service.system.manage import get_site_basic, save_site_basic, get_banners, save_banners
+
 
 class ManageLogic:
     @staticmethod

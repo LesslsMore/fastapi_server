@@ -1,15 +1,15 @@
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Union
 import hashlib
 import re
 import json
 
 from config.data_config import SEARCH_INFO_TEMP, MOVIE_BASIC_INFO_KEY, MOVIE_DETAIL_KEY, MULTIPLE_SITE_DETAIL, \
     FILM_EXPIRED
-from model.service.search import save_search_tag
+from service.system.search import save_search_tag
 from model.system.search import SearchInfo
 from plugin.db import redis_client, init_redis_conn, get_redis_client
-from model.system.movies import MovieDetail, MovieBasicInfo, MovieDescriptor, MovieUrlInfo
+from model.system.movies import MovieDetail, MovieBasicInfo
 
 
 def generate_hash_key(key: Union[str, int]) -> str:

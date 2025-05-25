@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Query
 
 from logic.collect_logic import CollectLogic
-from model.service.collect_source import get_collect_source_list
-from model.system.collect_source import FilmSource, SourceGrade
-from model.service.collect_source import FilmSource
-from model.service.collect_source import FindCollectSourceById
+from service.system.collect_source import get_collect_source_list
+from model.system.collect_source import SourceGrade
+from service.system.collect_source import FilmSource
+from service.system.collect_source import FindCollectSourceById
 from model.system import response
 from plugin.spider.spider_core import collect_api_test
 

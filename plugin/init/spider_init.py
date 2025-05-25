@@ -1,6 +1,6 @@
 from typing import List
 
-from model.service.collect_source import save_collect_source_list, exist_collect_source_list
+from service.system.collect_source import save_collect_source_list, exist_collect_source_list
 from model.system.collect_source import FilmSource, SourceGrade, CollectResultModel, ResourceType
 from plugin.common.util.string_util import generate_salt
 

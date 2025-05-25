@@ -1,19 +1,16 @@
 from sqlalchemy import text
 
 from model.system.movies import MovieDetail, MovieDescriptor, MovieUrlInfo
-from typing import List
 
-import json
-from typing import List, Optional
-from model.system.film_detail import FilmDetail
+from typing import List
+from model.collect.film_detail import FilmDetail
 from plugin.db import pg_engine
 from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
-from plugin.db import get_db, redis_client, get_redis_client
-import requests
-from typing import Dict, Any, Optional
+from plugin.db import get_db, redis_client
+from typing import Optional
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import SQLModel, Session
-import logging
+from sqlmodel import Session
+
 
 # 批量保存原始影片详情数据到MySQL（伪实现，需结合ORM完善）
 def batch_save_original_detail(dl: List[FilmDetail]):

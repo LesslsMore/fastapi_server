@@ -1,5 +1,6 @@
-from model.service.manage import save_site_basic, save_banners
+
 from model.system.manage import BasicConfig, Banner
+from service.system.manage import save_site_basic, save_banners
 
 
 def basic_config_init():

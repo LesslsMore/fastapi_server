@@ -1,12 +1,9 @@
-from model.service.film_detail import batch_save_original_detail, convert_film_details
-from model.service.film_list import save_film_class
+from service.collect.film_detail import batch_save_original_detail, convert_film_details
+from service.collect.film_list import save_film_class
 from model.system.collect_source import FilmSource, CollectResultModel
-from model.system.movies import MovieDetail, MovieDescriptor, MovieUrlInfo
-from typing import List
 
 import json
-from typing import List, Optional
-from model.system.film_detail import FilmDetail
+from model.collect.film_detail import FilmDetail
 from plugin.common.conver.collect import gen_category_tree
 import requests
 from typing import Dict, Any, Optional

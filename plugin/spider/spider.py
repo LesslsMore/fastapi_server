@@ -1,22 +1,19 @@
-import requests
-import json
-import xml.etree.ElementTree as ET
-from typing import Any
+from service.system.collect_source import FindCollectSourceById, get_collect_source_list, find_collect_source_by_id
 
-from model.service.collect_source import FindCollectSourceById, get_collect_source_list, find_collect_source_by_id
-from model.service.search import sync_search_info
-# from model.service.file_upload import sync_film_picture
-from model.system.collect_source import FilmSource, SourceGrade, ResourceType
-from model.service.categories import exists_category_tree, save_category_tree
-# from model.service.movies import sync_search_info, save_virtual_pic
-# from plugin.common.cache import clear_cache
+from model.system.collect_source import SourceGrade, ResourceType
+from service.system.categories import exists_category_tree, save_category_tree
+
 import time
 
-from model.service.failure_record import save_failure_record
+
 from model.system.failure_record import FailureRecord
 from datetime import datetime
 
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
+from service.system.failure_record import save_failure_record
+# from service.system.file_upload import save_virtual_pic
+from service.system.movies import save_site_play_list
+from service.system.search import sync_search_info, film_zero
 
 
 def collect_film(fs, h: int, pg: int):
@@ -53,7 +50,7 @@ def collect_film(fs, h: int, pg: int):
     # 通过采集站 Grade 类型, 执行不同的存储逻辑
     if getattr(fs, 'grade', 0) == SourceGrade.MasterCollect:
         # 主站点  保存完整影片详情信息到 redis
-        from model.service.movies import save_details
+
         try:
             save_details(movie_list)
         except Exception as e:
@@ -66,7 +63,7 @@ def collect_film(fs, h: int, pg: int):
         #         print(f"SaveVirtualPic Error: {e}")
     elif getattr(fs, 'grade', 0) == SourceGrade.SlaveCollect:
         # 附属站点 仅保存影片播放信息到redis
-        from model.service.movies import save_site_play_list
+
         try:
             save_site_play_list(fs.id, movie_list)
         except Exception as e:
@@ -154,20 +151,18 @@ def collect_film_by_id(ids: str, fs):
     if err or not movie_list:
         print(f"GetMovieDetail Error: {err}")
         return
-    if getattr(fs, 'grade', 0) == SourceGrade.MasterCollect:
-        from model.service.movies import save_detail, save_virtual_pic
-        try:
-            save_detail(movie_list[0])
-        except Exception as e:
-            print(f"SaveDetails Error: {e}")
-        if getattr(fs, 'syncPictures', False):
-            try:
-                from plugin.common.conver.Collect import convert_virtual_picture
-                save_virtual_pic(convert_virtual_picture(movie_list))
-            except Exception as e:
-                print(f"SaveVirtualPic Error: {e}")
+    # if getattr(fs, 'grade', 0) == SourceGrade.MasterCollect:
+    #
+    #     try:
+    #         save_detail(movie_list[0])
+    #     except Exception as e:
+    #         print(f"SaveDetails Error: {e}")
+    #     if getattr(fs, 'syncPictures', False):
+    #         try:
+    #             save_virtual_pic(convert_virtual_picture(movie_list))
+    #         except Exception as e:
+    #             print(f"SaveVirtualPic Error: {e}")
     elif getattr(fs, 'grade', 0) == SourceGrade.SlaveCollect:
-        from model.service.movies import save_site_play_list
         try:
             save_site_play_list(fs.id, movie_list)
         except Exception as e:
@@ -207,7 +202,7 @@ def clear_spider():
     """
     删除所有已采集的影片信息。
     """
-    from model.service.movies import film_zero
+
     film_zero()
 
 

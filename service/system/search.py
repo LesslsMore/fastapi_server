@@ -1,7 +1,7 @@
 from typing import List, Optional, Any
 from sqlmodel import SQLModel
 import json
-from plugin.db import redis_client, init_redis_conn, get_redis_client
+from plugin.db import redis_client, init_redis_conn, get_redis_client, pg_engine
 from sqlalchemy import create_engine, text
 from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG, MOVIE_BASIC_INFO_KEY
 import re
@@ -28,7 +28,7 @@ def get_basic_info_by_search_infos(infos: List[SearchInfo]) -> List[MovieBasicIn
     return result
 
 # 删除所有库存数据
-def film_zero(db_engine):
+def film_zero():
     keys_patterns = [
         'MovieBasicInfoKey*', 'MovieDetail*', 'MultipleSource*', 'OriginalResource*', 'Search*'
     ]
@@ -36,7 +36,7 @@ def film_zero(db_engine):
         keys = redis_client.keys(pattern)
         if keys:
             redis_client.delete(*keys)
-    with db_engine.connect() as conn:
+    with Session(pg_engine) as conn:
         conn.execute(text('TRUNCATE TABLE search_info'))
         conn.commit()
 

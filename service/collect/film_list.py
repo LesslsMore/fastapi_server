@@ -1,9 +1,8 @@
 import json
-from redis import Redis
 from typing import List
 
 from config.privide_config import FILM_CLASS_KEY, RESOURCE_EXPIRED
-from model.system.film_list import FilmClass
+from model.collect.film_list import FilmClass
 from plugin.db import get_redis_client, init_redis_conn
 
 

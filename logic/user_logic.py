@@ -1,5 +1,5 @@
-from model.service.user_service import get_user_by_id
-from model.system.user import User
+from service.system.user_service import get_user_by_id
+
 
 class UserLogic:
     @staticmethod

@@ -1,6 +1,6 @@
 import threading
 
-from model.service.collect_source import FindCollectSourceById, get_collect_source_list_by_grade
+from service.system.collect_source import FindCollectSourceById, get_collect_source_list_by_grade
 from model.system.collect_source import SourceGrade
 from plugin.spider.spider import batch_collect, handle_collect, auto_collect, clear_spider, star_zero, \
     collect_single_film, collect_category
