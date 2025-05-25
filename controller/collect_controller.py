@@ -102,3 +102,25 @@ def FilmSourceDel(id: str = Query(..., description="资源站标识")):
     return response.success_only_msg("删除成功")
 
 
+@collectController.post("/add")
+def FilmSourceAdd(s: FilmSource):
+    # 获取请求参数并校验
+    if not s:
+        return response.failed("请求参数异常")
+    if not s.name or not s.uri:
+        return response.failed("参数异常, 资源站标识、名称、地址不能为空")
+    # 如果采集站开启图片同步, 且采集站为附属站点则返回错误提示
+    if s.syncPictures and s.grade == SourceGrade.SlaveCollect:
+        return response.failed("附属站点无法开启图片同步功能")
+    # 执行 spider 测试
+    try:
+        collect_api_test(s)
+    except Exception as e:
+        return response.failed(f"资源接口测试失败, 请确认接口有效再添加: {e}")
+    # 测试通过后将资源站信息添加到list
+    result, msg = CollectLogic.save_film_source(s)
+    if not result:
+        return response.failed(f"资源站添加失败: {msg}")
+    return response.success_only_msg("添加成功")
+
+

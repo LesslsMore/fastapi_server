@@ -1,4 +1,4 @@
-from service.system.collect_source import update_collect_source, del_collect_resource
+from service.system.collect_source import update_collect_source, del_collect_resource, add_collect_source
 from service.system.collect_source import find_collect_source_by_id
 from model.system.collect_source import FilmSource, SourceGrade
 
@@ -22,3 +22,7 @@ class CollectLogic:
             raise ValueError("主站点无法直接删除, 请先降级为附属站点再进行删除")
         # 删除采集源信息
         return del_collect_resource(id)
+
+    @staticmethod
+    def save_film_source(fs: FilmSource) -> bool:
+        return add_collect_source(fs)

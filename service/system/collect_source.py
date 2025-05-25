@@ -65,7 +65,7 @@ def add_collect_source(s: FilmSource) -> (bool, str):
             return False, "当前采集站点信息已存在, 请勿重复添加"
     # 生成唯一ID
     s.id = generate_salt()
-    data = json.dumps(s.__dict__, ensure_ascii=False)
+    data = s.model_dump_json()
     redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(s.grade.value)})
     return True, "添加成功"
 

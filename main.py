@@ -36,10 +36,11 @@ def ping():
 
 
 app.include_router(indexController)
-app.include_router(manageController)
 manageController.include_router(collectController)
 manageController.include_router(spiderController)
 manageController.include_router(userController)
+app.include_router(manageController)
+
 
 app.add_middleware(
     CORSMiddleware,

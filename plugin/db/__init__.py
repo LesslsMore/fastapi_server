@@ -17,6 +17,4 @@ def get_redis_client():
 
 
 def close_redis():
-    if redis_client:
-        redis_client.close()
-        redis_client = None
+    redis_client.close()
