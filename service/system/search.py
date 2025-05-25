@@ -446,22 +446,7 @@ def remove_cache(key: str) -> bool:
         return False
 
 
-def get_multiple_play(site_id: str, key: str) -> Optional[List[MovieUrlInfo]]:
-    """
-    通过影片名hash值匹配播放源
-    :param site_id: 站点ID
-    :param key: 影片名hash值
-    :return: 播放源信息列表
-    """
-    try:
-        data = redis_client.hget(MULTIPLE_SITE_DETAIL % (site_id), key)
-        if data:
-            play_list = json.loads(data)
-            return [MovieUrlInfo(**item) for item in play_list]
-        return None
-    except Exception as e:
-        print(f"获取播放源失败: {e}")
-        return None
+
 
 
 def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List[MovieBasicInfo]]:

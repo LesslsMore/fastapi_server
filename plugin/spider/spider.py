@@ -1,6 +1,7 @@
-from service.system.collect_source import FindCollectSourceById, get_collect_source_list, find_collect_source_by_id
+from service.collect.multiple_source import save_site_play_list
+from service.collect.collect_source import get_collect_source_list, find_collect_source_by_id
 
-from model.system.collect_source import SourceGrade, ResourceType, FilmSource
+from model.collect.collect_source import SourceGrade, ResourceType, FilmSource
 from service.system.categories import exists_category_tree, save_category_tree
 
 import time
@@ -12,7 +13,7 @@ from datetime import datetime
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 from service.system.failure_record import save_failure_record
 # from service.system.file_upload import save_virtual_pic
-from service.system.movies import save_site_play_list, save_movie_detail_list, save_movie_detail
+from service.system.movies import save_movie_detail_list, save_movie_detail
 from service.system.search import sync_search_info, film_zero
 import threading
 
@@ -65,11 +66,7 @@ def collect_film(film_source: FilmSource, h: int, pg: int):
         #         print(f"SaveVirtualPic Error: {e}")
     elif film_source.grade == SourceGrade.SlaveCollect:
         # 附属站点 仅保存影片播放信息到redis
-
-        try:
-            save_site_play_list(film_source.id, movie_detail_list)
-        except Exception as e:
-            print(f"save_site_play_list Error: {e}")
+        save_site_play_list(film_source.id, movie_detail_list)
 
 
 def handle_collect(id: str, h: int):
@@ -79,7 +76,7 @@ def handle_collect(id: str, h: int):
     :param h: 时长参数
     """
     # 1. 获取采集站信息
-    film_source = FindCollectSourceById(id)
+    film_source = find_collect_source_by_id(id)
     if not film_source:
         print("Cannot Find Collect Source Site")
         return "Cannot Find Collect Source Site"
@@ -163,7 +160,6 @@ def collect_film_by_id(ids: str, film_source: FilmSource):
         #         print(f"SaveVirtualPic Error: {e}")
     elif film_source.grade == SourceGrade.SlaveCollect:
         save_site_play_list(film_source.id, movie_detail_list)
-
 
 
 def concurrent_page_spider(capacity: int, film_source, h: int, collect_func):

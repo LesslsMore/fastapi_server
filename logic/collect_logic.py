@@ -1,6 +1,6 @@
-from service.system.collect_source import update_collect_source, del_collect_resource, add_collect_source
-from service.system.collect_source import find_collect_source_by_id
-from model.system.collect_source import FilmSource, SourceGrade
+from service.collect.collect_source import update_collect_source, del_collect_resource, add_collect_source
+from service.collect.collect_source import find_collect_source_by_id
+from model.collect.collect_source import FilmSource, SourceGrade
 
 class CollectLogic:
     @staticmethod

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Query
 
 from logic.collect_logic import CollectLogic
-from service.system.collect_source import get_collect_source_list
-from model.system.collect_source import SourceGrade
-from service.system.collect_source import FilmSource
-from service.system.collect_source import FindCollectSourceById
+from service.collect.collect_source import get_collect_source_list
+from model.collect.collect_source import SourceGrade
+from service.collect.collect_source import FilmSource
+from service.collect.collect_source import find_collect_source_by_id
 from model.system import response
 from plugin.spider.spider_core import collect_api_test
 
@@ -20,7 +20,7 @@ def FilmSourceList():
 @collectController.get("/find")
 def FindFilmSource(id: str = Query(..., description="资源站标识")):
 
-    fs = FindCollectSourceById(id)
+    fs = find_collect_source_by_id(id)
     if fs is None:
         return response.failed("数据异常,资源站信息不存在")
     return response.success(fs, "原站点详情信息查找成功")

@@ -24,22 +24,7 @@ def generate_hash_key(key: Union[str, int]) -> str:
     return h.hexdigest()
 
 
-def save_site_play_list(site_id: str, details: List[MovieDetail]):
-    try:
-        res = {}
-        for d in details:
-            if d.playList and len(d.playList) > 0:
-                data = json.dumps([item.dict() for item in d.playList[0]])
-                if d.descriptor.cName and "解说" in d.descriptor.cName:
-                    continue
-                if d.descriptor.dbId:
-                    res[generate_hash_key(d.descriptor.dbId)] = data
-                res[generate_hash_key(d.name)] = data
-        if res:
-            redis_client.hmset(MULTIPLE_SITE_DETAIL % site_id, res)
 
-    except Exception as e:
-        print(f"save_site_play_list Error: {e}")
 
 
 def batch_save_search_info(movie_detail_list: List[MovieDetail]) -> None:

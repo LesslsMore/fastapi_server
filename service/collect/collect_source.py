@@ -1,23 +1,23 @@
-from typing import List, Optional
+from typing import List
 import json
-from model.system.collect_source import FilmSource, SourceGrade
+from model.collect.collect_source import FilmSource, SourceGrade
 from plugin.common.util.string_util import generate_salt
 from plugin.db import redis_client
 from config.data_config import FILM_SOURCE_LIST_KEY
 
 
-
-def get_collect_source(sl: List[str]) -> List[FilmSource]:
+def get_collect_source(film_source_json_list: List[str]) -> List[FilmSource]:
     """
     将字符串列表转换为FilmSource对象列表
-    :param sl: 字符串列表
+    :param film_source_json_list: 字符串列表
     :return: FilmSource对象列表
     """
     film_source_list = []
-    for s in sl:
-        film_source = FilmSource(**json.loads(s))
+    for film_source_json in film_source_json_list:
+        film_source = FilmSource(**json.loads(film_source_json))
         film_source_list.append(film_source)
     return film_source_list
+
 
 def get_collect_source_list() -> List[FilmSource]:
     """
@@ -26,21 +26,17 @@ def get_collect_source_list() -> List[FilmSource]:
     :return: FilmSource对象列表
     """
     # 查询指定score范围的采集站点信息
-    zl = redis_client.zrange(FILM_SOURCE_LIST_KEY, 0, -1)
-    return get_collect_source(zl)
+    film_source_json_list = redis_client.zrange(FILM_SOURCE_LIST_KEY, 0, -1)
+    return get_collect_source(film_source_json_list)
+
 
 # FindCollectSourceById 通过Id标识获取对应的资源站信息
-def FindCollectSourceById(id: str) -> FilmSource:
-    for v in get_collect_source_list():
-        if v.id == id:
-            return v
+def find_collect_source_by_id(id: str) -> FilmSource:
+    for film_source in get_collect_source_list():
+        if film_source.id == id:
+            return film_source
     return None
 
-def find_collect_source_by_id(id: str) -> FilmSource:
-    for v in get_collect_source_list():
-        if v.id == id:
-            return v
-    return None
 
 def get_collect_source_list_by_grade(grade: SourceGrade) -> List[FilmSource]:
     """
@@ -52,8 +48,8 @@ def get_collect_source_list_by_grade(grade: SourceGrade) -> List[FilmSource]:
     # 将grade转换为字符串作为score范围
     score = str(grade.value)
     # 查询指定score范围的采集站点信息
-    zl = redis_client.zrangebyscore(FILM_SOURCE_LIST_KEY, min=score, max=score)
-    return get_collect_source(zl)
+    film_source_json_list = redis_client.zrangebyscore(FILM_SOURCE_LIST_KEY, min=score, max=score)
+    return get_collect_source(film_source_json_list)
 
 
 def add_collect_source(film_source: FilmSource) -> (bool, str):
@@ -69,6 +65,7 @@ def add_collect_source(film_source: FilmSource) -> (bool, str):
     redis_client.zadd(FILM_SOURCE_LIST_KEY, {data: int(film_source.grade.value)})
     return True, "添加成功"
 
+
 def del_collect_resource(id: str) -> bool:
     """
     通过Id删除对应的采集站点信息
@@ -80,11 +77,13 @@ def del_collect_resource(id: str) -> bool:
             return True
     return False
 
+
 def clear_all_collect_source():
     """
     删除所有采集站信息
     """
     redis_client.delete(FILM_SOURCE_LIST_KEY)
+
 
 def exist_collect_source_list() -> bool:
     """
@@ -105,12 +104,12 @@ def save_collect_source_list(source_list: List[FilmSource]) -> bool:
         data = json.dumps(source.__dict__, ensure_ascii=False)
         # Redis ZAdd 需要一个字典 {member: score}
         mapping[data] = int(source.grade.value)
-    
+
     if not mapping:
         # 如果列表为空，可能需要清空或不做任何操作，这里选择清空以匹配Go的逻辑（如果传入空列表）
         # Go的ZAdd传入空列表不会报错，但不会添加任何成员。如果需要清空，需要显式调用delete。
         # 考虑到FilmSourceInit的调用场景，传入的列表通常不为空，这里不处理空列表清空逻辑。
-        return True # 或者根据需求返回False或抛出异常
+        return True  # 或者根据需求返回False或抛出异常
 
     try:
         # 使用 mapping 参数传递给 zadd

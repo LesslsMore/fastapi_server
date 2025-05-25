@@ -1,6 +1,6 @@
 from service.collect.film_detail import batch_save_film_detail, convert_film_details
 from service.collect.film_list import save_film_class
-from model.system.collect_source import FilmSource, CollectResultModel
+from model.collect.collect_source import FilmSource, CollectResultModel
 
 import json
 from model.collect.film_detail import FilmDetail

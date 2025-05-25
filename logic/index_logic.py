@@ -1,8 +1,8 @@
 from typing import List, Dict, Any, Optional
-from sqlmodel import select
 import json
 from model.system.categories import CategoryTree
 from service.collect.movie_dao import get_movie_basic_info, get_movie_detail
+from service.collect.multiple_source import get_multiple_play
 from service.system.categories import get_category_tree
 
 from model.system.movies import MovieBasicInfo, MovieDetail
@@ -10,14 +10,13 @@ from model.system.response import Page
 from model.system.search import SearchInfo
 from plugin.db import redis_client
 from config.data_config import INDEX_CACHE_KEY
-from plugin.db import get_session
-from model.system.collect_source import SourceGrade
-from service.system.collect_source import get_collect_source_list_by_grade
+from model.collect.collect_source import SourceGrade
+from service.collect.collect_source import get_collect_source_list_by_grade
 from model.system.virtual_object import PlayLinkVo
 from service.system.manage import get_banners
 from service.system.movies import generate_hash_key
 from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
-    get_hot_movie_by_cid, get_multiple_play, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, \
+    get_hot_movie_by_cid, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, \
     get_movie_list_by_sort, get_relate_movie_basic_info, search_film_keyword, get_search_info
 import re
 
