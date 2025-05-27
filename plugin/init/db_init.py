@@ -1,17 +1,12 @@
 # // TableInIt 初始化 mysql 数据库相关数据
-from service.collect.film_detail import create_film_detail_table
+from sqlmodel import SQLModel
+
+from plugin.db import get_session
 from service.system.user_service import init_admin_account
 
 
 def table_init():
-    # create_user_table()
-
-
-
-    # create_search_table()
-    #
-    # create_failure_record_table()
-
-    create_film_detail_table()
+    session = get_session()
+    SQLModel.metadata.create_all(session.get_bind())
 
     init_admin_account()
