@@ -49,8 +49,3 @@ app.add_middleware(
     allow_methods=["*"],  # 允许所有HTTP方法
     allow_headers=["*"],  # 允许所有请求头
 )
-
-if __name__ == "__main__":
-    port = os.environ.get("PORT")
-    # port = config['port']
-    uvicorn.run(app, host="0.0.0.0", port=int(port))
