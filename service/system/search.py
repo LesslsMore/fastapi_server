@@ -15,7 +15,7 @@ from sqlmodel import Session, select, func, desc, or_, and_
 from fastapi import Depends
 from plugin.db import get_session
 from model.system.response import Page
-from service.collect.movie_dao import get_movie_basic_info
+from service.collect.movie_dao import get_movie_basic_info, select_movie_basic_info_list
 from service.system.categories import get_children_tree
 
 
@@ -26,6 +26,9 @@ def get_basic_info_by_search_infos(search_info_list: List[SearchInfo]) -> List[M
         if movie_basic_info:
             movie_basic_info_list.append(movie_basic_info)
     return movie_basic_info_list
+
+def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
+    return select_movie_basic_info_list(search_info_list)
 
 
 # 删除所有库存数据
@@ -347,7 +350,8 @@ def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[Lis
     try:
         session = get_session()
         search_infos = session.exec(query).all()
-        return get_basic_info_by_search_infos(search_infos)
+        return get_basic_info_by_search_info_list(search_infos)
+        # return get_basic_info_by_search_infos(search_infos)
     except Exception as e:
         print(f"查询失败: {e}")
         return None

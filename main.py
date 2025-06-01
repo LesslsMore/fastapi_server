@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import httpx
@@ -20,6 +21,7 @@ from plugin.db import close_redis
 from plugin.init.db_init import table_init
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
+from plugin.middleware.handle_jwt import AuthTokenMiddleware
 
 
 @asynccontextmanager
@@ -70,15 +72,14 @@ async def proxy(full_path: str, request: Request):
                 params=dict(request.query_params),
                 timeout=30.0,
             )
+            # 返回响应
+            return Response(
+                content=proxy_response.content,
+                status_code=proxy_response.status_code,
+                headers=dict(proxy_response.headers),
+            )
         except httpx.RequestError as exc:
             return Response(content=f"Error: {str(exc)}", status_code=500)
-
-    # 返回响应
-    return Response(
-        content=proxy_response.content,
-        status_code=proxy_response.status_code,
-        headers=dict(proxy_response.headers),
-    )
 
 
 # 捕获 404 异常并返回前端入口文件
@@ -88,10 +89,12 @@ async def spa_fallback(request: Request, exc: HTTPException):
 
 
 app.include_router(prefix='/api', router=indexController)
+app.include_router(prefix='/api', router=userController)
 manageController.include_router(collectController)
 manageController.include_router(spiderController)
 manageController.include_router(userController)
 app.include_router(prefix='/api', router=manageController)
+# app.add_middleware(AuthTokenMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

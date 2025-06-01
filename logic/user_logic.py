@@ -1,4 +1,6 @@
-from service.system.user_service import get_user_by_id
+from service.system.user_service import get_user_by_id, get_user_by_name_or_email
+from plugin.common.util.string_util import password_encrypt
+from plugin.middleware.jwt_token import gen_token, save_user_token
 
 
 class UserLogic:
@@ -19,3 +21,20 @@ class UserLogic:
             }
             return user_info
         return {}
+
+    @staticmethod
+    def user_login(account: str, password: str):
+        """
+        用户登录，账号可以为用户名或邮箱
+        :param account: 用户名或邮箱
+        :param password: 密码
+        :return: (token, err)
+        """
+        user = get_user_by_name_or_email(account)
+        if user is None:
+            return None, "用户信息不存在!"
+        if password_encrypt(password, user.salt) != user.password:
+            return None, "用户名或密码错误"
+        token = gen_token(user.id, user.user_name)
+        save_user_token(token, user.id)
+        return token, None

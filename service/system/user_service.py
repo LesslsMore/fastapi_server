@@ -61,7 +61,7 @@ def init_admin_account():
 # 根据用户名或邮箱获取用户信息
 def get_user_by_name_or_email(user_name: str) -> Optional[User]:
     session = get_session()
-    result = session.execute(text("SELECT * FROM users WHERE user_name = :user_name OR email = :user_name"), {"user_name": user_name}).fetchone()
+    result = session.execute(text("SELECT * FROM users WHERE user_name = :user_name OR email = :user_name"), {"user_name": user_name}).mappings().fetchone()
     if result:
         return User(**result)
     return None

@@ -4,7 +4,9 @@ from model.system.manage import BasicConfig, Banner
 from model.system import response
 from typing import List, Optional
 
-manageController = APIRouter(prefix='/manage')
+from plugin.middleware.handle_jwt import AuthToken
+
+manageController = APIRouter(prefix='/manage', dependencies=[Depends(AuthToken)])
 
 
 # /manage/index
