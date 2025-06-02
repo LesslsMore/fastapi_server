@@ -1,6 +1,7 @@
 import threading
 
-from service.collect.collect_source import find_collect_source_by_id, get_collect_source_list_by_grade
+from service.collect.collect_source import find_collect_source_by_id, get_collect_source_list_by_grade, \
+    FilmSourceService
 from model.collect.collect_source import SourceGrade
 from plugin.spider.spider import batch_collect, handle_collect, auto_collect, clear_spider, star_zero, \
     collect_single_film, collect_category
@@ -18,7 +19,7 @@ class SpiderLogic:
 
     @staticmethod
     def start_collect(id: str, h: int):
-        fs = find_collect_source_by_id(id)
+        fs = FilmSourceService.find_collect_source_by_id(id)
         if not fs:
             raise Exception("采集任务开启失败采集站信息不存在")
 
@@ -47,7 +48,7 @@ class SpiderLogic:
 
     @staticmethod
     def film_class_collect():
-        l = get_collect_source_list_by_grade(SourceGrade.MasterCollect)
+        l = FilmSourceService.get_collect_source_list_by_grade(SourceGrade.MasterCollect)
         if not l:
             raise Exception("未获取到主采集站信息")
         for fs in l:

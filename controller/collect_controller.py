@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 
 from logic.collect_logic import CollectLogic
-from service.collect.collect_source import get_collect_source_list
+from service.collect.collect_source import get_collect_source_list, FilmSourceService
 from model.collect.collect_source import SourceGrade
 from service.collect.collect_source import FilmSource
 from service.collect.collect_source import find_collect_source_by_id
@@ -13,14 +13,14 @@ collectController = APIRouter(prefix='/collect')
 
 @collectController.get("/list")
 def FilmSourceList():
-    data = get_collect_source_list()
+    data = FilmSourceService.get_collect_source_list()
     return response.success(data, "影视源站点信息获取成功")
 
 
 @collectController.get("/find")
 def FindFilmSource(id: str = Query(..., description="资源站标识")):
 
-    fs = find_collect_source_by_id(id)
+    fs = FilmSourceService.find_collect_source_by_id(id)
     if fs is None:
         return response.failed("数据异常,资源站信息不存在")
     return response.success(fs, "原站点详情信息查找成功")

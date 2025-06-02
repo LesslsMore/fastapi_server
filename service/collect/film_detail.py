@@ -13,12 +13,12 @@ from sqlmodel import Session, SQLModel
 
 
 # 批量保存原始影片详情数据到MySQL（伪实现，需结合ORM完善）
-def batch_save_film_detail(film_detail: List[FilmDetail]):
+def batch_save_film_detail(film_detail_list: List[FilmDetail]):
     session = get_session()
-    if not film_detail:
+    if not film_detail_list:
         return
     table = FilmDetail.__table__
-    data = [d.dict() if hasattr(d, 'dict') else d.__dict__ for d in film_detail]
+    data = [d.dict() if hasattr(d, 'dict') else d.__dict__ for d in film_detail_list]
     stmt = insert(table).values(data)
     update_dict = {c.name: getattr(stmt.excluded, c.name) for c in table.columns if c.name != 'vod_id'}
     stmt = stmt.on_conflict_do_update(index_elements=['vod_id'], set_=update_dict)

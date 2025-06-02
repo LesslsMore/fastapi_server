@@ -16,7 +16,7 @@ from fastapi import Depends
 from plugin.db import get_session
 from model.system.response import Page
 from service.collect.movie_dao import get_movie_basic_info, select_movie_basic_info_list
-from service.system.categories import get_children_tree
+from service.system.categories import get_children_tree, CategoryTreeService
 
 
 def get_basic_info_by_search_infos(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
@@ -208,8 +208,7 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
     tags = []
     # 过滤分类tag
     if t == "Category":
-        from .categories import get_children_tree
-        children = get_children_tree(pid)
+        children = CategoryTreeService.get_children_tree(pid)
         if children:
             for c in children:
                 if c.show:
@@ -723,7 +722,7 @@ def save_search_tag(search: SearchInfo):
             tag_key = SEARCH_TAG % (search.pid, k)
             tag_count = redis_client.zcard(tag_key)
             if k == "Category" and tag_count == 0:
-                for t in get_children_tree(search.pid):
+                for t in CategoryTreeService.get_children_tree(search.pid):
                     redis_client.zadd(tag_key, {f"{t.name}:{t.id}": -t.id})
             elif k == "Year" and tag_count == 0:
                 current_year = datetime.now().year

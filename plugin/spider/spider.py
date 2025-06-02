@@ -1,8 +1,8 @@
 from service.collect.multiple_source import save_site_play_list
-from service.collect.collect_source import get_collect_source_list, find_collect_source_by_id
+from service.collect.collect_source import get_collect_source_list, find_collect_source_by_id, FilmSourceService
 
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource
-from service.system.categories import exists_category_tree, save_category_tree
+from service.system.categories import exists_category_tree, save_category_tree, CategoryTreeService
 
 import time
 import logging
@@ -76,7 +76,7 @@ def handle_collect(id: str, h: int):
     :param h: 时长参数
     """
     # 1. 获取采集站信息
-    film_source = find_collect_source_by_id(id)
+    film_source = FilmSourceService.find_collect_source_by_id(id)
     if not film_source:
         print("Cannot Find Collect Source Site")
         return "Cannot Find Collect Source Site"
@@ -85,7 +85,7 @@ def handle_collect(id: str, h: int):
         return "The acquisition site was disabled"
     # 主站点先采集分类树
     if film_source.grade == SourceGrade.MasterCollect and film_source.state:
-        if not exists_category_tree():
+        if not CategoryTreeService.exists_category_tree():
             collect_category(film_source)
     # h 参数校验
     if h == 0:
@@ -176,7 +176,7 @@ def batch_collect(h: int, ids: list):
     批量采集指定站点。
     """
     for id in ids:
-        film_source = find_collect_source_by_id(id)
+        film_source = FilmSourceService.find_collect_source_by_id(id)
         if film_source and film_source.state:
             threading.Thread(target=handle_collect, args=(film_source.id, h)).start()
 
@@ -185,7 +185,7 @@ def auto_collect(h: int):
     """
     自动采集所有已启用站点。
     """
-    for film_source in get_collect_source_list():
+    for film_source in FilmSourceService.get_collect_source_list():
         if film_source.state:
             handle_collect(film_source.id, h)
 
@@ -210,7 +210,7 @@ def collect_single_film(ids: str):
     """
     通过影片唯一ID获取影片信息，仅处理主站点。
     """
-    for film_source in get_collect_source_list():
+    for film_source in FilmSourceService.get_collect_source_list():
         if film_source.grade == SourceGrade.MasterCollect and film_source.state:
             collect_film_by_id(ids, film_source)
             return
@@ -226,5 +226,5 @@ def collect_category(s):
     except Exception as err:
         print(f"GetCategoryTree Error: {err}")
         return
-    save_category_tree(category_tree)
+    CategoryTreeService.save_category_tree(category_tree)
 

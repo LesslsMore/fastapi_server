@@ -3,7 +3,7 @@ import json
 from model.system.categories import CategoryTree
 from service.collect.movie_dao import get_movie_basic_info, get_movie_detail
 from service.collect.multiple_source import get_multiple_play
-from service.system.categories import get_category_tree
+from service.system.categories import get_category_tree, CategoryTreeService
 
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
@@ -11,9 +11,9 @@ from model.system.search import SearchInfo
 from plugin.db import redis_client
 from config.data_config import INDEX_CACHE_KEY
 from model.collect.collect_source import SourceGrade
-from service.collect.collect_source import get_collect_source_list_by_grade
+from service.collect.collect_source import get_collect_source_list_by_grade, FilmSourceService
 from model.system.virtual_object import PlayLinkVo
-from service.system.manage import get_banners
+from service.system.manage import get_banners, ManageService
 from service.system.movies import generate_hash_key
 from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
     get_hot_movie_by_cid, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, \
@@ -31,7 +31,7 @@ class IndexLogic:
         info = {}
         # 1. 分类信息
         tree = CategoryTree(**{"id": 0, "name":"分类信息"})
-        sys_tree = get_category_tree()
+        sys_tree = CategoryTreeService.get_category_tree()
         tree.children = [c for c in sys_tree.children if c.show]
         info["category"] = tree.model_dump()
         # 2. 首页内容
@@ -52,7 +52,7 @@ class IndexLogic:
             content.append(item)
         info["content"] = content
         # 3. 轮播
-        info["banners"] = [json.loads(b.model_dump_json()) for b in get_banners()]
+        info["banners"] = [json.loads(b.model_dump_json()) for b in ManageService.get_banners()]
         redis_client.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
         return info
 
@@ -64,7 +64,7 @@ class IndexLogic:
     @staticmethod
     def get_category_info() -> Dict[str, Any]:
         nav = {}
-        tree = get_category_tree()
+        tree = CategoryTreeService.get_category_tree()
         for t in tree.children:
             name = t.category.name
             if name in ["动漫", "动漫片"]:
@@ -79,7 +79,7 @@ class IndexLogic:
 
     @staticmethod
     def get_nav_category() -> List[Dict[str, Any]]:
-        tree = get_category_tree()
+        tree = CategoryTreeService.get_category_tree()
         cl = []
         for c in tree.children:
             if c.show:
@@ -115,7 +115,7 @@ class IndexLogic:
 
     @staticmethod
     def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
-        tree = get_category_tree()
+        tree = CategoryTreeService.get_category_tree()
         for t in tree.children:
             if t.id == pid:
                 return t.dict()
@@ -127,7 +127,7 @@ class IndexLogic:
 
     @staticmethod
     def multiple_source(detail: MovieDetail) -> List[Dict[str, Any]]:
-        master = get_collect_source_list_by_grade(SourceGrade.MasterCollect)
+        master = FilmSourceService.get_collect_source_list_by_grade(SourceGrade.MasterCollect)
 
         play_list = [
             PlayLinkVo(**{
@@ -147,7 +147,7 @@ class IndexLogic:
                 if sep in detail.descriptor.subTitle:
                     for v in detail.descriptor.subTitle.split(sep):
                         names.add(generate_hash_key(v))
-        sc = get_collect_source_list_by_grade(SourceGrade.SlaveCollect)
+        sc = FilmSourceService.get_collect_source_list_by_grade(SourceGrade.SlaveCollect)
         for s in sc:
             for k in names:
                 pl = get_multiple_play(s.id, k)

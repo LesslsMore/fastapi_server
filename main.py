@@ -26,8 +26,9 @@ from plugin.middleware.handle_jwt import AuthTokenMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    film_source_init()
     table_init()
+
+    film_source_init()
     basic_config_init()
     banners_init()
     yield

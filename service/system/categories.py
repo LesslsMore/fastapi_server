@@ -4,6 +4,43 @@ import json
 from config.data_config import CATEGORY_TREE_KEY, FILM_EXPIRED
 from model.system.categories import CategoryTree
 from plugin.db import redis_client
+from service.collect.kv_dao import KVDao
+
+
+class CategoryTreeService:
+    @staticmethod
+    def save_category_tree(tree: CategoryTree):
+        try:
+            data = tree.json()
+            KVDao.set_value(CATEGORY_TREE_KEY, data)
+        except Exception as err:
+            print(f"SaveCategoryTree Error: {err}")
+
+    @staticmethod
+    def get_category_tree():
+        data = KVDao.get_value(CATEGORY_TREE_KEY)
+        if not data:
+            return None
+        try:
+            data_dict = json.loads(data)
+            tree = CategoryTree(**data_dict)
+            return tree
+        except Exception:
+            return None
+
+    @staticmethod
+    def exists_category_tree():
+        return KVDao.get_value(CATEGORY_TREE_KEY) is not None
+
+    @classmethod
+    def get_children_tree(cls, id: int) -> Optional[List[CategoryTree]]:
+        tree = cls.get_category_tree()
+        if not tree or not tree.children:
+            return None
+        for t in tree.children:
+            if t.id == id:
+                return t.children
+        return None
 
 
 def save_category_tree(tree: CategoryTree) -> None:
