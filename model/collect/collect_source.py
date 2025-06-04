@@ -4,6 +4,8 @@ from sqlmodel import SQLModel, Field
 import json
 from pydantic import BaseModel
 
+from plugin.common.util.string_util import generate_salt
+
 
 class SourceGrade(int, Enum):
     MasterCollect = 0
@@ -44,3 +46,9 @@ class FilmSource(BaseModel):
     type_id: Optional[int] = -1  # 修改为Optional[int]以处理None值
     state: bool = None
     interval: Optional[int] = 0
+
+
+class FilmSourceModel(SQLModel, FilmSource, table=True):
+    __tablename__ = 'film_source'
+    id: str = Field(default_factory=generate_salt, primary_key=True)
+    uri: str = Field(default=None, unique=True)

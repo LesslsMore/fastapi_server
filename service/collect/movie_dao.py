@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from sqlmodel import select
 from sqlalchemy.dialects.postgresql import insert
@@ -59,6 +59,16 @@ def select_movie_basic_info(search_info: SearchInfo):
         results = session.exec(statement)
         item = results.first()
         return item
+
+def select_movie_basic_info_list(search_info_list: List[SearchInfo]):
+    mids = [search_info.mid for search_info in search_info_list]
+    with get_session() as session:
+        # 构建批量查询语句
+        statement = select(MovieBasicInfoModel).where(
+            MovieBasicInfoModel.id.in_(mids)  # 使用 IN 操作符匹配多个 ID
+        )
+        results = session.exec(statement)
+        return results.all()  # 返回所有匹配结果的列表
 
 def set_movie_basic_info(movie_basic_info: MovieBasicInfo):
     upsert_movie_basic_info(movie_basic_info)

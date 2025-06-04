@@ -15,8 +15,8 @@ from sqlmodel import Session, select, func, desc, or_, and_
 from fastapi import Depends
 from plugin.db import get_session
 from model.system.response import Page
-from service.collect.movie_dao import get_movie_basic_info
-from service.system.categories import get_children_tree
+from service.collect.movie_dao import get_movie_basic_info, select_movie_basic_info_list
+from service.system.categories import get_children_tree, CategoryTreeService
 
 
 def get_basic_info_by_search_infos(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
@@ -26,6 +26,9 @@ def get_basic_info_by_search_infos(search_info_list: List[SearchInfo]) -> List[M
         if movie_basic_info:
             movie_basic_info_list.append(movie_basic_info)
     return movie_basic_info_list
+
+def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
+    return select_movie_basic_info_list(search_info_list)
 
 
 # 删除所有库存数据
@@ -205,8 +208,7 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
     tags = []
     # 过滤分类tag
     if t == "Category":
-        from .categories import get_children_tree
-        children = get_children_tree(pid)
+        children = CategoryTreeService.get_children_tree(pid)
         if children:
             for c in children:
                 if c.show:
@@ -347,7 +349,8 @@ def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[Lis
     try:
         session = get_session()
         search_infos = session.exec(query).all()
-        return get_basic_info_by_search_infos(search_infos)
+        return get_basic_info_by_search_info_list(search_infos)
+        # return get_basic_info_by_search_infos(search_infos)
     except Exception as e:
         print(f"查询失败: {e}")
         return None
@@ -719,7 +722,7 @@ def save_search_tag(search: SearchInfo):
             tag_key = SEARCH_TAG % (search.pid, k)
             tag_count = redis_client.zcard(tag_key)
             if k == "Category" and tag_count == 0:
-                for t in get_children_tree(search.pid):
+                for t in CategoryTreeService.get_children_tree(search.pid):
                     redis_client.zadd(tag_key, {f"{t.name}:{t.id}": -t.id})
             elif k == "Year" and tag_count == 0:
                 current_year = datetime.now().year

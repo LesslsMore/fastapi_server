@@ -1,6 +1,6 @@
 
 from model.system.manage import BasicConfig, Banner
-from service.system.manage import save_site_basic, save_banners
+from service.system.manage import save_site_basic, save_banners, ManageService
 
 
 def basic_config_init():
@@ -14,7 +14,7 @@ def basic_config_init():
         state=True,
         hint="网站升级中, 暂时无法访问 !!!"
     )
-    save_site_basic(basic_config)
+    ManageService.save_site_basic(basic_config)
 
 
 def banners_init():
@@ -37,4 +37,4 @@ def banners_init():
                picture="https://img.bfzypic.com/upload/vod/20230424-43/06e79232a4650aea00f7476356a49847.jpg",
                remark="已完结", sort=4)
     ]
-    save_banners(banners)
+    ManageService.save_banners(banners)

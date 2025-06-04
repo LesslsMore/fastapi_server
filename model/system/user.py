@@ -7,7 +7,7 @@ class User(SQLModel, table=True):
     user_name: str = Field(default=None, nullable=True)
     password: str = Field(default=None, nullable=True)
     salt: str = Field(default=None, nullable=True)
-    email: str = Field(default=None, nullable=True)
+    email: str = Field(default=None, nullable=True, unique=True)
     gender: int = Field(default=None, nullable=True)
     nick_name: str = Field(default=None, nullable=True)
     avatar: str = Field(default=None, nullable=True)
