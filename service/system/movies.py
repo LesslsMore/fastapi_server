@@ -7,10 +7,10 @@ import json
 
 from config.data_config import SEARCH_INFO_TEMP, MULTIPLE_SITE_DETAIL
 from service.collect.movie_dao import set_movie_basic_info, set_movie_detail, convert_movie_basic_info
-from service.system.search import save_search_tag
 from model.system.search import SearchInfo
 from plugin.db import redis_client
 from model.system.movies import MovieDetail, MovieBasicInfo
+from service.system.search_tag import save_search_tag
 
 
 def generate_hash_key(key: Union[str, int]) -> str:

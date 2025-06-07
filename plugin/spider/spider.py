@@ -14,8 +14,10 @@ from plugin.spider.spider_core import get_category_tree, get_page_count, get_fil
 from service.system.failure_record import save_failure_record
 # from service.system.file_upload import save_virtual_pic
 from service.system.movies import save_movie_detail_list, save_movie_detail
-from service.system.search import sync_search_info, film_zero
+from service.system.search import sync_search_info
 import threading
+
+from service.system.search_tag import film_zero
 
 
 def collect_film(film_source: FilmSource, h: int, pg: int):

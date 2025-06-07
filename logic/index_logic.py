@@ -16,9 +16,11 @@ from model.system.virtual_object import PlayLinkVo
 from service.system.manage import get_banners, ManageService
 from service.system.movies import generate_hash_key
 from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
-    get_hot_movie_by_cid, get_search_infos_by_tags, get_basic_info_by_search_infos, get_search_tag, \
+    get_hot_movie_by_cid, get_search_infos_by_tags, get_basic_info_by_search_infos, \
     get_movie_list_by_sort, get_relate_movie_basic_info, search_film_keyword, get_search_info
 import re
+
+from service.system.search_tag import get_search_tag
 
 
 class IndexLogic:
@@ -30,7 +32,7 @@ class IndexLogic:
             return json.loads(info)
         info = {}
         # 1. 分类信息
-        tree = CategoryTree(**{"id": 0, "name":"分类信息"})
+        tree = CategoryTree(**{"id": 0, "name": "分类信息"})
         sys_tree = CategoryTreeService.get_category_tree()
         tree.children = [c for c in sys_tree.children if c.show]
         info["category"] = tree.model_dump()
@@ -45,8 +47,8 @@ class IndexLogic:
                 movies = get_movie_list_by_cid(c.id, page)
                 hot_movies = get_hot_movie_by_cid(c.id, page)
             item = {
-                "nav": json.loads(c.model_dump_json()), 
-                "movies": [json.loads(m.model_dump_json()) for m in movies], 
+                "nav": json.loads(c.model_dump_json()),
+                "movies": [json.loads(m.model_dump_json()) for m in movies],
                 "hot": [json.loads(h.model_dump_json()) for h in hot_movies]
             }
             content.append(item)
@@ -55,7 +57,6 @@ class IndexLogic:
         info["banners"] = [json.loads(b.model_dump_json()) for b in ManageService.get_banners()]
         redis_client.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
         return info
-
 
     @staticmethod
     def clear_index_cache():
@@ -121,7 +122,6 @@ class IndexLogic:
                 return t.dict()
         return None
 
-
     # def search_tags(self, pid: int) -> Dict[str, Any]:
     #     return SearchTagsVO.get_search_tag(self.db, pid)
 
@@ -131,8 +131,8 @@ class IndexLogic:
 
         play_list = [
             PlayLinkVo(**{
-                "id": master[0].id, 
-                "name": master[0].name, 
+                "id": master[0].id,
+                "name": master[0].name,
                 "linkList": detail.playList[0]
             }).model_dump()
         ] if master and detail.playList else []
@@ -155,16 +155,15 @@ class IndexLogic:
                     play_list.append(
                         PlayLinkVo(**{
                             "id": s.id, "name": s.name, "linkList": pl
-                            }
-                            ).model_dump()
-                        )
+                        }
+                                   ).model_dump()
+                    )
                     break
         return play_list
 
     @staticmethod
-    def get_films_by_tags(tags: Dict[str, Any], page: int, pageSize: int) -> List[Dict[str, Any]]:
-        page_obj = Page(pageSize=pageSize, current=page)
-        sl = get_search_infos_by_tags(tags, page_obj)
+    def get_films_by_tags(tags: Dict[str, Any], page: Page) -> List[Dict[str, Any]]:
+        sl = get_search_infos_by_tags(tags, page)
         return get_basic_info_by_search_infos(sl)
 
     @staticmethod
@@ -175,6 +174,7 @@ class IndexLogic:
         :return: 包含搜索标签的字典
         """
         return get_search_tag(pid)
+
     @staticmethod
     def get_film_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:
         page_obj = Page(**{"pageSize": pageSize, "current": page})
@@ -194,20 +194,18 @@ class IndexLogic:
         search_info = get_search_info(id)
         if not search_info:
             return {}
-            
+
         # 获取Redis中的完整影视信息
 
         movie_detail = get_movie_detail(search_info)
         if not movie_detail:
             return {}
-            
+
         # 查找其他站点的播放源
         play_list = IndexLogic.multiple_source(movie_detail)
         res = movie_detail.model_dump()
         res["list"] = play_list
         return res
-
-
 
     @staticmethod
     def relate_movie(movie_detail: MovieDetail, page: Page) -> List[MovieBasicInfo]:
