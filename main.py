@@ -18,11 +18,11 @@ from controller.index_controller import indexController
 from controller.manage_controller import manageController
 from controller.spider_controller import spiderController
 from controller.user_controller import userController
+from model.collect.MacType import MacType
 from plugin.db import close_redis
 from plugin.init.db_init import table_init
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
-from plugin.middleware.handle_jwt import AuthTokenMiddleware
 
 
 @asynccontextmanager

@@ -1,9 +1,10 @@
 import json
 
+from dao.collect.MacVodDao import MacVodDao
 from model.collect.movie_entity import MovieDetailModel
 from model.system.movies import MovieDetail
 from model.system.search import SearchInfo
-from service.collect.movie_dao import upsert_movie_detail, select_movie_detail
+from dao.collect.movie_dao import MovieDao
 
 
 def test_upsert_movie_detail():
@@ -206,11 +207,9 @@ def test_upsert_movie_detail():
 }
         '''
     ))
-    upsert_movie_detail(movie_detail)
+    MovieDao.upsert_movie_detail(movie_detail)
+
 
 def test_select_movie_detail():
-    search_info = SearchInfo(**{
-        "mid": 100405,
-    })
-    movie_detail_model = select_movie_detail(search_info)
-    movie_detail = MovieDetail(**movie_detail_model.model_dump())
+    vod_id = 100405
+    mac_vod = MacVodDao.select_mac_vod(vod_id)

@@ -6,6 +6,7 @@ from sqlmodel import SQLModel, Field
 
 from plugin.db import get_session
 
+
 class KVModel(SQLModel, table=True):
     __tablename__ = 'key_value'
     id: int = Field(primary_key=True)
@@ -14,6 +15,7 @@ class KVModel(SQLModel, table=True):
     # __table_args__ = (
     #     UniqueConstraint('key', name='uq_key')
     # )
+
 
 class KVDao:
     @staticmethod

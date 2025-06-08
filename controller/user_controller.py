@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from logic.user_logic import UserLogic
+from service.user_logic import UserLogic
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from model.system import response

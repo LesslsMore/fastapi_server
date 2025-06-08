@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from logic.manage_logic import ManageLogic
+from service.manage_logic import ManageLogic
 from model.system.manage import BasicConfig, Banner
 from model.system import response
 from typing import List, Optional

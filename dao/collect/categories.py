@@ -2,9 +2,9 @@ from typing import List, Optional
 import json
 
 from config.data_config import CATEGORY_TREE_KEY, FILM_EXPIRED
-from model.system.categories import CategoryTree
+from model.collect.categories import CategoryTree
 from plugin.db import redis_client
-from service.collect.kv_dao import KVDao
+from dao.collect.kv_dao import KVDao
 
 
 class CategoryTreeService:

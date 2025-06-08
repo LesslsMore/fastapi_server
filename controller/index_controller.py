@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
+from starlette.requests import Request
 
-from logic.manage_logic import ManageLogic
+from service.manage_logic import ManageLogic
+from model.collect.categories import Category
 from model.system.movies import MovieDetail
 from model.system.response import Page
-from logic.index_logic import IndexLogic
+from service.index_logic import IndexLogic
 from model.system import response
 from typing import Optional
 
@@ -85,12 +87,11 @@ def search_film(
 
 
 @indexController.get("/filmClassify")
-def film_classify(
-        Pid: int = Query(...),
-):
-    title = IndexLogic.get_pid_category(Pid)
+def film_classify(request: Request, category: Category = Query(...)):
+    pid = category.pid
+    title = IndexLogic.get_pid_category(pid)
     page = {"pageSize": 21, "current": 1}
-    content = IndexLogic.get_film_classify(Pid, 1, 21)
+    content = IndexLogic.get_film_classify(pid, 1, 21)
     return response.success({"title": title, "content": content}, "分类影片信息获取成功")
 
 

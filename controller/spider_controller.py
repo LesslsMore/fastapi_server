@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from logic.spider_logic import SpiderLogic
+from service.spider_logic import SpiderLogic
 from model.system import response
 from typing import Optional, List
 
@@ -33,3 +33,9 @@ def star_spider(params: CollectParams):
             return JSONResponse({"msg": f"采集任务开启失败: {str(e)}", "success": False}, status_code=400)
     # return JSONResponse({"msg": "采集任务已成功开启!!!", "success": True})
     return response.success(None, "采集任务已成功开启!!!")
+
+
+@spiderController.get("/class/cover")
+def CoverFilmClass():
+    SpiderLogic.FilmClassCollect()
+    return response.success(None, "影视分类信息重置成功, 请稍等片刻后刷新页面")

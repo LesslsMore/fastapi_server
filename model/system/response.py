@@ -8,7 +8,7 @@ FAILED = -1
 
 
 class Page(BaseModel):
-    current: int = Field(default=1, ge=1, description="当前页码")
+    current: int = Field(default=1, ge=0, description="当前页码")
     pageSize: int = Field(default=10, ge=1, le=500, description="每页数量")
     total: int = 0
     pageCount: int = 1

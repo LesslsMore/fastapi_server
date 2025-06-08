@@ -6,7 +6,7 @@ from plugin.db.redis_client import init_redis_conn
 
 # config = load_config()
 # load_dotenv('../config/.env.win')
-# load_dotenv('config/.env.win')
+load_dotenv('config/.env.win')
 # load_dotenv('config/.env.render')
 # load_dotenv('config/.env.vercel')
 pg_engine = init_postgres()

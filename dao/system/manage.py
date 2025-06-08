@@ -3,7 +3,7 @@ from json import dumps, loads
 from plugin.db import redis_client
 from config import data_config
 from model.system.manage import BasicConfig, Banner
-from service.collect.kv_dao import KVDao
+from dao.collect.kv_dao import KVDao
 
 
 class ManageService:

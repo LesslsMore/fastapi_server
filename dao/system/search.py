@@ -1,38 +1,34 @@
 import logging
-from typing import List, Optional, Any
-from sqlmodel import SQLModel, not_
+from sqlmodel import not_
 import json
 
+from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail, mac_vod_list_to_movie_detail_list
 from model.system.virtual_object import SearchVo
 from plugin.db import redis_client, pg_engine
-from sqlalchemy import create_engine, text, update
-from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG
-import re
+from sqlalchemy import text, update
+from config.data_config import SEARCH_INFO_TEMP
 from datetime import datetime, timedelta
-from model.system.movies import MovieBasicInfo, MovieUrlInfo
+from model.system.movies import MovieBasicInfo
 from model.system.search import SearchInfo
 
 from typing import List, Optional
-from sqlmodel import Session, select, func, desc, or_, and_
-from fastapi import Depends
+from sqlmodel import Session, select, func, or_
 from plugin.db import get_session
 from model.system.response import Page
-from service.collect.movie_dao import get_movie_basic_info, select_movie_basic_info_list
-from service.system.categories import get_children_tree, CategoryTreeService
-from service.system.search_tag import batch_handle_search_tag, get_tags_by_title
-
-
-def get_basic_info_by_search_infos(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
-    movie_basic_info_list = []
-    for search_info in search_info_list:
-        movie_basic_info = get_movie_basic_info(search_info)
-        if movie_basic_info:
-            movie_basic_info_list.append(movie_basic_info)
-    return movie_basic_info_list
+from dao.collect.movie_dao import MovieDao, movie_detail_to_movie_basic_info
+from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
 
 
 def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
-    return select_movie_basic_info_list(search_info_list)
+    mids = [search_info.mid for search_info in search_info_list]
+    mac_vod_list = MacVodDao.select_mac_vod_list(mids)
+
+    movie_basic_info_list = []
+    for mac_vod in mac_vod_list:
+        movie_detail = mac_vod_to_movie_detail(mac_vod)
+        movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
+        movie_basic_info_list.append(movie_basic_info)
+    return movie_basic_info_list
 
 
 # 重置Search表
@@ -200,6 +196,7 @@ def GetSearchPage(s: SearchVo) -> List[SearchInfo]:
 
         return results
 
+
 def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
     """
     通过Pid分类ID获取对应影片的数据信息
@@ -217,9 +214,9 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
         # 查询数据
         query = select(SearchInfo).where(SearchInfo.pid == pid).order_by(SearchInfo.update_stamp.desc()) \
             .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        search_infos = session.exec(query).all()
+        search_info_list = session.exec(query).all()
 
-        return get_basic_info_by_search_infos(search_infos)
+        return get_basic_info_by_search_info_list(search_info_list)
     except Exception as e:
         print(f"查询失败: {e}")
         return None
@@ -242,9 +239,9 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
         # 查询数据
         query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc()) \
             .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        search_infos = session.exec(query).all()
+        search_info_list = session.exec(query).all()
 
-        return get_basic_info_by_search_infos(search_infos)
+        return get_basic_info_by_search_info_list(search_info_list)
     except Exception as e:
         print(f"查询失败: {e}")
         return None
@@ -375,8 +372,8 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
             query = query.where(or_(*tag_conditions))
         # 分页
         query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        search_infos = session.exec(query).all()
-        return get_basic_info_by_search_infos(search_infos)
+        search_info_list = session.exec(query).all()
+        return get_basic_info_by_search_info_list(search_info_list)
     except Exception as e:
         print(f"查询相关影片失败: {e}")
         return None
@@ -535,12 +532,12 @@ def batch_save_or_update(list_: List[SearchInfo]) -> None:
 
 def add_search_index() -> None:
     session = get_session()
-    session.exec(text("CREATE UNIQUE INDEX idx_mid ON search_info (mid)"))
-    session.exec(text("CREATE INDEX idx_time ON search_info (update_stamp DESC)"))
-    session.exec(text("CREATE INDEX idx_hits ON search_info (hits DESC)"))
-    session.exec(text("CREATE INDEX idx_score ON search_info (score DESC)"))
-    session.exec(text("CREATE INDEX idx_release ON search_info (release_stamp DESC)"))
-    session.exec(text("CREATE INDEX idx_year ON search_info (year DESC)"))
+    session.exec(text("CREATE UNIQUE INDEX idx_mid ON search (mid)"))
+    session.exec(text("CREATE INDEX idx_time ON search (update_stamp DESC)"))
+    session.exec(text("CREATE INDEX idx_hits ON search (hits DESC)"))
+    session.exec(text("CREATE INDEX idx_score ON search (score DESC)"))
+    session.exec(text("CREATE INDEX idx_release ON search (release_stamp DESC)"))
+    session.exec(text("CREATE INDEX idx_year ON search (year DESC)"))
 
 
 def get_search_info(id):

@@ -1,9 +1,11 @@
 from typing import List, Dict, Any, Optional
 import json
-from model.system.categories import CategoryTree
-from service.collect.movie_dao import get_movie_basic_info, get_movie_detail
-from service.collect.multiple_source import get_multiple_play
-from service.system.categories import get_category_tree, CategoryTreeService
+
+from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail
+from model.collect.categories import CategoryTree
+from dao.collect.movie_dao import MovieDao
+from dao.collect.multiple_source import get_multiple_play
+from dao.collect.categories import CategoryTreeService
 
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
@@ -11,16 +13,17 @@ from model.system.search import SearchInfo
 from plugin.db import redis_client
 from config.data_config import INDEX_CACHE_KEY
 from model.collect.collect_source import SourceGrade
-from service.collect.collect_source import get_collect_source_list_by_grade, FilmSourceService
+from dao.collect.collect_source import FilmSourceService
 from model.system.virtual_object import PlayLinkVo
-from service.system.manage import get_banners, ManageService
-from service.system.movies import generate_hash_key
-from service.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
-    get_hot_movie_by_cid, get_search_infos_by_tags, get_basic_info_by_search_infos, \
-    get_movie_list_by_sort, get_relate_movie_basic_info, search_film_keyword, get_search_info
+from dao.system.manage import ManageService
+from dao.system.movies import generate_hash_key
+from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
+    get_hot_movie_by_cid, get_search_infos_by_tags, \
+    get_movie_list_by_sort, get_relate_movie_basic_info, search_film_keyword, get_search_info, \
+    get_basic_info_by_search_info_list
 import re
 
-from service.system.search_tag import get_search_tag
+from dao.system.search_tag import get_search_tag
 
 
 class IndexLogic:
@@ -98,11 +101,8 @@ class IndexLogic:
         """
 
         search_info_list = search_film_keyword(keyword, page)
-        movie_basic_info_list = []
-        for search_info in search_info_list:
-            movie_basic_info = get_movie_basic_info(search_info)
-            if movie_basic_info:
-                movie_basic_info_list.append(movie_basic_info)
+
+        movie_basic_info_list = get_basic_info_by_search_info_list(search_info_list)
         return movie_basic_info_list
 
     @staticmethod
@@ -116,6 +116,8 @@ class IndexLogic:
 
     @staticmethod
     def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
+        if pid == 0:
+            pid = 4
         tree = CategoryTreeService.get_category_tree()
         for t in tree.children:
             if t.id == pid:
@@ -163,8 +165,8 @@ class IndexLogic:
 
     @staticmethod
     def get_films_by_tags(tags: Dict[str, Any], page: Page) -> List[Dict[str, Any]]:
-        sl = get_search_infos_by_tags(tags, page)
-        return get_basic_info_by_search_infos(sl)
+        search_info_list = get_search_infos_by_tags(tags, page)
+        return get_basic_info_by_search_info_list(search_info_list)
 
     @staticmethod
     def search_tags(pid: int) -> Dict[str, Any]:
@@ -185,21 +187,17 @@ class IndexLogic:
         }
 
     @staticmethod
-    def get_film_detail(id: int) -> Dict[str, Any]:
+    def get_film_detail(vod_id: int) -> Dict[str, Any]:
         """
         获取影片详情信息
-        :param id: 影片ID
+        :param vod_id: 影片ID
         :return: 包含影片详情和播放源的字典
         """
-        search_info = get_search_info(id)
-        if not search_info:
-            return {}
 
-        # 获取Redis中的完整影视信息
-
-        movie_detail = get_movie_detail(search_info)
-        if not movie_detail:
+        mac_vod = MacVodDao.select_mac_vod(vod_id)
+        if not mac_vod:
             return {}
+        movie_detail = mac_vod_to_movie_detail(mac_vod)
 
         # 查找其他站点的播放源
         play_list = IndexLogic.multiple_source(movie_detail)

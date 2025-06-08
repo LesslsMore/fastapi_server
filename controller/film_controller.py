@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 
-from logic.film_logic import FilmLogic
-from logic.user_logic import UserLogic
+from service.film_logic import FilmLogic
+from service.user_logic import UserLogic
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from model.system import response

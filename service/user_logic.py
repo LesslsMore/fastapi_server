@@ -1,4 +1,4 @@
-from service.system.user_service import get_user_by_id, get_user_by_name_or_email
+from dao.system.user_dao import get_user_by_id, get_user_by_name_or_email
 from plugin.common.util.string_util import password_encrypt
 from plugin.middleware.jwt_token import gen_token, save_user_token
 

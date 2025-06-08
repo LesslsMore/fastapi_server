@@ -6,11 +6,11 @@ import re
 import json
 
 from config.data_config import SEARCH_INFO_TEMP, MULTIPLE_SITE_DETAIL
-from service.collect.movie_dao import set_movie_basic_info, set_movie_detail, convert_movie_basic_info
+from dao.collect.movie_dao import movie_detail_to_movie_basic_info, MovieDao
 from model.system.search import SearchInfo
 from plugin.db import redis_client
 from model.system.movies import MovieDetail, MovieBasicInfo
-from service.system.search_tag import save_search_tag
+from dao.system.search_tag import save_search_tag
 
 
 def generate_hash_key(key: Union[str, int]) -> str:
@@ -29,13 +29,13 @@ def generate_hash_key(key: Union[str, int]) -> str:
 
 def batch_save_search_info(movie_detail_list: List[MovieDetail]) -> None:
     try:
-        search_info_list = [convert_search_info(movie_detail) for movie_detail in movie_detail_list]
+        search_info_list = [movie_detail_to_search_info(movie_detail) for movie_detail in movie_detail_list]
         rdb_save_search_info(search_info_list)
     except Exception as e:
         logging.error('batch_save_search_info: {}', e)
 
 
-def convert_search_info(detail: MovieDetail) -> SearchInfo:
+def movie_detail_to_search_info(detail: MovieDetail) -> SearchInfo:
     score = float(detail.descriptor.dbScore) if detail.descriptor.dbScore else 0.0
     stamp = datetime.strptime(detail.descriptor.updateTime, "%Y-%m-%d %H:%M:%S").timestamp()
     year = int(detail.descriptor.year) if detail.descriptor.year else 0
@@ -86,12 +86,12 @@ def save_movie_detail(movie_detail: MovieDetail) -> Optional[Exception]:
     :return: 异常对象或None
     """
     try:
-        set_movie_detail(movie_detail)
+        MovieDao.set_movie_detail(movie_detail)
 
-        movie_basic_info = convert_movie_basic_info(movie_detail)
-        set_movie_basic_info(movie_basic_info)
+        movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
+        MovieDao.set_movie_basic_info(movie_basic_info)
 
-        search_info = convert_search_info(movie_detail)
+        search_info = movie_detail_to_search_info(movie_detail)
         save_search_tag(search_info)
         # 保存影片检索信息到searchTable（如有需要可调用 batch_save_search_info 或单条保存）
         # 这里假设有 save_search_info 单条保存函数，否则可忽略

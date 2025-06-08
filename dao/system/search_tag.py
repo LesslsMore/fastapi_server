@@ -1,22 +1,16 @@
 import logging
-from typing import List, Optional, Any
-from sqlmodel import SQLModel
+from typing import Any
 import json
-from plugin.db import redis_client, pg_engine
-from sqlalchemy import create_engine, text, update
-from config.data_config import MULTIPLE_SITE_DETAIL, SEARCH_INFO_TEMP, SEARCH_TITLE, SEARCH_TAG
+from plugin.db import redis_client
+from sqlalchemy import text
+from config.data_config import SEARCH_TITLE, SEARCH_TAG
 import re
-from datetime import datetime, timedelta
-from model.system.movies import MovieBasicInfo, MovieUrlInfo
+from datetime import datetime
 from model.system.search import SearchInfo
 
 from typing import List, Optional
-from sqlmodel import Session, select, func, desc, or_, and_
-from fastapi import Depends
 from plugin.db import get_session
-from model.system.response import Page
-from service.collect.movie_dao import get_movie_basic_info, select_movie_basic_info_list
-from service.system.categories import get_children_tree, CategoryTreeService
+from dao.collect.categories import CategoryTreeService
 
 
 # 删除所有库存数据

@@ -2,7 +2,7 @@
 from sqlmodel import SQLModel
 
 from plugin.db import get_session
-from service.system.user_service import init_admin_account
+from dao.system.user_dao import init_admin_account
 
 
 def table_init():

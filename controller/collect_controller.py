@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Query
 
-from logic.collect_logic import CollectLogic
-from service.collect.collect_source import get_collect_source_list, FilmSourceService
+from service.collect_logic import CollectLogic
+from dao.collect.collect_source import get_collect_source_list, FilmSourceService
 from model.collect.collect_source import SourceGrade
-from service.collect.collect_source import FilmSource
-from service.collect.collect_source import find_collect_source_by_id
+from dao.collect.collect_source import FilmSource
+from dao.collect.collect_source import find_collect_source_by_id
 from model.system import response
 from plugin.spider.spider_core import collect_api_test
 
