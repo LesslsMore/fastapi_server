@@ -11,18 +11,18 @@ class CategoryTreeService:
     @staticmethod
     def save_category_tree(tree: CategoryTree):
         try:
-            data = tree.json()
+            data = tree.model_dump()
             KVDao.set_value(CATEGORY_TREE_KEY, data)
         except Exception as err:
             print(f"SaveCategoryTree Error: {err}")
 
     @staticmethod
     def get_category_tree():
-        data = KVDao.get_value(CATEGORY_TREE_KEY)
-        if not data:
-            return None
+        data_dict = KVDao.get_value(CATEGORY_TREE_KEY)
+        # if not data:
+        #     return None
         try:
-            data_dict = json.loads(data)
+            # data_dict = json.loads(data)
             tree = CategoryTree(**data_dict)
             return tree
         except Exception:

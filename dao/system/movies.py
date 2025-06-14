@@ -1,15 +1,15 @@
 import logging
-from datetime import datetime
 from typing import List, Optional, Union
 import hashlib
 import re
-import json
 
-from config.data_config import SEARCH_INFO_TEMP, MULTIPLE_SITE_DETAIL
-from dao.collect.movie_dao import movie_detail_to_movie_basic_info, MovieDao
+from config.data_config import SEARCH_INFO_TEMP
+from dao.collect.movie_dao import MovieDao
 from model.system.search import SearchInfo
+from plugin.common.conver.mac_vod import movie_detail_list_to_search_info_list, movie_detail_to_movie_basic_info, \
+    movie_detail_to_search_info
 from plugin.db import redis_client
-from model.system.movies import MovieDetail, MovieBasicInfo
+from model.system.movies import MovieDetail
 from dao.system.search_tag import save_search_tag
 
 
@@ -24,47 +24,12 @@ def generate_hash_key(key: Union[str, int]) -> str:
     return h.hexdigest()
 
 
-
-
-
 def batch_save_search_info(movie_detail_list: List[MovieDetail]) -> None:
     try:
-        search_info_list = [movie_detail_to_search_info(movie_detail) for movie_detail in movie_detail_list]
+        search_info_list = movie_detail_list_to_search_info_list(movie_detail_list)
         rdb_save_search_info(search_info_list)
     except Exception as e:
         logging.error('batch_save_search_info: {}', e)
-
-
-def movie_detail_to_search_info(detail: MovieDetail) -> SearchInfo:
-    score = float(detail.descriptor.dbScore) if detail.descriptor.dbScore else 0.0
-    stamp = datetime.strptime(detail.descriptor.updateTime, "%Y-%m-%d %H:%M:%S").timestamp()
-    year = int(detail.descriptor.year) if detail.descriptor.year else 0
-    try:
-        year_match = re.search(r"[1-9][0-9]{3}", detail.descriptor.releaseDate)
-        year = int(year_match.group()) if year_match else 0
-    except Exception as e:
-        print(f"convert_search_info Error: {e}")
-        logging.error(f"convert_search_info Error: {e}")
-
-    return SearchInfo(
-        mid=detail.id,
-        cid=detail.cid,
-        pid=detail.pid,
-        name=detail.name,
-        sub_title=detail.descriptor.subTitle,
-        c_name=detail.descriptor.cName,
-        class_tag=detail.descriptor.classTag,
-        area=detail.descriptor.area,
-        language=detail.descriptor.language,
-        year=year,
-        initial=detail.descriptor.initial,
-        score=score,
-        hits=detail.descriptor.hits,
-        update_stamp=int(stamp),
-        state=detail.descriptor.state,
-        remarks=detail.descriptor.remarks,
-        release_stamp=detail.descriptor.addTime
-    )
 
 
 def rdb_save_search_info(search_info_list: List[SearchInfo]):

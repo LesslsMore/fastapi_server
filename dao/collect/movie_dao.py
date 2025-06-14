@@ -1,33 +1,10 @@
-from typing import Optional, List
-
-from sqlmodel import select
 from sqlalchemy.dialects.postgresql import insert
-
-from config.data_config import MOVIE_BASIC_INFO_KEY, FILM_EXPIRED, MOVIE_DETAIL_KEY
 from model.collect.movie_entity import MovieDetailModel, MovieBasicInfoModel
 from model.system.movies import MovieBasicInfo, MovieDetail
-from model.system.search import SearchInfo
 from plugin.db import redis_client, get_session
 
 
-def movie_detail_to_movie_basic_info(movie_detail):
-    movie_basic_info = MovieBasicInfo(
-        id=movie_detail.id,
-        cid=movie_detail.cid,
-        pid=movie_detail.pid,
-        name=movie_detail.name,
-        sub_title=movie_detail.descriptor.subTitle,
-        c_name=movie_detail.descriptor.cName,
-        state=movie_detail.descriptor.state,
-        picture=movie_detail.picture,
-        actor=movie_detail.descriptor.actor,
-        director=movie_detail.descriptor.director,
-        blurb=movie_detail.descriptor.blurb,
-        remarks=movie_detail.descriptor.remarks,
-        area=movie_detail.descriptor.area,
-        year=movie_detail.descriptor.year
-    )
-    return movie_basic_info
+
 
 
 class MovieDao:

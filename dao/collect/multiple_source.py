@@ -5,8 +5,9 @@ from sqlalchemy import Column, JSON, UniqueConstraint
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import SQLModel, Field, select
 
-from config.data_config import MULTIPLE_SITE_DETAIL
-from model.system.movies import MovieDetail, MovieUrlInfo
+from model.collect.MacVod import MacVod
+from model.system.movies import MovieUrlInfo
+from plugin.common.conver.mac_vod import mac_vod_list_to_movie_detail_list
 from plugin.db import redis_client, get_session
 from dao.system.movies import generate_hash_key
 
@@ -26,7 +27,8 @@ class MultipleSourceModel(SQLModel, table=True):
     )
 
 
-def save_site_play_list(site_id: str, movie_detail_list: List[MovieDetail]):
+def save_site_play_list(site_id: str, mac_vod_list: List[MacVod]):
+    movie_detail_list = mac_vod_list_to_movie_detail_list(mac_vod_list)
     try:
         res = {}
         for movie_detail in movie_detail_list:

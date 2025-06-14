@@ -2,33 +2,28 @@ import logging
 from sqlmodel import not_
 import json
 
-from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail, mac_vod_list_to_movie_detail_list
+from dao.collect.MacVodDao import MacVodDao
 from model.collect.MacVod import MacVod
 from model.system.virtual_object import SearchVo
+from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_list_to_search_info_list
 from plugin.db import redis_client, pg_engine
 from sqlalchemy import text, update
 from config.data_config import SEARCH_INFO_TEMP
 from datetime import datetime, timedelta
-from model.system.movies import MovieBasicInfo, MovieDetail
+from model.system.movies import MovieBasicInfo
 from model.system.search import SearchInfo
 
 from typing import List, Optional
 from sqlmodel import Session, select, func, or_
 from plugin.db import get_session
 from model.system.response import Page
-from dao.collect.movie_dao import MovieDao, movie_detail_to_movie_basic_info
 from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
 
 
 def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
     mids = [search_info.mid for search_info in search_info_list]
     mac_vod_list = MacVodDao.select_mac_vod_list(mids)
-
-    movie_basic_info_list = []
-    for mac_vod in mac_vod_list:
-        movie_detail = mac_vod_to_movie_detail(mac_vod)
-        movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
-        movie_basic_info_list.append(movie_basic_info)
+    movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
     return movie_basic_info_list
 
 
@@ -144,40 +139,40 @@ def GetPage(query, page: Page):
 def GetSearchPage(s: SearchVo) -> List[SearchInfo]:
     with Session(pg_engine) as session:
         # 构建基础查询
-        query = select(SearchInfo)
+        query = select(MacVod)
 
         # 添加动态查询条件
         if s.name:
-            query = query.where(SearchInfo.name.like(f"%{s.name}%"))
+            query = query.where(MacVod.vod_name.like(f"%{s.name}%"))
 
         if s.cid and s.cid > 0:
-            query = query.where(SearchInfo.cid == s.cid)
+            query = query.where(MacVod.type_id == s.cid)
         elif s.pid and s.pid > 0:
-            query = query.where(SearchInfo.pid == s.pid)
+            query = query.where(MacVod.type_id_1 == s.pid)
 
         if s.plot:
-            query = query.where(SearchInfo.class_tag.like(f"%{s.plot}%"))
+            query = query.where(MacVod.vod_class.like(f"%{s.plot}%"))
 
         if s.area:
-            query = query.where(SearchInfo.area == s.area)
+            query = query.where(MacVod.vod_area == s.area)
 
         if s.language:
-            query = query.where(SearchInfo.language == s.language)
+            query = query.where(MacVod.vod_lang == s.language)
 
         if s.year and s.year > (datetime.now().year - 12):
-            query = query.where(SearchInfo.year == s.year)
+            query = query.where(MacVod.vod_year == s.year)
 
         if s.remarks:
             if s.remarks == "完结":
-                query = query.where(SearchInfo.remarks.in_(["完结", "HD"]))
+                query = query.where(MacVod.vod_remarks.in_(["完结", "HD"]))
             else:
-                query = query.where(not_(SearchInfo.remarks.in_(["完结", "HD"])))
+                query = query.where(not_(MacVod.vod_remarks.in_(["完结", "HD"])))
 
         if s.beginTime and s.beginTime > 0:
-            query = query.where(SearchInfo.update_stamp >= s.beginTime)
+            query = query.where(MacVod.vod_time >= s.beginTime)
 
         if s.endTime and s.endTime > 0:
-            query = query.where(SearchInfo.update_stamp <= s.endTime)
+            query = query.where(MacVod.vod_time <= s.endTime)
 
         # 返回分页参数
         GetPage(query, s.paging)
@@ -191,11 +186,12 @@ def GetSearchPage(s: SearchVo) -> List[SearchInfo]:
         offset = (s.paging.current - 1) * s.paging.pageSize
 
         # 执行分页查询
-        results = session.exec(
+        mac_vod_list = session.exec(
             query.limit(s.paging.pageSize).offset(offset)
         ).all()
 
-        return results
+        search_info_list = mac_vod_list_to_search_info_list(mac_vod_list)
+        return search_info_list
 
 
 def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
@@ -208,16 +204,17 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
     try:
         session = get_session()
         # 计算总数
-        count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.pid == pid)).one()
+        count = session.exec(select(func.count()).select_from(MacVod).where(MacVod.type_id_1 == pid)).one()
         page.total = count
         page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
 
         # 查询数据
-        query = select(SearchInfo).where(SearchInfo.pid == pid).order_by(SearchInfo.update_stamp.desc()) \
+        query = select(MacVod).where(MacVod.type_id_1 == pid).order_by(MacVod.vod_time.desc()) \
             .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        search_info_list = session.exec(query).all()
+        mac_vod_list = session.exec(query).all()
 
-        return get_basic_info_by_search_info_list(search_info_list)
+        movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
+        return movie_basic_info_list
     except Exception as e:
         print(f"查询失败: {e}")
         return None
@@ -260,13 +257,15 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
         # 当前时间偏移一个月
         t = datetime.now() - timedelta(days=30)
 
-        query = select(SearchInfo).where(
-            SearchInfo.pid == pid,
-            SearchInfo.update_stamp > t.timestamp()
-        ).order_by(SearchInfo.year.desc(), SearchInfo.hits.desc()) \
+        query = select(MacVod).where(
+            MacVod.type_id_1 == pid,
+            MacVod.vod_time_add > t.timestamp()
+        ).order_by(MacVod.vod_year.desc(), MacVod.vod_hits.desc()) \
             .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
 
-        return session.exec(query).all()
+        mac_vod_list = session.exec(query).all()
+        search_info_list = mac_vod_list_to_search_info_list(mac_vod_list)
+        return search_info_list
     except Exception as e:
         print(f"查询失败: {e}")
         return None
