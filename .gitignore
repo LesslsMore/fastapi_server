@@ -7,3 +7,4 @@ config/config.yml
 /config/.env.vercel
 /config/.env.render
 /.VSCodeCounter/
+/logs/
