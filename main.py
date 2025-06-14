@@ -18,6 +18,7 @@ from controller.index_controller import indexController
 from controller.manage_controller import manageController
 from controller.spider_controller import spiderController
 from controller.user_controller import userController
+from exceptions.handle import handle_exception
 from model.collect.MacType import MacType
 from plugin.db import close_redis
 from plugin.init.db_init import table_init
@@ -38,6 +39,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+# 加载全局异常处理方法
+handle_exception(app)
 
 
 @app.get("/ping")

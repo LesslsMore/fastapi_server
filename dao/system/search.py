@@ -3,12 +3,13 @@ from sqlmodel import not_
 import json
 
 from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail, mac_vod_list_to_movie_detail_list
+from model.collect.MacVod import MacVod
 from model.system.virtual_object import SearchVo
 from plugin.db import redis_client, pg_engine
 from sqlalchemy import text, update
 from config.data_config import SEARCH_INFO_TEMP
 from datetime import datetime, timedelta
-from model.system.movies import MovieBasicInfo
+from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.search import SearchInfo
 
 from typing import List, Optional
@@ -486,15 +487,15 @@ def search_info_to_mdb(model: int) -> None:
     if not list_:
         return
 
-    sl = []
+    search_info_list = []
     for member, score in list_:
         info = SearchInfo(**json.loads(member))
-        sl.append(info)
+        search_info_list.append(info)
 
     if model == 0:
-        batch_save(sl)
+        batch_save(search_info_list)
     elif model == 1:
-        batch_save_or_update(sl)
+        batch_save_or_update(search_info_list)
 
     search_info_to_mdb(model)
 

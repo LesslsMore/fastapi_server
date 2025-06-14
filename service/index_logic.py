@@ -2,8 +2,10 @@ from typing import List, Dict, Any, Optional
 import json
 
 from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail
+from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
+    get_relate_mac_vod_basic_info
 from model.collect.categories import CategoryTree
-from dao.collect.movie_dao import MovieDao
+from dao.collect.movie_dao import MovieDao, movie_detail_to_movie_basic_info
 from dao.collect.multiple_source import get_multiple_play
 from dao.collect.categories import CategoryTreeService
 
@@ -106,6 +108,23 @@ class IndexLogic:
         return movie_basic_info_list
 
     @staticmethod
+    def search_mac_vod_info(keyword: str, page: Page) -> list:
+        """
+        根据关键字和分页参数检索影片基本信息列表
+        :param keyword: 检索关键字
+        :param page: 当前页码
+        :param pageSize: 每页数量
+        :return: 影片基本信息列表
+        """
+        mac_vod_list = search_mac_vod_keyword(keyword, page)
+        movie_basic_info_list = []
+        for mac_vod in mac_vod_list:
+            movie_detail = mac_vod_to_movie_detail(mac_vod)
+            movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
+            movie_basic_info_list.append(movie_basic_info)
+        return movie_basic_info_list
+
+    @staticmethod
     def get_film_category(id: int, id_type: str, page: int, pageSize: int) -> List[Dict[str, Any]]:
         page_obj = Page(pageSize=pageSize, current=page)
         if id_type == "pid":
@@ -169,6 +188,16 @@ class IndexLogic:
         return get_basic_info_by_search_info_list(search_info_list)
 
     @staticmethod
+    def get_mac_vod_list_by_tags(tags: Dict[str, Any], page: Page) -> List[Dict[str, Any]]:
+        mac_vod_list = get_mac_vod_list_by_tags(tags, page)
+        movie_basic_info_list = []
+        for mac_vod in mac_vod_list:
+            movie_detail = mac_vod_to_movie_detail(mac_vod)
+            movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
+            movie_basic_info_list.append(movie_basic_info)
+        return movie_basic_info_list
+
+    @staticmethod
     def search_tags(pid: int) -> Dict[str, Any]:
         """
         通过pid获取对应分类的搜索标签
@@ -184,6 +213,15 @@ class IndexLogic:
             "news": get_movie_list_by_sort(0, pid, page_obj),
             "top": get_movie_list_by_sort(1, pid, page_obj),
             "recent": get_movie_list_by_sort(2, pid, page_obj)
+        }
+
+    @staticmethod
+    def get_mac_vod_list_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:
+        page_obj = Page(**{"pageSize": pageSize, "current": page})
+        return {
+            "news": get_mac_vod_list_by_sort(0, pid, page_obj),
+            "top": get_mac_vod_list_by_sort(1, pid, page_obj),
+            "recent": get_mac_vod_list_by_sort(2, pid, page_obj)
         }
 
     @staticmethod
@@ -220,4 +258,5 @@ class IndexLogic:
             area=movie_detail.descriptor.area,
             language=movie_detail.descriptor.language,
         )
-        return get_relate_movie_basic_info(search, page)
+        return get_relate_mac_vod_basic_info(search, page)
+        # return get_relate_movie_basic_info(search, page)
