@@ -9,7 +9,7 @@ from dao.collect.kv_dao import KVDao
 class ManageService:
     @staticmethod
     def save_site_basic(config: BasicConfig):
-        data = config.model_dump_json()
+        data = config.model_dump()
         return KVDao.set_value(data_config.SITE_CONFIG_BASIC, data)
 
     @staticmethod
@@ -17,7 +17,7 @@ class ManageService:
         data = KVDao.get_value(data_config.SITE_CONFIG_BASIC)
         if data:
             try:
-                return BasicConfig.parse_raw(data)
+                return BasicConfig(**data)
             except Exception as e:
                 print(f"GetSiteBasic Err: {e}")
         return BasicConfig(siteName="", domain="", logo="", keyword="", describe="", state=False, hint="")
@@ -28,8 +28,7 @@ class ManageService:
         banners = []
         if data:
             try:
-                banners_data = loads(data)
-                banners = [Banner.parse_obj(b) for b in banners_data]
+                banners = [Banner(**b) for b in data]
                 banners.sort(key=lambda x: x.sort)
             except Exception as e:
                 print(f"GetBanners Error: {e}")
@@ -37,9 +36,8 @@ class ManageService:
 
     @staticmethod
     def save_banners(banners: List[Banner]):
-        banners_list = [b.dict() for b in banners]
-        data = dumps(banners_list, ensure_ascii=False)
-        return KVDao.set_value(data_config.BANNERS_KEY, data)
+        banners_list = [b.model_dump() for b in banners]
+        return KVDao.set_value(data_config.BANNERS_KEY, banners_list)
 
 
 def save_site_basic(config: BasicConfig):

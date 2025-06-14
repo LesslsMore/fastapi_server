@@ -6,7 +6,7 @@ from sqlmodel import SQLModel, Field
 from model.system.movies import MovieDetail, MovieBasicInfo, MovieUrlInfo, MovieDescriptor
 
 
-class MovieDetailModel(SQLModel, MovieDetail, table=True):
+class MovieDetailModel(SQLModel, MovieDetail):
     __tablename__ = 'movie_detail'
     id: int = Field(primary_key=True)
     playFrom: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON))
@@ -15,6 +15,6 @@ class MovieDetailModel(SQLModel, MovieDetail, table=True):
     descriptor: Optional[MovieDescriptor] = Field(default=None, sa_column=Column(JSON))
 
 
-class MovieBasicInfoModel(SQLModel, MovieBasicInfo, table=True):
+class MovieBasicInfoModel(SQLModel, MovieBasicInfo):
     __tablename__ = 'movie_basic_info'
     id: int = Field(primary_key=True)

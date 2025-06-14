@@ -5,22 +5,19 @@ from model.collect.collect_source import SourceGrade, ResourceType, FilmSource
 from dao.collect.categories import CategoryTreeService
 
 import time
-import logging
 
 from model.system.failure_record import FailureRecord
 from datetime import datetime
 
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 from dao.system.failure_record import save_failure_record
-# from dao.system.file_upload import save_virtual_pic
-from dao.system.movies import save_movie_detail_list, save_movie_detail
 from dao.system.search import sync_search_info
 import threading
 
 from dao.system.search_tag import film_zero
 
 
-def collect_film(film_source: FilmSource, h: int, pg: int):
+def collect_film(film_source: FilmSource, h: int, pg: int, params: dict):
     """
     影视详情采集（单一源分页全采集），兼容Go collectFilm主流程。
     :param film_source: FilmSource对象，需包含uri、typeId、grade、syncPictures等字段
@@ -28,14 +25,14 @@ def collect_film(film_source: FilmSource, h: int, pg: int):
     :param pg: 页码
     """
     uri = film_source.uri
-    params = {'pg': str(pg)}
-    if h > 0:
-        params['h'] = str(h)
-    if film_source.type_id and film_source.type_id > 0:
-        params['t'] = str(film_source.type_id)
+    params.update({'pg': str(pg)})
+    # if h > 0:
+    #     params['h'] = str(h)
+    # if film_source.type_id and film_source.type_id > 0:
+    #     params['t'] = str(film_source.type_id)
     # 执行采集方法 获取影片详情list
-    movie_detail_list, err = get_film_detail(uri, params)
-    if err or not movie_detail_list:
+    mac_vod_list, err = get_film_detail(uri, params)
+    if err:
         fr = FailureRecord(
             origin_id=film_source.id,
             origin_name=film_source.name,
@@ -53,32 +50,28 @@ def collect_film(film_source: FilmSource, h: int, pg: int):
         return
     # 通过采集站 Grade 类型, 执行不同的存储逻辑
     if film_source.grade == SourceGrade.MasterCollect:
+        pass
         # 主站点  保存完整影片详情信息到 redis
 
-        try:
-            save_movie_detail_list(movie_detail_list)
-        except Exception as e:
-            print(f"SaveDetails Error: {e}")
-            logging.error('save_details: %s', e)
-        # if getattr(fs, 'syncPictures', False):
-        #     try:
-        #         from plugin.common.conver.Collect import convert_virtual_picture
-        #         save_virtual_pic(convert_virtual_picture(movie_list))
-        #     except Exception as e:
-        #         print(f"SaveVirtualPic Error: {e}")
+        # try:
+        #     save_movie_detail_list(movie_detail_list)
+        # except Exception as e:
+        #     print(f"SaveDetails Error: {e}")
+        #     logging.error('save_details: %s', e)
     elif film_source.grade == SourceGrade.SlaveCollect:
         # 附属站点 仅保存影片播放信息到redis
-        save_site_play_list(film_source.id, movie_detail_list)
+        save_site_play_list(film_source.id, mac_vod_list)
 
 
-def handle_collect(id: str, h: int):
+def handle_collect(h: int, film_source: FilmSource):
+    ""
     """
     影视采集主流程，兼容Go HandleCollect。
     :param id: 采集站ID
     :param h: 时长参数
     """
     # 1. 获取采集站信息
-    film_source = FilmSourceService.find_collect_source_by_id(id)
+    # film_source = FilmSourceService.find_collect_source_by_id(id)
     if not film_source:
         print("Cannot Find Collect Source Site")
         return "Cannot Find Collect Source Site"
@@ -97,7 +90,15 @@ def handle_collect(id: str, h: int):
     params = {}
     if h > 0:
         params['h'] = str(h)
-    if film_source.type_id and film_source.type_id > 0:
+    if 'jkun资源' in film_source.name:
+        # params.update({
+        #     "t": 3,
+        #     "wd": "mide",
+        # })
+        params.update({
+            "wd": "高橋聖子",
+        })
+    elif film_source.type_id and film_source.type_id > 0:
         params['t'] = str(film_source.type_id)
     # 2. 获取分页数，失败重试一次
     try:
@@ -113,15 +114,15 @@ def handle_collect(id: str, h: int):
         # 采集视频资源
         if film_source.interval > 500:
             for i in range(1, page_count + 1):
-                collect_film(film_source, h, i)
+                collect_film(film_source, h, i, params)
                 time.sleep(film_source.interval / 1000)
         elif page_count <= 20:  # 假设 MAXGoroutine=10
             for i in range(1, page_count + 1):
-                collect_film(film_source, h, i)
+                collect_film(film_source, h, i, params)
         else:
             # 简化并发采集为串行（如需并发可用线程池）
             for i in range(1, page_count + 1):
-                collect_film(film_source, h, i)
+                collect_film(film_source, h, i, params)
         # 视频采集完成后同步信息
         if film_source.grade == SourceGrade.MasterCollect:
             if h > 0:
@@ -148,12 +149,13 @@ def collect_film_by_id(ids: str, film_source: FilmSource):
     """
     uri = film_source.uri
     params = {'pg': '1', 'ids': ids}
-    movie_detail_list, err = get_film_detail(uri, params)
-    if err or not movie_detail_list:
+    mac_vod_list, err = get_film_detail(uri, params)
+    if err:
         print(f"get_film_detail Error: {err}")
         return
     if film_source.grade == SourceGrade.MasterCollect:
-        save_movie_detail(movie_detail_list[0])
+        pass
+        # save_movie_detail(movie_detail_list[0])
 
         # if getattr(fs, 'syncPictures', False):
         #     try:
@@ -161,7 +163,7 @@ def collect_film_by_id(ids: str, film_source: FilmSource):
         #     except Exception as e:
         #         print(f"SaveVirtualPic Error: {e}")
     elif film_source.grade == SourceGrade.SlaveCollect:
-        save_site_play_list(film_source.id, movie_detail_list)
+        save_site_play_list(film_source.id, mac_vod_list)
 
 
 def concurrent_page_spider(capacity: int, film_source, h: int, collect_func):
@@ -180,7 +182,7 @@ def batch_collect(h: int, ids: list):
     for id in ids:
         film_source = FilmSourceService.find_collect_source_by_id(id)
         if film_source and film_source.state:
-            threading.Thread(target=handle_collect, args=(film_source.id, h)).start()
+            threading.Thread(target=handle_collect, args=(h, film_source)).start()
 
 
 def auto_collect(h: int):
@@ -189,7 +191,7 @@ def auto_collect(h: int):
     """
     for film_source in FilmSourceService.get_collect_source_list():
         if film_source.state:
-            handle_collect(film_source.id, h)
+            handle_collect(h, film_source)
 
 
 def clear_spider():

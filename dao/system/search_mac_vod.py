@@ -1,24 +1,15 @@
-import logging
-from sqlmodel import not_
-import json
-
-from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail, mac_vod_list_to_movie_detail_list
 from dao.system.search import GetPage
 from model.collect.MacVod import MacVod
-from model.system.virtual_object import SearchVo
-from plugin.db import redis_client, pg_engine
-from sqlalchemy import text, update
-from config.data_config import SEARCH_INFO_TEMP
-from datetime import datetime, timedelta
 from model.system.movies import MovieBasicInfo, MovieDetail
-from model.system.search import SearchInfo
-
 from typing import List, Optional
-from sqlmodel import Session, select, func, or_
+from sqlmodel import func
+
+from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list
 from plugin.db import get_session
 from model.system.response import Page
-from dao.collect.movie_dao import MovieDao, movie_detail_to_movie_basic_info
-from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
+from dao.system.search_tag import get_tags_by_title, handle_tag_str
+import re
+from sqlmodel import or_, select
 
 
 def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
@@ -78,8 +69,8 @@ def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
         # 添加分页
         query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
 
-        search_infos = session.exec(query).all()
-        return search_infos
+        mac_vod_list = session.exec(query).all()
+        return mac_vod_list
     except Exception as e:
         print(f"查询失败: {e}")
         return None
@@ -126,7 +117,7 @@ def search_mac_vod_keyword(keyword: str, page: Page) -> Optional[List[MacVod]]:
         return None
 
 
-def get_relate_mac_vod_basic_info(search: SearchInfo, page: Page) -> Optional[List[MovieBasicInfo]]:
+def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Optional[List[MovieBasicInfo]]:
     """
     根据当前影片信息匹配相关影片
     1. 分类cid
@@ -137,27 +128,31 @@ def get_relate_mac_vod_basic_info(search: SearchInfo, page: Page) -> Optional[Li
     :param page: 分页参数
     :return: 相关影片的基本信息列表
     """
-    import re
-    from sqlmodel import or_, select
+    # cid = movie_detail.cid,
+    # name = movie_detail.name,
+    # class_tag = movie_detail.descriptor.classTag,
+    # area = movie_detail.descriptor.area,
+    # language = movie_detail.descriptor.language,
+
     try:
         session = get_session()
         # 确保分页参数 current 至少为 1
         page.current = max(1, page.current)
         # 处理影片名称，去除季、数字、剧场版等
-        name = re.sub(r'(第.{1,3}季.*)|([0-9]{1,3})|(剧场版)|([\s\S]*$)|(之.*)|([^u4e00-u9fa5\w].*)', '', search.name)
+        name = re.sub(r'(第.{1,3}季.*)|([0-9]{1,3})|(剧场版)|([\s\S]*$)|(之.*)|([^u4e00-u9fa5\w].*)', '', movie_detail.name)
         # 如果处理后长度没变且大于10，做截断
-        if len(name) == len(search.name) and len(name) > 10:
+        if len(name) == len(movie_detail.name) and len(name) > 10:
             name = name[:((len(name) // 5) * 3)]
         # 名称相似匹配
         query = select(MacVod).where(
-            MacVod.type_id == search.cid,
+            MacVod.type_id == movie_detail.cid,
             or_(MacVod.vod_name.contains(name), MacVod.vod_sub.contains(name))
         )
         # 排除自身mid
-        if getattr(search, 'mid', None):
-            query = query.where(MacVod.vod_id != search.mid)
+        if movie_detail.id:
+            query = query.where(MacVod.vod_id != movie_detail.id)
         # 剧情标签模糊匹配
-        class_tag = (search.class_tag or '').replace(' ', '')
+        class_tag = (movie_detail.descriptor.classTag or '').replace(' ', '')
         tag_conditions = []
         if ',' in class_tag:
             for t in class_tag.split(','):
@@ -172,11 +167,7 @@ def get_relate_mac_vod_basic_info(search: SearchInfo, page: Page) -> Optional[Li
         # 分页
         query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         mac_vod_list = session.exec(query).all()
-        movie_basic_info_list = []
-        for mac_vod in mac_vod_list:
-            movie_detail = mac_vod_to_movie_detail(mac_vod)
-            movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
-            movie_basic_info_list.append(movie_basic_info)
+        movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
     except Exception as e:
         print(f"查询相关影片失败: {e}")
@@ -209,12 +200,41 @@ def get_mac_vod_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[L
         session = get_session()
         mac_vod_list = session.exec(query).all()
 
-        movie_basic_info_list = []
-        for mac_vod in mac_vod_list:
-            movie_detail = mac_vod_to_movie_detail(mac_vod)
-            movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
-            movie_basic_info_list.append(movie_basic_info)
+        movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
     except Exception as e:
         print(f"查询失败: {e}")
         return None
+
+
+def get_search_tag_by_stat(pid: int) -> dict:
+    """
+    通过影片分类Pid返回对应分类的tag信息
+    :param pid: 分类ID
+    :return: 包含标签信息的字典
+    """
+    result = {}
+
+    # 获取标题信息
+    titles = {
+        "Category": "类型",
+        "Plot": "剧情",
+        "Area": "地区",
+        "Language": "语言",
+        "Year": "年份",
+        "Initial": "首字母",
+        "Sort": "排序"
+    }
+
+    result["titles"] = titles
+
+    # 处理标签信息
+    tag_map = {}
+    for title in titles:
+        tags = get_tags_by_title(pid, title)
+        tag_map[title] = handle_tag_str(title, tags)
+
+    result["tags"] = tag_map
+    result["sortList"] = ["Category", "Plot", "Area", "Language", "Year", "Sort"]
+
+    return result

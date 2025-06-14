@@ -1,20 +1,19 @@
-from sqlalchemy import text
 
-from model.system.movies import MovieDetail, MovieDescriptor, MovieUrlInfo
+from sqlalchemy import text, func
 
-from typing import List
+from model.system.movies import MovieUrlInfo
+from typing import List, Tuple
 from model.collect.MacVod import MacVod
-from plugin.db import pg_engine
 from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
 from plugin.db import get_session, redis_client
 from typing import Optional
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import select
 
 
 class MacVodDao:
     @staticmethod
-# 批量保存原始影片详情数据到MySQL（伪实现，需结合ORM完善）
+    # 批量保存原始影片详情数据到MySQL（伪实现，需结合ORM完善）
     def batch_save_film_detail(film_detail_list: List[MacVod]):
         session = get_session()
         if not film_detail_list:
@@ -34,6 +33,64 @@ class MacVodDao:
             results = session.exec(statement)
             item = results.first()
             return item
+
+    @staticmethod
+    def count_vod_class_tags(type_id_1: int) -> List[Tuple[str, int]]:
+        """
+        统计指定 type_id_1 的所有记录中 vod_class 各 tag 的出现次数。
+
+        :param session: 数据库会话
+        :param type_id_1: 用于筛选记录的一级分类ID
+        :return: 返回 tag 及其出现次数的列表
+        """
+        with get_session() as session:
+            statement = (
+                select(
+                    text("UNNEST(STRING_TO_ARRAY(vod_class, ',')) AS tag"),
+                    func.count().label("count")
+                )
+                .where(
+                    (MacVod.type_id_1 == type_id_1) &
+                    (MacVod.vod_class.is_not(None))
+                )
+                .group_by(text("tag"))
+                .order_by(text("count DESC"))
+            )
+
+            result = session.exec(statement).all()
+            return [(row.count, row.tag) for row in result]
+
+    @staticmethod
+    def count_vod_key_tags(field_name, split, type_id_1: int) -> List[Tuple[str, int]]:
+        """
+        统计指定 type_id_1 的所有记录中 vod_class 各 tag 的出现次数（纯 SQL 实现）。
+
+        :param session: 数据库会话
+        :param type_id_1: 用于筛选记录的一级分类ID
+        :return: 返回 tag 及其出现次数的列表
+        """
+        # 白名单校验防止 SQL 注入
+        allowed_fields = {"vod_class", "vod_area", "vod_lang"}
+        if field_name not in allowed_fields:
+            raise ValueError(f"Invalid field name: {field_name}")
+        with get_session() as session:
+            query = text(f"""
+                SELECT 
+                    UNNEST(STRING_TO_ARRAY({field_name}, :split)) AS tag,
+                    COUNT(*) AS count
+                FROM 
+                    mac_vod
+                WHERE 
+                    type_id_1 = :type_id_1
+                    AND vod_class IS NOT NULL
+                GROUP BY 
+                    tag
+                ORDER BY 
+                    count DESC;
+            """)
+
+            result = session.execute(query, {"split": split, "type_id_1": type_id_1}).fetchall()
+            return [(row[1], row[0]) for row in result]
 
     @staticmethod
     def select_mac_vod_list(vod_id_list: List[int]):
@@ -71,49 +128,6 @@ def get_original_detail_by_id(id: int) -> Optional[MacVod]:
         return fd
     except Exception:
         return None
-
-
-def mac_vod_list_to_movie_detail_list(mac_vod_list: List[MacVod]) -> List[MovieDetail]:
-    return [mac_vod_to_movie_detail(mac_vod) for mac_vod in mac_vod_list]
-
-
-def mac_vod_to_movie_detail(film_detail: MacVod) -> MovieDetail:
-    movie_detail = MovieDetail(
-        id=film_detail.vod_id,
-        cid=film_detail.type_id,
-        pid=film_detail.type_id_1,
-        name=film_detail.vod_name,
-        picture=film_detail.vod_pic,
-        DownFrom=film_detail.vod_down_from,
-        descriptor=MovieDescriptor(
-            subTitle=film_detail.vod_sub,
-            cName=film_detail.type_name if hasattr(film_detail, 'type_name') else None,
-            enName=film_detail.vod_en,
-            initial=film_detail.vod_letter,
-            classTag=film_detail.vod_class,
-            actor=film_detail.vod_actor,
-            director=film_detail.vod_director,
-            writer=film_detail.vod_writer,
-            blurb=film_detail.vod_blurb,
-            remarks=film_detail.vod_remarks,
-            releaseDate=film_detail.vod_pub_date,
-            area=film_detail.vod_area,
-            language=film_detail.vod_lang,
-            year=film_detail.vod_year,
-            state=film_detail.vod_state,
-            updateTime=film_detail.vod_time,
-            addTime=film_detail.vod_time_add,
-            dbId=film_detail.vod_douban_id,
-            dbScore=film_detail.vod_douban_score,
-            hits=film_detail.vod_hits,
-            content=film_detail.vod_content,
-        ),
-        playFrom=film_detail.vod_play_from.split(
-            film_detail.vod_play_note) if film_detail.vod_play_from and film_detail.vod_play_note else None,
-        playList=gen_film_play_list(film_detail.vod_play_url, film_detail.vod_play_note),
-        downloadList=gen_film_play_list(film_detail.vod_down_url, film_detail.vod_play_note),
-    )
-    return movie_detail
 
 
 def gen_film_play_list(play_url: str, separator: str) -> List[List[MovieUrlInfo]]:

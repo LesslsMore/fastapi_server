@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 
 # SearchInfo 数据模型
-class SearchInfo(SQLModel, table=True):
+class SearchInfo(SQLModel):
     __tablename__ = 'search'
     id: Optional[int] = Field(
         default=None,

@@ -1,7 +1,7 @@
 from model.collect.MacType import MacType
 from dao.collect.MacTypeDao import MacTypeDao
 from dao.collect.categories import CategoryTreeService
-from dao.collect.MacVodDao import mac_vod_list_to_movie_detail_list, MacVodDao
+from dao.collect.MacVodDao import MacVodDao
 from dao.collect.film_list import save_film_class
 from model.collect.collect_source import FilmSource, CollectResultModel
 
@@ -39,10 +39,11 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
         # detail_page 应包含 'list' 字段，对应 FilmDetailLPage 结构
         film_detail_list = detail_page.get('list', [])
         # 保存原始详情到 redis
-        MacVodDao.batch_save_film_detail([MacVod(**item) for item in film_detail_list])
+        mac_vod_list = [MacVod(**item) for item in film_detail_list]
+        MacVodDao.batch_save_film_detail(mac_vod_list)
         # 转换为业务 MovieDetail
-        movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])
-        return movie_detail_list, None
+        # movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])
+        return mac_vod_list, None
     except Exception as e:
         return [], f'解析失败: {e}'
 

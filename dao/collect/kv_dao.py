@@ -11,7 +11,7 @@ class KVModel(SQLModel, table=True):
     __tablename__ = 'key_value'
     id: int = Field(primary_key=True)
     key: Optional[str] = Field(default=None, description="key", unique=True)
-    value: Optional[str] = Field(default=None, sa_column=Column(JSON))
+    value: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     # __table_args__ = (
     #     UniqueConstraint('key', name='uq_key')
     # )

@@ -1,17 +1,16 @@
 from typing import List, Dict, Any, Optional
 import json
 
-from dao.collect.MacVodDao import MacVodDao, mac_vod_to_movie_detail
+from dao.collect.MacVodDao import MacVodDao
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
-    get_relate_mac_vod_basic_info
+    get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.categories import CategoryTree
-from dao.collect.movie_dao import MovieDao, movie_detail_to_movie_basic_info
 from dao.collect.multiple_source import get_multiple_play
 from dao.collect.categories import CategoryTreeService
 
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
-from model.system.search import SearchInfo
+from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_to_movie_detail
 from plugin.db import redis_client
 from config.data_config import INDEX_CACHE_KEY
 from model.collect.collect_source import SourceGrade
@@ -51,15 +50,21 @@ class IndexLogic:
             else:
                 movies = get_movie_list_by_cid(c.id, page)
                 hot_movies = get_hot_movie_by_cid(c.id, page)
+            movies_data = []
+            if movies:
+                movies_data = [m.model_dump() for m in movies]
+            hot_movies_data = []
+            if hot_movies:
+                hot_movies_data = [h.model_dump() for h in hot_movies]
             item = {
-                "nav": json.loads(c.model_dump_json()),
-                "movies": [json.loads(m.model_dump_json()) for m in movies],
-                "hot": [json.loads(h.model_dump_json()) for h in hot_movies]
+                "nav": c.model_dump(),
+                "movies": movies_data,
+                "hot": hot_movies_data,
             }
             content.append(item)
         info["content"] = content
         # 3. 轮播
-        info["banners"] = [json.loads(b.model_dump_json()) for b in ManageService.get_banners()]
+        info["banners"] = [b.model_dump() for b in ManageService.get_banners()]
         redis_client.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
         return info
 
@@ -117,11 +122,7 @@ class IndexLogic:
         :return: 影片基本信息列表
         """
         mac_vod_list = search_mac_vod_keyword(keyword, page)
-        movie_basic_info_list = []
-        for mac_vod in mac_vod_list:
-            movie_detail = mac_vod_to_movie_detail(mac_vod)
-            movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
-            movie_basic_info_list.append(movie_basic_info)
+        movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
 
     @staticmethod
@@ -190,11 +191,7 @@ class IndexLogic:
     @staticmethod
     def get_mac_vod_list_by_tags(tags: Dict[str, Any], page: Page) -> List[Dict[str, Any]]:
         mac_vod_list = get_mac_vod_list_by_tags(tags, page)
-        movie_basic_info_list = []
-        for mac_vod in mac_vod_list:
-            movie_detail = mac_vod_to_movie_detail(mac_vod)
-            movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
-            movie_basic_info_list.append(movie_basic_info)
+        movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
 
     @staticmethod
@@ -204,7 +201,8 @@ class IndexLogic:
         :param pid: 分类ID
         :return: 包含搜索标签的字典
         """
-        return get_search_tag(pid)
+        # return get_search_tag(pid)
+        return get_search_tag_by_stat(pid)
 
     @staticmethod
     def get_film_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:
@@ -251,12 +249,12 @@ class IndexLogic:
         :param page: 分页参数对象
         :return: 相关影片的基本信息列表
         """
-        search = SearchInfo(
-            cid=movie_detail.cid,
-            name=movie_detail.name,
-            class_tag=movie_detail.descriptor.classTag,
-            area=movie_detail.descriptor.area,
-            language=movie_detail.descriptor.language,
-        )
-        return get_relate_mac_vod_basic_info(search, page)
+        # search = SearchInfo(
+        #     cid=movie_detail.cid,
+        #     name=movie_detail.name,
+        #     class_tag=movie_detail.descriptor.classTag,
+        #     area=movie_detail.descriptor.area,
+        #     language=movie_detail.descriptor.language,
+        # )
+        return get_relate_mac_vod_basic_info(movie_detail, page)
         # return get_relate_movie_basic_info(search, page)

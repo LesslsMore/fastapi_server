@@ -20,12 +20,12 @@ class SpiderLogic:
 
     @staticmethod
     def start_collect(id: str, h: int):
-        fs = FilmSourceService.find_collect_source_by_id(id)
-        if not fs:
+        film_source = FilmSourceService.find_collect_source_by_id(id)
+        if not film_source:
             raise Exception("采集任务开启失败采集站信息不存在")
 
         def run():
-            err = handle_collect(id, h)
+            err = handle_collect(h, film_source)
             if err:
                 print(f"资源站[{id}]采集任务执行失败: {err}")
 
