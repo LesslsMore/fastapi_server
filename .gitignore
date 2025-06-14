@@ -6,3 +6,5 @@ config/config.yml
 /config/.env.win
 /config/.env.vercel
 /config/.env.render
+/.VSCodeCounter/
+/logs/

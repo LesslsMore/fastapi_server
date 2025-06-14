@@ -1,14 +1,19 @@
-from service.collect.film_detail import batch_save_film_detail, convert_film_details
-from service.collect.film_list import save_film_class
+from model.collect.MacType import MacType
+from dao.collect.MacTypeDao import MacTypeDao
+from dao.collect.categories import CategoryTreeService
+from dao.collect.MacVodDao import mac_vod_list_to_movie_detail_list, MacVodDao
+from dao.collect.film_list import save_film_class
 from model.collect.collect_source import FilmSource, CollectResultModel
 
 import json
-from model.collect.film_detail import FilmDetail
+from model.collect.MacVod import MacVod
 from plugin.common.conver.collect import gen_category_tree
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
-def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 10) -> Optional[bytes]:
+
+def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 10) -> Optional[
+    bytes]:
     try:
         # 设置随机 User-Agent，可扩展
         default_headers = {'User-Agent': 'Mozilla/5.0'}
@@ -20,6 +25,7 @@ def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] 
         return None
     except Exception as e:
         return None
+
 
 def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 10):
     # 设置分页请求参数
@@ -33,15 +39,16 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
         # detail_page 应包含 'list' 字段，对应 FilmDetailLPage 结构
         film_detail_list = detail_page.get('list', [])
         # 保存原始详情到 redis
-        batch_save_film_detail([FilmDetail(**item) for item in film_detail_list])
+        MacVodDao.batch_save_film_detail([MacVod(**item) for item in film_detail_list])
         # 转换为业务 MovieDetail
-        movie_detail_list = convert_film_details([FilmDetail(**item) for item in film_detail_list])
+        movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])
         return movie_detail_list, None
     except Exception as e:
         return [], f'解析失败: {e}'
 
 
-def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 10) -> int:
+def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None,
+                   timeout: int = 10) -> int:
     """
     获取分页总页数，对应Go GetPageCount。
     """
@@ -59,7 +66,8 @@ def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str,
         raise Exception(f'解析分页数失败: {e}')
 
 
-def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
+def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
+                      timeout: int = 10):
     """
     获取影视分类树，对应Go GetCategoryTree。
     """
@@ -82,7 +90,40 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
         raise Exception(f'解析分类树失败: {e}')
 
 
-def custom_search(uri: str, wd: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
+def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
+                      timeout: int = 10):
+    """
+    获取影视分类树，对应Go GetCategoryTree。
+    """
+    params = params.copy() if params else {}
+    params['ac'] = 'list'
+    params['pg'] = '1'
+    resp_bytes = api_get(film_source.uri, params, headers, timeout)
+    if not resp_bytes:
+        raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
+    try:
+        film_list_page = json.loads(resp_bytes)
+        cl = film_list_page.get('class', [])
+        # 假设有 GenCategoryTree、SaveFilmClass 方法
+        # from plugin.common.conver.Collect import gen_category_tree
+        # from model.collect.film_list import save_film_class
+        tree = gen_category_tree(cl)
+        save_film_class(cl)
+        return tree
+    except Exception as e:
+        raise Exception(f'解析分类树失败: {e}')
+
+
+def get_category_tree_by_db():
+    mac_type_list: List[MacType] = MacTypeDao.get_mac_type_list()
+    cl = [mac_type.model_dump() for mac_type in mac_type_list]
+    category_tree = gen_category_tree(cl)
+    save_film_class(cl)
+    CategoryTreeService.save_category_tree(category_tree)
+
+
+def custom_search(uri: str, wd: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
+                  timeout: int = 10):
     """
     自定义搜索，支持影片名模糊搜索。
     """
@@ -96,12 +137,13 @@ def custom_search(uri: str, wd: str, params: Dict[str, Any] = None, headers: Opt
     try:
         detail_page = json.loads(resp_bytes)
         detail_list = detail_page.get('list', [])
-        return [FilmDetail(**item) for item in detail_list]
+        return [MacVod(**item) for item in detail_list]
     except Exception:
         return []
 
 
-def get_single_film(uri: str, ids: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
+def get_single_film(uri: str, ids: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
+                    timeout: int = 10):
     """
     获取单一影片信息。
     """
@@ -115,7 +157,7 @@ def get_single_film(uri: str, ids: str, params: Dict[str, Any] = None, headers: 
     try:
         detail_page = json.loads(resp_bytes)
         detail_list = detail_page.get('list', [])
-        return FilmDetail(**detail_list[0]) if detail_list else None
+        return MacVod(**detail_list[0]) if detail_list else None
     except Exception:
         return None
 
@@ -128,7 +170,8 @@ def failure_record(info: Dict[str, Any]):
     print(f"FailureRecord: {info}")
 
 
-def film_detail_retry(uri: str, params: Dict[str, Any], retry: int = 1, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
+def film_detail_retry(uri: str, params: Dict[str, Any], retry: int = 1, headers: Optional[Dict[str, str]] = None,
+                      timeout: int = 10):
     """
     影片详情重试机制。
     """

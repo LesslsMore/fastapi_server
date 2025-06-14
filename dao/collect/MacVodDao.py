@@ -3,58 +3,81 @@ from sqlalchemy import text
 from model.system.movies import MovieDetail, MovieDescriptor, MovieUrlInfo
 
 from typing import List
-from model.collect.film_detail import FilmDetail
+from model.collect.MacVod import MacVod
 from plugin.db import pg_engine
 from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
 from plugin.db import get_session, redis_client
 from typing import Optional
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session, SQLModel, select
 
 
+class MacVodDao:
+    @staticmethod
 # 批量保存原始影片详情数据到MySQL（伪实现，需结合ORM完善）
-def batch_save_film_detail(film_detail_list: List[FilmDetail]):
-    session = get_session()
-    if not film_detail_list:
-        return
-    table = FilmDetail.__table__
-    data = [d.dict() if hasattr(d, 'dict') else d.__dict__ for d in film_detail_list]
-    stmt = insert(table).values(data)
-    update_dict = {c.name: getattr(stmt.excluded, c.name) for c in table.columns if c.name != 'vod_id'}
-    stmt = stmt.on_conflict_do_update(index_elements=['vod_id'], set_=update_dict)
-    session.execute(stmt)
-    session.commit()
+    def batch_save_film_detail(film_detail_list: List[MacVod]):
+        session = get_session()
+        if not film_detail_list:
+            return
+        table = MacVod.__table__
+        data = [d.dict() if hasattr(d, 'dict') else d.__dict__ for d in film_detail_list]
+        stmt = insert(table).values(data)
+        update_dict = {c.name: getattr(stmt.excluded, c.name) for c in table.columns if c.name != 'vod_id'}
+        stmt = stmt.on_conflict_do_update(index_elements=['vod_id'], set_=update_dict)
+        session.execute(stmt)
+        session.commit()
+
+    @staticmethod
+    def select_mac_vod(vod_id: int):
+        with get_session() as session:
+            statement = select(MacVod).where(MacVod.vod_id == vod_id)
+            results = session.exec(statement)
+            item = results.first()
+            return item
+
+    @staticmethod
+    def select_mac_vod_list(vod_id_list: List[int]):
+        with get_session() as session:
+            # 构建批量查询语句
+            statement = select(MacVod).where(
+                MacVod.vod_id.in_(vod_id_list)  # 使用 IN 操作符匹配多个 ID
+            )
+            results = session.exec(statement)
+            return results.all()  # 返回所有匹配结果的列表
+
 
 # 保存未处理的完整影片详情信息到redis
-def save_original_detail(fd: FilmDetail):
+def save_original_detail(fd: MacVod):
     data = fd.json(ensure_ascii=False)
     # redis = redis_client or init_redis_conn()
     redis_client.set(ORIGINAL_FILM_DETAIL_KEY % (fd.vod_id), data, ex=RESOURCE_EXPIRED)
 
+
 # 保存未处理的完整影片详情信息到mysql（伪实现）
-def save_original_detail2mysql(fd: FilmDetail):
+def save_original_detail2mysql(fd: MacVod):
     session = get_session()
     # 假设 FilmDetail 已继承 SQLModel 并映射表结构，否则需补充
     session.bulk_save_objects(fd)
     session.commit()
 
+
 # 根据ID获取原始影片详情数据
-def get_original_detail_by_id(id: int) -> Optional[FilmDetail]:
+def get_original_detail_by_id(id: int) -> Optional[MacVod]:
     data = redis_client.get(ORIGINAL_FILM_DETAIL_KEY % (id))
     if not data:
         return None
     try:
-        fd = FilmDetail.parse_raw(data)
+        fd = MacVod.parse_raw(data)
         return fd
     except Exception:
         return None
 
 
-def convert_film_details(film_detail_list: List[FilmDetail]) -> List[MovieDetail]:
-    return [convert_film_detail(film_detail) for film_detail in film_detail_list]
+def mac_vod_list_to_movie_detail_list(mac_vod_list: List[MacVod]) -> List[MovieDetail]:
+    return [mac_vod_to_movie_detail(mac_vod) for mac_vod in mac_vod_list]
 
 
-def convert_film_detail(film_detail: FilmDetail) -> MovieDetail:
+def mac_vod_to_movie_detail(film_detail: MacVod) -> MovieDetail:
     movie_detail = MovieDetail(
         id=film_detail.vod_id,
         cid=film_detail.type_id,
@@ -85,7 +108,8 @@ def convert_film_detail(film_detail: FilmDetail) -> MovieDetail:
             hits=film_detail.vod_hits,
             content=film_detail.vod_content,
         ),
-        playFrom=film_detail.vod_play_from.split(film_detail.vod_play_note) if film_detail.vod_play_from and film_detail.vod_play_note else None,
+        playFrom=film_detail.vod_play_from.split(
+            film_detail.vod_play_note) if film_detail.vod_play_from and film_detail.vod_play_note else None,
         playList=gen_film_play_list(film_detail.vod_play_url, film_detail.vod_play_note),
         downloadList=gen_film_play_list(film_detail.vod_down_url, film_detail.vod_play_note),
     )
@@ -123,19 +147,3 @@ def convert_play_url(play_url: str) -> List[MovieUrlInfo]:
         else:
             l.append(MovieUrlInfo(episode="(｀・ω・´)", link=p))
     return l
-
-
-def exist_film_detail_table() -> bool:
-    """
-    判断是否存在FilmDetail Table
-    """
-    session = get_session()
-    result = session.execute(text("""
-    SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'film_detail'
-    )
-    """)).fetchone()
-    return result[0]
-
-

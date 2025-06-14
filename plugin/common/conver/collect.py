@@ -1,4 +1,4 @@
-from model.system.categories import Category, CategoryTree
+from model.collect.categories import CategoryTree
 
 
 def gen_category_tree(film_classes):

@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from config import data_config
+from model.system.file_upload import FileInfo
 from plugin.db import redis_client
 
 # -------------------------------- 本地图库 --------------------------------

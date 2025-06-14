@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, Field, select
 from config.data_config import MULTIPLE_SITE_DETAIL
 from model.system.movies import MovieDetail, MovieUrlInfo
 from plugin.db import redis_client, get_session
-from service.system.movies import generate_hash_key
+from dao.system.movies import generate_hash_key
 
 
 class MultipleSourceModel(SQLModel, table=True):

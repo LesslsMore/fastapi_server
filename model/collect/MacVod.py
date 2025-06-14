@@ -1,7 +1,8 @@
 from typing import Optional, List, Any
 from sqlmodel import SQLModel, Field
 
-class FilmDetail(SQLModel, table=True):
+
+class MacVod(SQLModel, table=True):
     __tablename__ = "mac_vod"
     vod_id: int = Field(primary_key=True, description="影片ID")
     type_id: int = Field(description="分类ID")
@@ -87,6 +88,7 @@ class FilmDetail(SQLModel, table=True):
     vod_plot_detail: Optional[str] = Field(default=None, description="分集剧情详情")
     type_name: Optional[str] = Field(default=None, description="分类名称")
 
+
 class FilmDetailLPage(SQLModel):
     code: int
     msg: str
@@ -94,4 +96,4 @@ class FilmDetailLPage(SQLModel):
     pagecount: int
     limit: Any
     total: int
-    list: List[FilmDetail]
+    list: List[MacVod]

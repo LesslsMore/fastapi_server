@@ -1,8 +1,8 @@
 import json
 
-from model.system.categories import CategoryTree
-from service.collect.kv_dao import KVModel
-from service.system.categories import CategoryTreeService
+from model.collect.categories import CategoryTree
+from dao.collect.kv_dao import KVModel
+from dao.collect.categories import CategoryTreeService
 
 
 def test_save_category_tree():

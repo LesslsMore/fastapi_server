@@ -1,8 +1,8 @@
-from service.collect.multiple_source import save_site_play_list
-from service.collect.collect_source import get_collect_source_list, find_collect_source_by_id, FilmSourceService
+from dao.collect.multiple_source import save_site_play_list
+from dao.collect.collect_source import FilmSourceService
 
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource
-from service.system.categories import exists_category_tree, save_category_tree, CategoryTreeService
+from dao.collect.categories import CategoryTreeService
 
 import time
 import logging
@@ -11,11 +11,13 @@ from model.system.failure_record import FailureRecord
 from datetime import datetime
 
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
-from service.system.failure_record import save_failure_record
-# from service.system.file_upload import save_virtual_pic
-from service.system.movies import save_movie_detail_list, save_movie_detail
-from service.system.search import sync_search_info, film_zero
+from dao.system.failure_record import save_failure_record
+# from dao.system.file_upload import save_virtual_pic
+from dao.system.movies import save_movie_detail_list, save_movie_detail
+from dao.system.search import sync_search_info
 import threading
+
+from dao.system.search_tag import film_zero
 
 
 def collect_film(film_source: FilmSource, h: int, pg: int):

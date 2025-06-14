@@ -1,6 +1,7 @@
 import threading
 
-from service.collect.collect_source import find_collect_source_by_id, get_collect_source_list_by_grade, \
+from plugin.spider.spider_core import get_category_tree_by_db
+from dao.collect.collect_source import find_collect_source_by_id, get_collect_source_list_by_grade, \
     FilmSourceService
 from model.collect.collect_source import SourceGrade
 from plugin.spider.spider import batch_collect, handle_collect, auto_collect, clear_spider, star_zero, \
@@ -56,3 +57,7 @@ class SpiderLogic:
                 threading.Thread(target=collect_category, args=(fs,)).start()
                 return
         raise Exception("未获取到已启用的主采集站信息")
+
+    @staticmethod
+    def FilmClassCollect():
+        get_category_tree_by_db()

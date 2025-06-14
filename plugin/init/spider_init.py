@@ -1,6 +1,6 @@
 from typing import List
 
-from service.collect.collect_source import save_collect_source_list, exist_collect_source_list, FilmSourceService
+from dao.collect.collect_source import save_collect_source_list, exist_collect_source_list, FilmSourceService
 from model.collect.collect_source import FilmSource, SourceGrade, CollectResultModel, ResourceType
 from plugin.common.util.string_util import generate_salt
 
@@ -16,6 +16,9 @@ def film_source_init():
                    collectType=ResourceType.CollectVideo, state=False),
         FilmSource(id=generate_salt(), type_id=30, name="如意资源", uri="https://cj.rycjapi.com/api.php/provide/vod",
                    resultModel=CollectResultModel.JsonResult, grade=SourceGrade.SlaveCollect, syncPictures=False,
+                   collectType=ResourceType.CollectVideo, state=True),
+        FilmSource(id=generate_salt(), type_id=6, name="魔都资源", uri="https://www.mdzyapi.com/api.php/provide/vod",
+                   resultModel=CollectResultModel.JsonResult, grade=SourceGrade.MasterCollect, syncPictures=False,
                    collectType=ResourceType.CollectVideo, state=True),
         FilmSource(id=generate_salt(), type_id=30, name="HD(LZ)", uri="https://cj.lziapi.com/api.php/provide/vod/",
                    resultModel=CollectResultModel.JsonResult, grade=SourceGrade.MasterCollect, syncPictures=False,

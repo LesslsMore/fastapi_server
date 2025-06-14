@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from logic.manage_logic import ManageLogic
+from service.manage_logic import ManageLogic
 from model.system.manage import BasicConfig, Banner
-from model.system import response
+from utils.response_util import ResponseUtil
 from typing import List, Optional
 
 from plugin.middleware.handle_jwt import AuthToken
@@ -13,26 +13,27 @@ manageController = APIRouter(prefix='/manage', dependencies=[Depends(AuthToken)]
 @manageController.get("/index")
 def manage_index():
     # 这里可以根据实际业务返回管理后台首页数据
-    return response.success({}, "管理后台首页数据获取成功")
+    data = {}
+    return ResponseUtil.success(data=data, msg="管理后台首页数据获取成功")
 
 
 # /manage/config/basic
 @manageController.get("/config/basic")
 def site_basic_config():
     data = ManageLogic.get_site_basic_config()
-    return response.success(data, "基础配置信息获取成功")
+    return ResponseUtil.success(data=data, msg="基础配置信息获取成功")
 
 
 # /manage/config/basic/update
 @manageController.post("/manage/config/basic/update")
 def update_site_basic(config: BasicConfig):
     if not config.domain or not config.site_name:
-        return response.failed("域名和网站名称不能为空")
+        return ResponseUtil.error(msg="域名和网站名称不能为空")
     try:
         ManageLogic.update_site_basic(config)
-        return response.success_only_msg("更新成功")
+        return ResponseUtil.success(msg="更新成功")
     except Exception as e:
-        return response.failed(f"网站配置更新失败: {e}")
+        return ResponseUtil.error(msg=f"网站配置更新失败: {e}")
 
 
 # /manage/config/basic/reset
@@ -40,16 +41,16 @@ def update_site_basic(config: BasicConfig):
 def reset_site_basic():
     try:
         ManageLogic.reset_site_basic()
-        return response.success_only_msg("配置信息重置成功")
+        return ResponseUtil.success(msg="配置信息重置成功")
     except Exception as e:
-        return response.failed(f"配置信息重置失败: {e}")
+        return ResponseUtil.error(msg=f"配置信息重置失败: {e}")
 
 
 # /manage/banner/list
 @manageController.get("/manage/banner/list")
 def banner_list():
     banners = ManageLogic.get_banners()
-    return response.success(banners, "轮播图列表获取成功")
+    return ResponseUtil.success(data=banners, msg="轮播图列表获取成功")
 
 
 # /manage/banner/find
@@ -58,8 +59,8 @@ def banner_find(id: str = Query(...)):
     banners = ManageLogic.get_banners()
     for b in banners:
         if b.id == id:
-            return response.success(b, "Banner信息获取成功")
-    return response.failed("Banner信息获取失败")
+            return ResponseUtil.success(data=b, msg="Banner信息获取成功")
+    return ResponseUtil.error(msg="Banner信息获取失败")
 
 
 # /manage/banner/add
@@ -67,15 +68,15 @@ def banner_find(id: str = Query(...)):
 def banner_add(banner: Banner):
     banners = ManageLogic.get_banners()
     if len(banners) >= 6:
-        return response.failed("Banners最大阈值为6, 无法添加新的banner信息")
+        return ResponseUtil.error(msg="Banners最大阈值为6, 无法添加新的banner信息")
     import uuid
     banner.id = str(uuid.uuid4())
     banners.append(banner)
     try:
         ManageLogic.save_banners(banners)
-        return response.success_only_msg("海报信息添加成功")
+        return ResponseUtil.success(msg="海报信息添加成功")
     except Exception as e:
-        return response.failed(f"Banners信息添加失败, {e}")
+        return ResponseUtil.error(msg=f"Banners信息添加失败, {e}")
 
 
 # /manage/banner/update
@@ -87,10 +88,10 @@ def banner_update(banner: Banner):
             banners[i] = banner
             try:
                 ManageLogic.save_banners(banners)
-                return response.success_only_msg("海报信息更新成功")
+                return ResponseUtil.success(msg="海报信息更新成功")
             except Exception as e:
-                return response.failed(f"海报信息更新失败: {e}")
-    return response.failed("海报信息更新失败, 未匹配对应Banner信息")
+                return ResponseUtil.error(msg=f"海报信息更新失败: {e}")
+    return ResponseUtil.error(msg="海报信息更新失败, 未匹配对应Banner信息")
 
 
 # /manage/banner/del
@@ -101,5 +102,5 @@ def banner_del(id: str = Query(...)):
         if b.id == id:
             banners.pop(i)
             ManageLogic.save_banners(banners)
-            return response.success_only_msg("海报信息删除成功")
-    return response.failed("海报信息删除失败")
+            return ResponseUtil.success(msg="海报信息删除成功")
+    return ResponseUtil.error(msg="海报信息删除失败")
