@@ -2,6 +2,7 @@ import os
 import binascii
 import hashlib
 
+
 def generate_salt() -> str:
     """
     生成 length为16的随机字符串 (16进制表示)
