@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 
@@ -9,7 +11,7 @@ from exceptions.exception import (
     ServiceException,
     ServiceWarning,
 )
-from utils.log_util import logger
+# from utils.log_util import logger
 from utils.response_util import jsonable_encoder, JSONResponse, ResponseUtil
 
 
@@ -31,7 +33,7 @@ def handle_exception(app: FastAPI):
     # 自定义模型检验异常
     @app.exception_handler(ModelValidatorException)
     async def model_validator_exception_handler(request: Request, exc: ModelValidatorException):
-        logger.warning(exc.message)
+        logging.warning(exc.message)
         return ResponseUtil.failure(data=exc.data, msg=exc.message)
 
     # 自定义字段检验异常
@@ -48,13 +50,13 @@ def handle_exception(app: FastAPI):
     # 自定义服务异常
     @app.exception_handler(ServiceException)
     async def service_exception_handler(request: Request, exc: ServiceException):
-        logger.error(exc.message)
+        logging.error(exc.message)
         return ResponseUtil.error(data=exc.data, msg=exc.message)
 
     # 自定义服务警告
     @app.exception_handler(ServiceWarning)
     async def service_warning_handler(request: Request, exc: ServiceWarning):
-        logger.warning(exc.message)
+        logging.warning(exc.message)
         return ResponseUtil.failure(data=exc.data, msg=exc.message)
 
     # 处理其他http请求异常
@@ -67,5 +69,5 @@ def handle_exception(app: FastAPI):
     # 处理其他异常
     @app.exception_handler(Exception)
     async def exception_handler(request: Request, exc: Exception):
-        logger.exception(exc)
+        logging.exception(exc)
         return ResponseUtil.error(msg=str(exc))
