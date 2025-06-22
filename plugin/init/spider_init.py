@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from dao.collect.collect_source import FilmSourceService
@@ -40,4 +41,4 @@ def film_source_init():
     ]
     err = FilmSourceService.save_collect_source_list(l)
     if err:
-        print(f"SaveSourceApiList Error: {err}")
+        logging.info(f"SaveSourceApiList Error: {err}")

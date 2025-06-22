@@ -21,7 +21,8 @@ def init_postgres():
     else:
         pg = config['postgres']
         db_url = f"postgresql+psycopg2://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{pg['db']}"
-    pg_engine = create_engine(db_url, echo=True, pool_pre_ping=True)
+    echo = False
+    pg_engine = create_engine(db_url, echo=echo, pool_pre_ping=True)
     return pg_engine
 
 

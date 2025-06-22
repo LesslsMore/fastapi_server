@@ -46,7 +46,12 @@ class MacVodDao:
         with get_session() as session:
             statement = (
                 select(
-                    text("UNNEST(STRING_TO_ARRAY(vod_class, ',')) AS tag"),
+                    text('''UNNEST(
+                    STRING_TO_ARRAY(
+                        regexp_replace(vod_class, '[\\、\\/\s，]+', ',', 'g'),
+                        ','
+                    )
+                    ) AS tag'''),
                     func.count().label("count")
                 )
                 .where(

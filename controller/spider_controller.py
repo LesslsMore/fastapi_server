@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
@@ -17,6 +19,7 @@ class CollectParams(BaseModel):
 
 @spiderController.post("/start")
 def star_spider(params: CollectParams):
+    logging.info(f"开始采集任务, 采集时长: {params.time}, 资源站Id: {params.id}, 资源站Ids: {params.ids}, 批量采集: {params.batch}")
     if params.time == 0:
         return ResponseUtil.error(msg="采集开启失败,采集时长不能为0")
     if params.batch:

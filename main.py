@@ -12,6 +12,7 @@ from starlette.requests import Request
 from starlette.responses import FileResponse, Response
 from starlette.staticfiles import StaticFiles
 
+from controller.CronController import CronController
 from controller.collect_controller import collectController
 from controller.film_controller import filmController
 from controller.index_controller import indexController
@@ -24,6 +25,7 @@ from plugin.db import close_redis
 from plugin.init.db_init import table_init
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
+from utils.get_scheduler import SchedulerUtil
 
 
 @asynccontextmanager
@@ -33,7 +35,9 @@ async def lifespan(app: FastAPI):
     film_source_init()
     basic_config_init()
     banners_init()
+    await SchedulerUtil.init_system_scheduler()
     yield
+    await SchedulerUtil.close_system_scheduler()
     # Clean up the ML models and release the resources
     close_redis()
 
@@ -57,7 +61,7 @@ async def proxy(full_path: str, request: Request):
 
     # 构造目标 URL
     url = f"{TARGET_SERVER}/{full_path}"
-    print("Proxying request to:", url)
+    logging.info("Proxying request to:", url)
 
     # 读取请求体和请求头
     body = await request.body()
@@ -96,6 +100,7 @@ async def spa_fallback(request: Request, exc: HTTPException):
 app.include_router(prefix='/api', router=indexController)
 app.include_router(prefix='/api', router=userController)
 manageController.include_router(collectController)
+manageController.include_router(CronController)
 manageController.include_router(spiderController)
 manageController.include_router(userController)
 manageController.include_router(filmController)
@@ -113,6 +118,6 @@ app.add_middleware(
 app.mount("/", StaticFiles(directory="dist", html=True), name="dist")
 
 if __name__ == "__main__":
-    port = os.environ.get("PORT")
-    # port = config['port']
-    uvicorn.run(app, host="0.0.0.0", port=int(port))
+    port = int(os.environ.get("PORT", 8000))
+    logging_config = "logging.ini"  # 假设你把上面的配置保存为 logging.ini
+    uvicorn.run(app, host="0.0.0.0", port=port, log_config=logging_config)

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, validator, field_validator
+from pydantic import BaseModel, validator, field_validator, Field
 from pydantic_core.core_schema import ValidationInfo
 
 from model.system.movies import MovieUrlInfo, MovieDetail
@@ -20,12 +20,14 @@ class SearchTagsVO(BaseModel):
 
 # 影视更新任务请求参数
 class FilmCronVo(BaseModel):
-    ids: List[str]
-    time: int
-    spec: str
-    model: int
-    state: bool
+    id: Optional[str] = None
+    ids: Optional[List[str]] = None
+    time: Optional[int] = None
+    spec: Optional[str] = '0 0 0 * * * 1970'
+    model: Optional[int] = None
+    state: Optional[bool] = True
     remark: Optional[str] = None
+    next: Optional[str] = None
 
 
 # 定时任务数据response
@@ -113,6 +115,7 @@ class SearchVo(BaseModel):
         except:
             raise ValueError("时间格式应为 YYYY-MM-DD HH:MM:SS")
 
+
 # 多站点播放链接数据列表
 class PlayLinkVo(BaseModel):
     id: str
@@ -138,10 +141,11 @@ class UserInfoVo(BaseModel):
 
 
 # 采集记录请求参数
-class RecordRequestVo(BaseModel):
-    originId: str
+class RecordRequestVo(Page):
+    originId: Optional[str] = None
     collectType: int
-    hour: int
+    hour: Optional[int] = None
     status: int
     beginTime: Optional[str] = None
     endTime: Optional[str] = None
+    paging: Optional[Page] = None

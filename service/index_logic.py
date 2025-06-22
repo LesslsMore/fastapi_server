@@ -20,11 +20,8 @@ from dao.system.manage import ManageService
 from dao.system.movies import generate_hash_key
 from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
     get_hot_movie_by_cid, get_search_infos_by_tags, \
-    get_movie_list_by_sort, get_relate_movie_basic_info, search_film_keyword, get_search_info, \
-    get_basic_info_by_search_info_list
+    get_movie_list_by_sort, search_film_keyword, get_basic_info_by_search_info_list
 import re
-
-from dao.system.search_tag import get_search_tag
 
 
 class IndexLogic:
@@ -142,7 +139,12 @@ class IndexLogic:
         for t in tree.children:
             if t.id == pid:
                 return t.dict()
-        return None
+        return {
+            "id": -1,
+            "name": "",
+            "pid": -1,
+            "show": True,
+        }
 
     # def search_tags(self, pid: int) -> Dict[str, Any]:
     #     return SearchTagsVO.get_search_tag(self.db, pid)

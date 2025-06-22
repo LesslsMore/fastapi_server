@@ -16,11 +16,11 @@ class SearchInfo(SQLModel):
         alias="ID"  # JSON 键名强制大写
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(),
         alias="CreatedAt",
     )
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(),
         alias="UpdatedAt",
         sa_column_kwargs={"name": "updated_at"}
     )
@@ -58,10 +58,10 @@ class SearchInfo(SQLModel):
         return dt.astimezone().isoformat(timespec='microseconds')
 
     # 4. 启用全局驼峰转换配置
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        populate_by_name=True  # 允许通过别名初始化模型
-    )
+    # model_config = ConfigDict(
+    #     alias_generator=to_camel,
+    #     populate_by_name=True  # 允许通过别名初始化模型
+    # )
 
 
 class Tag(BaseModel):

@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from json import dumps, loads
 from plugin.db import redis_client
@@ -19,7 +20,7 @@ class ManageService:
             try:
                 return BasicConfig(**data)
             except Exception as e:
-                print(f"GetSiteBasic Err: {e}")
+                logging.info(f"GetSiteBasic Err: {e}")
         return BasicConfig(siteName="", domain="", logo="", keyword="", describe="", state=False, hint="")
 
     @staticmethod
@@ -31,7 +32,7 @@ class ManageService:
                 banners = [Banner(**b) for b in data]
                 banners.sort(key=lambda x: x.sort)
             except Exception as e:
-                print(f"GetBanners Error: {e}")
+                logging.info(f"GetBanners Error: {e}")
         return banners
 
     @staticmethod
@@ -51,7 +52,7 @@ def get_site_basic() -> BasicConfig:
         try:
             return BasicConfig.parse_raw(data)
         except Exception as e:
-            print(f"GetSiteBasic Err: {e}")
+            logging.info(f"GetSiteBasic Err: {e}")
     return BasicConfig(siteName="", domain="", logo="", keyword="", describe="", state=False, hint="")
 
 
@@ -70,5 +71,5 @@ def get_banners() -> List[Banner]:
             banners = [Banner.parse_obj(b) for b in banners_data]
             banners.sort(key=lambda x: x.sort)
         except Exception as e:
-            print(f"GetBanners Error: {e}")
+            logging.info(f"GetBanners Error: {e}")
     return banners

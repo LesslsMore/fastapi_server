@@ -1,6 +1,6 @@
 from typing import List
 from model.system.manage import BasicConfig, Banner
-from dao.system.manage import get_site_basic, save_site_basic, get_banners, save_banners, ManageService
+from dao.system.manage import ManageService
 
 
 class ManageLogic:

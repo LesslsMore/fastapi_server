@@ -1,3 +1,5 @@
+import logging
+
 from dao.system.search import GetPage
 from model.collect.MacVod import MacVod
 from model.system.movies import MovieBasicInfo, MovieDetail
@@ -72,7 +74,7 @@ def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
         mac_vod_list = session.exec(query).all()
         return mac_vod_list
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -113,7 +115,7 @@ def search_mac_vod_keyword(keyword: str, page: Page) -> Optional[List[MacVod]]:
         search_list = session.exec(query).all()
         return search_list
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -170,7 +172,7 @@ def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Opti
         movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
     except Exception as e:
-        print(f"查询相关影片失败: {e}")
+        logging.info(f"查询相关影片失败: {e}")
         return None
 
 
@@ -203,7 +205,7 @@ def get_mac_vod_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[L
         movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 

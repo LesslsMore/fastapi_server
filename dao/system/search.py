@@ -119,7 +119,7 @@ def get_search_infos_by_tags(st: dict, page: Page) -> Optional[List[SearchInfo]]
         search_infos = session.exec(query).all()
         return search_infos
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -216,7 +216,7 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
         movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -241,7 +241,7 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
 
         return get_basic_info_by_search_info_list(search_info_list)
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -267,7 +267,7 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
         search_info_list = mac_vod_list_to_search_info_list(mac_vod_list)
         return search_info_list
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -291,7 +291,7 @@ def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
 
         return session.exec(query).all()
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -323,7 +323,7 @@ def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[Lis
         return get_basic_info_by_search_info_list(search_infos)
         # return get_basic_info_by_search_infos(search_infos)
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -375,7 +375,7 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
         search_info_list = session.exec(query).all()
         return get_basic_info_by_search_info_list(search_info_list)
     except Exception as e:
-        print(f"查询相关影片失败: {e}")
+        logging.info(f"查询相关影片失败: {e}")
         return None
 
 
@@ -416,7 +416,7 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
         search_list = session.exec(query).all()
         return search_list
     except Exception as e:
-        print(f"查询失败: {e}")
+        logging.info(f"查询失败: {e}")
         return None
 
 
@@ -473,7 +473,7 @@ def batch_save(search_info_list: List[SearchInfo]) -> None:
         session.commit()
     except Exception as e:
         session.rollback()
-        print(f"批量保存失败: {e}")
+        logging.info(f"批量保存失败: {e}")
         logging.error(f"批量保存失败: {e}")
 
 
