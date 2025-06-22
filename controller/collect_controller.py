@@ -15,12 +15,11 @@ collectController = APIRouter(prefix='/collect')
 @collectController.get("/list")
 def FilmSourceList():
     data = FilmSourceService.get_collect_source_list()
-    return ResponseUtil.success(data=data,  msg="影视源站点信息获取成功")
+    return ResponseUtil.success(data=data, msg="影视源站点信息获取成功")
 
 
 @collectController.get("/find")
 def FindFilmSource(id: str = Query(..., description="资源站标识")):
-
     fs = FilmSourceService.find_collect_source_by_id(id)
     if fs is None:
         return ResponseUtil.error(msg="数据异常,资源站信息不存在")
@@ -29,7 +28,6 @@ def FindFilmSource(id: str = Query(..., description="资源站标识")):
 
 @collectController.post("/update")
 def FilmSourceUpdate(s: FilmSource):
-
     # 参数校验
     if not s.id:
         return ResponseUtil.error(msg="参数异常, 资源站标识不能为空")
@@ -43,8 +41,6 @@ def FilmSourceUpdate(s: FilmSource):
 
 @collectController.post("/change")
 def FilmSourceChange(s: FilmSource):
-
-
     # 参数校验
     if not s.id:
         return ResponseUtil.error(msg="参数异常, 资源站标识不能为空")
@@ -77,7 +73,6 @@ def FilmSourceChange(s: FilmSource):
 
 @collectController.post("/test")
 def FilmSourceTest(s: dict):
-
     # 参数校验
     try:
         film_source = FilmSource(**s)
@@ -93,7 +88,6 @@ def FilmSourceTest(s: dict):
 
 @collectController.get("/del")
 def FilmSourceDel(id: str = Query(..., description="资源站标识")):
-
     # 参数校验
     if not id:
         return ResponseUtil.error(msg="参数异常, 资源站标识不能为空")
@@ -124,3 +118,8 @@ def FilmSourceAdd(s: FilmSource):
         return ResponseUtil.error(msg=f"资源站添加失败: {msg}")
     return ResponseUtil.success(msg="添加成功")
 
+
+@collectController.get("/options")
+def GetNormalFilmSource():
+    data = FilmSourceService.get_collect_source_list()
+    return ResponseUtil.success(data=data, msg="影视源信息获取成功")

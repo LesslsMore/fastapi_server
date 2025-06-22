@@ -91,13 +91,13 @@ def handle_collect(h: int, film_source: FilmSource):
     if h > 0:
         params['h'] = str(h)
     if 'jkun资源' in film_source.name:
-        # params.update({
-        #     "t": 3,
-        #     "wd": "mide",
-        # })
         params.update({
-            "wd": "高橋聖子",
+            "t": 3,
+            "wd": "mide",
         })
+        # params.update({
+        #     "wd": "高橋聖子",
+        # })
     elif film_source.type_id and film_source.type_id > 0:
         params['t'] = str(film_source.type_id)
     # 2. 获取分页数，失败重试一次

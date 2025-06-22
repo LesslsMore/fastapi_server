@@ -12,6 +12,7 @@ from starlette.requests import Request
 from starlette.responses import FileResponse, Response
 from starlette.staticfiles import StaticFiles
 
+from controller.CronController import CronController
 from controller.collect_controller import collectController
 from controller.film_controller import filmController
 from controller.index_controller import indexController
@@ -24,6 +25,7 @@ from plugin.db import close_redis
 from plugin.init.db_init import table_init
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
+from utils.get_scheduler import SchedulerUtil
 
 
 @asynccontextmanager
@@ -33,7 +35,9 @@ async def lifespan(app: FastAPI):
     film_source_init()
     basic_config_init()
     banners_init()
+    await SchedulerUtil.init_system_scheduler()
     yield
+    await SchedulerUtil.close_system_scheduler()
     # Clean up the ML models and release the resources
     close_redis()
 
@@ -96,6 +100,7 @@ async def spa_fallback(request: Request, exc: HTTPException):
 app.include_router(prefix='/api', router=indexController)
 app.include_router(prefix='/api', router=userController)
 manageController.include_router(collectController)
+manageController.include_router(CronController)
 manageController.include_router(spiderController)
 manageController.include_router(userController)
 manageController.include_router(filmController)
