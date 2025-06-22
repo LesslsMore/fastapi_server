@@ -225,7 +225,7 @@ def remove_cache(key: str) -> bool:
     try:
         return redis_client.delete(key) > 0
     except Exception as e:
-        print(f"删除缓存数据失败: {e}")
+        logging.info(f"删除缓存数据失败: {e}")
         return False
 
 
@@ -246,7 +246,7 @@ def data_cache(key: str, data: Any, expire: int = 0) -> bool:
             redis_client.set(key, data)
         return True
     except Exception as e:
-        print(f"缓存数据失败: {e}")
+        logging.info(f"缓存数据失败: {e}")
         return False
 
 
@@ -265,5 +265,5 @@ def get_cache_data(key: str) -> Optional[Any]:
                 return data
         return None
     except Exception as e:
-        print(f"获取缓存数据失败: {e}")
+        logging.info(f"获取缓存数据失败: {e}")
         return None

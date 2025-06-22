@@ -1,3 +1,5 @@
+import logging
+
 from model.collect.MacType import MacType
 from dao.collect.MacTypeDao import MacTypeDao
 from dao.collect.categories import CategoryTreeService
@@ -24,6 +26,7 @@ def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] 
             return resp.content
         return None
     except Exception as e:
+        logging.error(f"API请求失败: {e}")
         return None
 
 
@@ -31,6 +34,7 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
     # 设置分页请求参数
     params = params.copy()
     params['ac'] = 'detail'
+    logging.info(f"请求详情页: {uri}, 参数: {params}")
     resp_bytes = api_get(uri, params, headers, timeout)
     if not resp_bytes:
         return [], '请求失败或无响应'
@@ -41,10 +45,12 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
         # 保存原始详情到 redis
         mac_vod_list = [MacVod(**item) for item in film_detail_list]
         MacVodDao.batch_save_film_detail(mac_vod_list)
+        logging.info(f"保存原始详情成功: {len(mac_vod_list)}")
         # 转换为业务 MovieDetail
         # movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])
         return mac_vod_list, None
     except Exception as e:
+        logging.error(f"解析详情失败: {e}")
         return [], f'解析失败: {e}'
 
 
@@ -57,13 +63,18 @@ def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str,
     if not params.get('ac'):
         params['ac'] = 'detail'
     params['pg'] = '1'
+    logging.info(f"请求分页数: {uri}, 参数: {params}")
     resp_bytes = api_get(uri, params, headers, timeout)
     if not resp_bytes:
+        logging.error('response is empty')
         raise Exception('response is empty')
     try:
         res = json.loads(resp_bytes)
-        return int(res.get('pagecount', 0) or res.get('pageCount', 0) or 0)
+        page_count = int(res.get('pagecount', 0) or res.get('pageCount', 0) or 0)
+        logging.info(f"获取分页数: {page_count}")
+        return page_count
     except Exception as e:
+        logging.error(f"解析分页数失败: {e}")
         raise Exception(f'解析分页数失败: {e}')
 
 
@@ -77,6 +88,7 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
     params['pg'] = '1'
     resp_bytes = api_get(film_source.uri, params, headers, timeout)
     if not resp_bytes:
+        logging.error('filmListPage 数据获取异常 : Resp Is Empty')
         raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
     try:
         film_list_page = json.loads(resp_bytes)
@@ -88,6 +100,7 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
         save_film_class(cl)
         return tree
     except Exception as e:
+        logging.error(f"解析分类树失败: {e}")
         raise Exception(f'解析分类树失败: {e}')
 
 
@@ -101,6 +114,7 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
     params['pg'] = '1'
     resp_bytes = api_get(film_source.uri, params, headers, timeout)
     if not resp_bytes:
+        logging.error('filmListPage 数据获取异常 : Resp Is Empty')
         raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
     try:
         film_list_page = json.loads(resp_bytes)
@@ -112,6 +126,7 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
         save_film_class(cl)
         return tree
     except Exception as e:
+        logging.error(f"解析分类树失败: {e}")
         raise Exception(f'解析分类树失败: {e}')
 
 
@@ -168,7 +183,7 @@ def failure_record(info: Dict[str, Any]):
     记录采集失败信息。
     """
     # 可扩展为写入redis或数据库
-    print(f"FailureRecord: {info}")
+    logging.info(f"FailureRecord: {info}")
 
 
 def film_detail_retry(uri: str, params: Dict[str, Any], retry: int = 1, headers: Optional[Dict[str, str]] = None,

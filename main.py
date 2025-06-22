@@ -61,7 +61,7 @@ async def proxy(full_path: str, request: Request):
 
     # 构造目标 URL
     url = f"{TARGET_SERVER}/{full_path}"
-    print("Proxying request to:", url)
+    logging.info("Proxying request to:", url)
 
     # 读取请求体和请求头
     body = await request.body()
@@ -118,6 +118,6 @@ app.add_middleware(
 app.mount("/", StaticFiles(directory="dist", html=True), name="dist")
 
 if __name__ == "__main__":
-    port = os.environ.get("PORT")
-    # port = config['port']
-    uvicorn.run(app, host="0.0.0.0", port=int(port))
+    port = int(os.environ.get("PORT", 8000))
+    logging_config = "logging.ini"  # 假设你把上面的配置保存为 logging.ini
+    uvicorn.run(app, host="0.0.0.0", port=port, log_config=logging_config)

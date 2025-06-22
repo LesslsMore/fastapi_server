@@ -1,4 +1,5 @@
 import json
+import logging
 
 from model.collect.categories import CategoryTree
 from dao.collect.kv_dao import KVModel
@@ -13,18 +14,18 @@ def test_save_category_tree():
 
 def test_get_category_tree():
     category_tree = CategoryTreeService.get_category_tree()
-    print(category_tree)
+    logging.info(category_tree)
 
 def test_exists_category_tree():
     res = CategoryTreeService.exists_category_tree()
-    print(res)
+    logging.info(res)
 
 def test_get_children_tree():
     res = CategoryTreeService.get_children_tree(4)
-    print(res)
+    logging.info(res)
 
 
 def test():
     # 检查表结构是否一致
     from sqlalchemy.inspection import inspect
-    print(inspect(KVModel).unique_constraints)  # 应输出 [UniqueConstraint('key')]
+    logging.info(inspect(KVModel).unique_constraints)  # 应输出 [UniqueConstraint('key')]

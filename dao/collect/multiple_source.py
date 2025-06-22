@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List, Optional
 
 from sqlalchemy import Column, JSON, UniqueConstraint
@@ -51,7 +52,7 @@ def save_site_play_list(site_id: str, mac_vod_list: List[MacVod]):
                     session.commit()
 
     except Exception as e:
-        print(f"save_site_play_list Error: {e}")
+        logging.info(f"save_site_play_list Error: {e}")
 
 
 def get_multiple_play(site_id: str, key: str) -> Optional[List[MovieUrlInfo]]:
@@ -79,7 +80,7 @@ def get_multiple_play(site_id: str, key: str) -> Optional[List[MovieUrlInfo]]:
 #             return [MovieUrlInfo(**item) for item in play_list]
 #         return None
 #     except Exception as e:
-#         print(f"获取播放源失败: {e}")
+#         logging.info(f"获取播放源失败: {e}")
 #         return None
 #
 # def save_site_play_list(site_id: str, movie_detail_list: List[MovieDetail]):
@@ -97,4 +98,4 @@ def get_multiple_play(site_id: str, key: str) -> Optional[List[MovieUrlInfo]]:
 #             redis_client.hmset(MULTIPLE_SITE_DETAIL % site_id, res)
 #
 #     except Exception as e:
-#         print(f"save_site_play_list Error: {e}")
+#         logging.info(f"save_site_play_list Error: {e}")

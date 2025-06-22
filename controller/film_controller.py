@@ -1,10 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 
 from service.film_logic import FilmLogic
-from service.user_logic import UserLogic
-from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
-from model.system import response
 from model.system.response import Page
 from model.system.virtual_object import SearchVo
 from utils.response_util import ResponseUtil

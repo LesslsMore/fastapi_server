@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 import json
 
@@ -14,7 +15,7 @@ class CategoryTreeService:
             data = tree.model_dump()
             KVDao.set_value(CATEGORY_TREE_KEY, data)
         except Exception as err:
-            print(f"SaveCategoryTree Error: {err}")
+            logging.info(f"SaveCategoryTree Error: {err}")
 
     @staticmethod
     def get_category_tree():
@@ -48,7 +49,7 @@ def save_category_tree(tree: CategoryTree) -> None:
         data = tree.json()
         redis_client.set(CATEGORY_TREE_KEY, data, ex=FILM_EXPIRED)
     except Exception as err:
-        print(f"SaveCategoryTree Error: {err}")
+        logging.info(f"SaveCategoryTree Error: {err}")
 
 
 def get_category_tree() -> Optional[CategoryTree]:

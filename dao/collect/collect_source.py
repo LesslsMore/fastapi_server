@@ -1,3 +1,4 @@
+import logging
 from typing import List
 import json
 
@@ -217,7 +218,7 @@ def save_collect_source_list(source_list: List[FilmSource]) -> bool:
         redis_client.zadd(FILM_SOURCE_LIST_KEY, mapping=mapping)
         return True
     except Exception as e:
-        print(f"保存采集站列表到Redis失败: {e}")
+        logging.info(f"保存采集站列表到Redis失败: {e}")
         return False
 
 

@@ -141,10 +141,11 @@ class UserInfoVo(BaseModel):
 
 
 # 采集记录请求参数
-class RecordRequestVo(BaseModel):
-    originId: str
+class RecordRequestVo(Page):
+    originId: Optional[str] = None
     collectType: int
-    hour: int
+    hour: Optional[int] = None
     status: int
     beginTime: Optional[str] = None
     endTime: Optional[str] = None
+    paging: Optional[Page] = None

@@ -44,7 +44,7 @@ class UserClaims:
 #     return PUBLIC_KEY.encode()
 
 def gen_token(user_id, user_name):
-    now = datetime.utcnow()
+    now = datetime.now()
     exp = now + timedelta(hours=AUTH_TOKEN_EXPIRES)
     claims = UserClaims(
         user_id=user_id,
