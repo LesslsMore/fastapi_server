@@ -1,5 +1,3 @@
-import logging
-
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -8,10 +6,7 @@ from typing import Union
 
 from plugin.db import pg_engine
 from service.spider_logic import SpiderLogic
-import hashlib
-from typing import List
-
-# from utils.log_util import logger
+from utils.log_util import logger
 
 job_stores = {
     'default': SQLAlchemyJobStore(engine=pg_engine)
@@ -92,9 +87,9 @@ class SchedulerUtil:
 
         :return:
         """
-        logging.info('开始启动定时任务...')
+        logger.info('开始启动定时任务...')
         scheduler.start()
-        logging.info('系统初始定时任务加载成功')
+        logger.info('系统初始定时任务加载成功')
 
     @classmethod
     async def close_system_scheduler(cls):
@@ -104,7 +99,7 @@ class SchedulerUtil:
         :return:
         """
         scheduler.shutdown()
-        logging.info('关闭定时任务成功')
+        logger.info('关闭定时任务成功')
 
     @classmethod
     def get_scheduler_job(cls, job_id: Union[str, int]):
@@ -181,6 +176,10 @@ class SchedulerUtil:
         query_job = scheduler.get_jobs()
 
         return query_job
+
+
+import hashlib
+from typing import List
 
 
 def generate_id(ids: List[str], time: int, spec: str) -> str:
