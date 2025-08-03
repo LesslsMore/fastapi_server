@@ -12,6 +12,7 @@ from starlette.requests import Request
 from starlette.responses import FileResponse, Response
 from starlette.staticfiles import StaticFiles
 
+from anime.anime_controller import anime_controller
 from controller.CronController import CronController
 from controller.collect_controller import collectController
 from controller.film_controller import filmController
@@ -96,6 +97,7 @@ async def proxy(full_path: str, request: Request):
 async def spa_fallback(request: Request, exc: HTTPException):
     return FileResponse("dist/index.html")
 
+app.include_router(prefix='/api', router=anime_controller)
 
 app.include_router(prefix='/api', router=indexController)
 app.include_router(prefix='/api', router=userController)
