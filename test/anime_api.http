@@ -41,8 +41,7 @@ POST http://localhost:8000/api/anime/search
 Content-Type: application/json
 
 {
-  "name": "鬼灭之刃",
-  "episode": "999"
+  "name": "新石纪第二季"
 }
 
 
@@ -69,7 +68,16 @@ client.global.set("vod_id", response.body.data.vod_id);
 %}
 
 ### 获取所有 AnimeVod 记录
-GET http://localhost:8000/api/anime/
+GET http://localhost:8000/api/anime/?offset=1&limit=1
+
+### 获取所有 AnimeVod 记录
+POST http://localhost:8000/api/anime/page
+Content-Type: application/json
+
+{
+  "page_num": 1,
+  "page_size": 1
+}
 
 ### 根据 ID 获取单个 AnimeVod 记录
 GET http://localhost:8000/api/anime/{{vod_id}}

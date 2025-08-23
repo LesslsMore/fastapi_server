@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from anime.anime_dao import AnimeDao, ConfigPageQueryModel
 from anime.anime_vod import AnimeVod
 from plugin.db import pg_engine
 from pydantic import BaseModel
@@ -35,7 +36,7 @@ class AnimeVodUpsertRequest(BaseModel):
 
 class AnimeVodSearchRequest(BaseModel):
     name: str
-    episode: str
+    episode: Optional[str] = None
 
 
 # 新增或更新 AnimeVod 接口
@@ -116,20 +117,22 @@ def search_anime_vod_by_name_and_episode(search_request: AnimeVodSearchRequest):
             return ResponseUtil.error(msg="未找到该影片")
 
         # 收集所有匹配的 URLs
-        urls = []
-        for anime_vod in anime_vods:
-            vod_play_url = anime_vod.vod_play_url or {}
-            for host, episodes in vod_play_url.items():
-                if episode in episodes:
-                    urls.append({
-                        "host": host,
-                        "url": episodes[episode]
-                    })
+        if episode:
+            urls = []
+            for anime_vod in anime_vods:
+                vod_play_url = anime_vod.vod_play_url or {}
+                for host, episodes in vod_play_url.items():
+                    if episode in episodes:
+                        urls.append({
+                            "host": host,
+                            "url": episodes[episode]
+                        })
 
-        if not urls:
-            return ResponseUtil.error(msg="该集数未找到")
-
-    return ResponseUtil.success(data=urls, msg="查询成功")
+            if not urls:
+                return ResponseUtil.error(msg="该集数未找到")
+            return ResponseUtil.success(data=urls, msg="查询成功")
+        else:
+            return ResponseUtil.success(data=anime_vods[0], msg="查询成功")
 
 
 # 创建 AnimeVod
@@ -191,6 +194,16 @@ def get_anime_vods(
 ):
     with Session(pg_engine) as session:
         anime_vods = session.exec(select(AnimeVod).offset(offset).limit(limit)).all()
+    return ResponseUtil.success(data=anime_vods, msg="获取成功")
+
+
+# 获取所有 AnimeVod
+@anime_controller.post("/page", response_model=List[AnimeVod])
+async def get_anime_vods(
+        config_page_query: ConfigPageQueryModel
+):
+    with Session(pg_engine) as session:
+        anime_vods = await AnimeDao.get_config_list(session, config_page_query, is_page=True)
     return ResponseUtil.success(data=anime_vods, msg="获取成功")
 
 

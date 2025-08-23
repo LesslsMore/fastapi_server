@@ -1,3 +1,5 @@
+import logging
+
 import redis
 from config import data_config, config
 import os
@@ -12,7 +14,7 @@ def init_redis_conn():
         try:
             redis_client.ping()
         except redis.ConnectionError as e:
-            raise Exception(f"Redis连接失败: {e}")
+            logging.error(f"Redis连接失败: {e}")
     else:
         cfg = config['redis']
         host = cfg['host']
@@ -29,7 +31,8 @@ def init_redis_conn():
         try:
             redis_client.ping()
         except redis.ConnectionError as e:
-            raise Exception(f"Redis连接失败: {e}")
+            logging.error(f"Redis连接失败: {e}")
+            # raise Exception(f"Redis连接失败: {e}")
     return redis_client
 
 
