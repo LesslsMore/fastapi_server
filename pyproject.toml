@@ -1,0 +1,24 @@
+[project]
+name = "fastapi-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "apscheduler>=3.11.0",
+    "boto3>=1.40.16",
+    "cryptography>=45.0.6",
+    "fastapi>=0.116.1",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.10.1",
+    "pyjwt>=2.10.1",
+    "pymysql>=1.1.1",
+    "python-dotenv>=1.1.1",
+    "pyyaml>=6.0.2",
+    "redis>=6.4.0",
+    "requests>=2.32.5",
+    "sqlmodel>=0.0.24",
+    "uvicorn>=0.35.0",
+]
