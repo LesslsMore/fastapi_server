@@ -1,16 +1,16 @@
-import logging
-from typing import List, Optional, Union
 import hashlib
+import logging
 import re
+from typing import List, Optional, Union
 
 from config.data_config import SEARCH_INFO_TEMP
-from dao.collect.movie_dao import MovieDao
+from dao.system.search_tag import save_search_tag
+from model.collect.movie_entity import movie_detail_dao, movie_basic_info_dao
+from model.system.movies import MovieDetail
 from model.system.search import SearchInfo
 from plugin.common.conver.mac_vod import movie_detail_list_to_search_info_list, movie_detail_to_movie_basic_info, \
     movie_detail_to_search_info
 from plugin.db import redis_client
-from model.system.movies import MovieDetail
-from dao.system.search_tag import save_search_tag
 
 
 def generate_hash_key(key: Union[str, int]) -> str:
@@ -51,10 +51,10 @@ def save_movie_detail(movie_detail: MovieDetail) -> Optional[Exception]:
     :return: 异常对象或None
     """
     try:
-        MovieDao.set_movie_detail(movie_detail)
+        movie_detail_dao.upsert(movie_detail)
 
         movie_basic_info = movie_detail_to_movie_basic_info(movie_detail)
-        MovieDao.set_movie_basic_info(movie_basic_info)
+        movie_basic_info_dao.upsert(movie_basic_info)
 
         search_info = movie_detail_to_search_info(movie_detail)
         save_search_tag(search_info)

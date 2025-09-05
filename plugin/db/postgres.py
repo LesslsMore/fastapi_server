@@ -1,11 +1,9 @@
+import os
 from urllib.parse import urlparse
 
-from sqlmodel import SQLModel, create_engine
-from sqlalchemy.engine import Engine
-from typing import Optional
-from config import data_config, config
-from sqlmodel import Session
-import os
+from sqlmodel import create_engine
+
+from config import config
 
 
 def init_postgres():
@@ -24,6 +22,3 @@ def init_postgres():
     echo = False
     pg_engine = create_engine(db_url, echo=echo, pool_pre_ping=True)
     return pg_engine
-
-
-

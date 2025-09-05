@@ -1,6 +1,6 @@
 from sqlmodel import Session
 
-from config.config import load_config, load_dotenv
+from config.config import load_dotenv
 from plugin.db.postgres import init_postgres
 from plugin.db.redis_client import init_redis_conn
 
