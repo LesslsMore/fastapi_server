@@ -3,6 +3,7 @@ from typing import Optional, List
 from sqlalchemy import Column, JSON
 from sqlmodel import SQLModel, Field
 
+from dao.base_dao import BaseDao
 from model.system.movies import MovieDetail, MovieBasicInfo, MovieUrlInfo, MovieDescriptor
 
 
@@ -18,3 +19,7 @@ class MovieDetailModel(SQLModel, MovieDetail):
 class MovieBasicInfoModel(SQLModel, MovieBasicInfo):
     __tablename__ = 'movie_basic_info'
     id: int = Field(primary_key=True)
+
+
+movie_basic_info_dao = BaseDao(MovieBasicInfoModel)
+movie_detail_dao = BaseDao(MovieDetailModel)

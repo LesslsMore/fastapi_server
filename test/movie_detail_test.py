@@ -1,10 +1,7 @@
 import json
 
 from dao.collect.MacVodDao import MacVodDao
-from model.collect.movie_entity import MovieDetailModel
-from model.system.movies import MovieDetail
-from model.system.search import SearchInfo
-from dao.collect.movie_dao import MovieDao
+from model.collect.movie_entity import MovieDetailModel, movie_detail_dao
 
 
 def test_upsert_movie_detail():
@@ -207,7 +204,7 @@ def test_upsert_movie_detail():
 }
         '''
     ))
-    MovieDao.upsert_movie_detail(movie_detail)
+    movie_detail_dao.upsert(movie_detail)
 
 
 def test_select_movie_detail():
