@@ -29,9 +29,11 @@ class AnimeVodUpdate(BaseModel):
 
 # 添加新的 Pydantic 模型用于 upsert 和 search 接口
 class AnimeVodUpsertRequest(BaseModel):
+    vod_id: int
     name: str
     episode: str
     url: str
+    vod_pic: str
 
 
 class AnimeVodSearchRequest(BaseModel):
@@ -47,6 +49,8 @@ def upsert_anime_vod(anime_vod_request: AnimeVodUpsertRequest):
     name = anime_vod_request.name
     episode = anime_vod_request.episode
     url = anime_vod_request.url
+    vod_pic = anime_vod_request.vod_pic
+    vod_id = anime_vod_request.vod_id
 
     # 解析 URL 获取 host
     parsed_url = urlparse(url)
@@ -54,7 +58,7 @@ def upsert_anime_vod(anime_vod_request: AnimeVodUpsertRequest):
 
     with Session(pg_engine) as session:
         # 根据名称查找现有的 AnimeVod 记录
-        statement = select(AnimeVod).where(AnimeVod.vod_name == name)
+        statement = select(AnimeVod).where(AnimeVod.vod_id == vod_id)
         existing_anime_vod = session.exec(statement).first()
 
         if existing_anime_vod:
@@ -77,6 +81,7 @@ def upsert_anime_vod(anime_vod_request: AnimeVodUpsertRequest):
                 where(AnimeVod.vod_id == existing_anime_vod.vod_id).
                 values(
                     vod_play_url=existing_anime_vod.vod_play_url,
+                    vod_pic=vod_pic,
                     updated_at=existing_anime_vod.updated_at
                 )
             )
@@ -91,8 +96,10 @@ def upsert_anime_vod(anime_vod_request: AnimeVodUpsertRequest):
             vod_play_url = {host: {episode: url}}
 
             new_anime_vod = AnimeVod(
+                vod_id=vod_id,
                 vod_name=name,
-                vod_play_url=vod_play_url
+                vod_play_url=vod_play_url,
+                vod_pic=vod_pic,
             )
 
             session.add(new_anime_vod)
