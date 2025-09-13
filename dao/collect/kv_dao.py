@@ -1,9 +1,10 @@
 from typing import Optional
 
-from sqlalchemy import Column, JSON, UniqueConstraint
+from sqlalchemy import Column, JSON
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import SQLModel, Field
 
+from dao.base_dao import BaseDao
 from demo.sql import get_session
 
 
@@ -17,13 +18,14 @@ class KVModel(SQLModel, table=True):
     # )
 
 
+key_value_dao = BaseDao(KVModel)
+
+
 class KVDao:
     @staticmethod
     def get_value(key: str) -> str:
-        with get_session() as session:
-            item = session.query(KVModel).where(KVModel.key == key).one_or_none()
-            if item:
-                return item.value
+        item = key_value_dao.query_item(filter_dict={'key': key})
+        return item.value
 
     @staticmethod
     def set_value(key: str, value: str) -> dict:
@@ -37,10 +39,7 @@ class KVDao:
             stmt = stmt.on_conflict_do_update(index_elements=['key'], set_=update_dict)
             session.exec(stmt)
 
-
     @staticmethod
     def exists(key: str):
-        with get_session() as session:
-            item = session.query(KVModel).where(KVModel.key == key).one_or_none()
-            if item:
-                return item.value
+        item = key_value_dao.query_item(filter_dict={'key': key})
+        return item.value

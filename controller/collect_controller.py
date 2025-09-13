@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Query
 
-from dao.collect.collect_source import FilmSource
 from dao.system.failure_record import FailureRecordService
-from model.collect.collect_source import SourceGrade, film_source_dao
+from model.collect.collect_source import SourceGrade, film_source_dao, FilmSource
 from model.system.virtual_object import RecordRequestVo
 from plugin.spider.spider import SpiderService
 from plugin.spider.spider_core import collect_api_test

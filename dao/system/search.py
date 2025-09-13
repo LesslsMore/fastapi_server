@@ -204,15 +204,6 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
     page.total = page_items.total
     page.pageCount = (page_items.total + page_items.page_size - 1) // page_items.page_size
     mac_vod_list = page_items.rows
-    # with get_session() as session:
-    #     # 计算总数
-    #     count = session.exec(select(func.count()).select_from(MacVod).where(MacVod.type_id_1 == pid)).one()
-    #
-    #
-    #     # 查询数据
-    #     query = select(MacVod).where(MacVod.type_id_1 == pid).order_by(MacVod.vod_time.desc()) \
-    #         .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-    #     mac_vod_list = session.exec(query).all()
 
     movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
     return movie_basic_info_list
@@ -225,24 +216,16 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :param page: 分页参数
     :return: 影片基本信息列表
     """
-    page_items = mac_vod_dao.page_items({'type_id_1': cid}, ['vod_time'], IOrderEnum.descendent,
+    page_items = mac_vod_dao.page_items({'type_id': cid}, ['vod_time'], IOrderEnum.descendent,
                                         ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
     page.total = page_items.total
     page.pageCount = (page_items.total + page_items.pageSize - 1) // page_items.pageSize
-    search_info_list = page_items.rows
+    mac_vod_list = page_items.rows
 
-    # with get_session() as session:
-    #     # 计算总数
-    #     count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
-    #     page.total = count
-    #     page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
-    #
-    #     # 查询数据
-    #     query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc()) \
-    #         .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-    #     search_info_list = session.exec(query).all()
 
-    return get_basic_info_by_search_info_list(search_info_list)
+
+    movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
+    return movie_basic_info_list
 
 
 def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:

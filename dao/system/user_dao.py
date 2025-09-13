@@ -39,8 +39,7 @@ def exist_user_table() -> bool:
 
 # 初始化管理员账户
 def init_admin_account():
-    # user = get_user_by_name_or_email(session, "admin")
-    user = None
+    user = users_dao.query_item({"user_name": "admin"})
     if user:
         return
     u = User(

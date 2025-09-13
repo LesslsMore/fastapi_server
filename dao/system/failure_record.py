@@ -8,10 +8,7 @@ from model.system.failure_record import FailureRecord
 
 
 class FailureRecordService:
-    @staticmethod
-    def create_failure_record_table():
-        with get_session() as session:
-            FailureRecord.metadata.create_all(session.get_bind())
+
 
     @staticmethod
     def save_failure_record(fr: FailureRecord):
