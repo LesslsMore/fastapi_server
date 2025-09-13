@@ -8,7 +8,7 @@ class UserLogic:
     @staticmethod
     def get_user_info(id: int) -> dict:
         # 通过用户ID查询对应的用户信息
-        user = users_dao.query(filter_dict={"id": id})
+        user = users_dao.query_item(filter_dict={"id": id})
         if user:
             # 去除user信息中的不必要信息
             user_info = {

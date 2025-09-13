@@ -21,7 +21,7 @@ def FilmSourceList():
 
 @collectController.get("/find")
 def FindFilmSource(id: str = Query(..., description="资源站标识")):
-    item = film_source_dao.query(filter_dict={"id": id})
+    item = film_source_dao.query_item(filter_dict={"id": id})
     if item is None:
         return ResponseUtil.error(msg="数据异常,资源站信息不存在")
     return ResponseUtil.success(data=item, msg="原站点详情信息查找成功")

@@ -7,6 +7,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import SQLModel, Field
 from sqlmodel import Session
 
+from config.constant import IOrderEnum
 from config.database import sync_engine
 from demo.sql import get_session
 from utils.page_util import PageUtil
@@ -53,6 +54,7 @@ class BaseDao:
         #     stmt = stmt.on_conflict_do_update(index_elements=[FilmSourceModel.id], set_=update_dict)
         #     session.exec(stmt)
         #     session.commit()
+
     def delete_item(self, filter_dict: dict):
         with get_session() as session:
             item = session.query(self.model).filter_by(**filter_dict).first()
@@ -62,7 +64,6 @@ class BaseDao:
     def create_item(self, item):
         with get_session() as session:
             session.add(item)
-
 
         # """
         # 通过Id删除对应的采集站点信息
@@ -74,7 +75,7 @@ class BaseDao:
         #     return True
         # return False
 
-    def query(self, filter_dict: dict):
+    def query_item(self, filter_dict: dict):
         with Session(self.engine) as session:
             item = session.query(self.model).filter_by(**filter_dict).first()
             return item
@@ -83,6 +84,15 @@ class BaseDao:
         with Session(self.engine) as session:
             items = session.query(self.model).filter_by(**filter_dict).all()
             return items
+
+    def query_items_by_ids(self, ids: list):
+        with Session(self.engine) as session:
+            # 构建批量查询语句
+            statement = select(self.model).where(
+                self.model.vod_id.in_(ids)  # 使用 IN 操作符匹配多个 ID
+            )
+            results = session.exec(statement)
+            return results.all()  # 返回所有匹配结果的列表
 
     # with get_session() as session:
     #     statement = select(FilmSourceModel).where(FilmSourceModel.grade == grade)
@@ -103,7 +113,11 @@ class BaseDao:
         with Session(self.engine) as session:
             return paginate(session, select(self.model).order_by(self.model.created_at))
 
-    async def page(self, query_object: ConfigPageQueryModel, is_page: bool = False):
+    def page_items(self, filter_dict: dict = {},
+                   order_bys: list[str] = ["id"],
+                   order: IOrderEnum = IOrderEnum.descendent,
+                   query_object: ConfigPageQueryModel = ConfigPageQueryModel(),
+                   is_page: bool = True):
         """
         根据查询参数获取参数配置列表信息
 
@@ -112,12 +126,31 @@ class BaseDao:
         :param is_page: 是否开启分页
         :return: 参数配置列表信息对象
         """
+        # .where(MacVod.type_id_1 == pid).order_by(MacVod.vod_time.desc())
+
         with Session(self.engine) as session:
-            query = (
-                select(self.model)
-                .order_by(self.model.vod_id)
-            )
-            config_list = await PageUtil.paginate(session, query, query_object.page_num, query_object.page_size,
-                                                  is_page)
+
+            columns = self.model.__table__.columns
+
+            if order == IOrderEnum.ascendent:
+                order_bys = [columns[order_by].asc() for order_by in order_bys]
+            else:
+                order_bys = [columns[order_by].desc() for order_by in order_bys]
+
+            query = select(self.model).filter_by(**filter_dict).order_by(*order_bys)
+
+            config_list = PageUtil.paginate(session, query, query_object.page_num, query_object.page_size,
+                                            is_page)
 
             return config_list
+
+        # with get_session() as session:
+        #     # 计算总数
+        #     count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
+        #     page.total = count
+        #     page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
+        #
+        #     # 查询数据
+        #     query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc()) \
+        #         .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+        #     search_info_list = session.exec(query).all()

@@ -4,6 +4,7 @@ import json
 from dao.collect.MacVodDao import MacVodDao
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
+from model.collect.MacVod import mac_vod_dao
 from model.collect.categories import CategoryTree
 from dao.collect.multiple_source import get_multiple_play
 from dao.collect.categories import CategoryTreeService
@@ -45,8 +46,11 @@ class IndexLogic:
                 movies = get_movie_list_by_pid(c.id, page)
                 hot_movies = get_hot_movie_by_pid(c.id, page)
             else:
-                movies = get_movie_list_by_cid(c.id, page)
-                hot_movies = get_hot_movie_by_cid(c.id, page)
+                movies = get_movie_list_by_pid(c.id, page)
+                hot_movies = get_hot_movie_by_pid(c.id, page)
+
+                # movies = get_movie_list_by_cid(c.id, page)
+                # hot_movies = get_hot_movie_by_cid(c.id, page)
             movies_data = []
             if movies:
                 movies_data = [m.model_dump() for m in movies]
@@ -232,7 +236,8 @@ class IndexLogic:
         :return: 包含影片详情和播放源的字典
         """
 
-        mac_vod = MacVodDao.select_mac_vod(vod_id)
+        # mac_vod = MacVodDao.select_mac_vod(vod_id)
+        mac_vod = mac_vod_dao.query_item(filter_dict={"vod_id": vod_id})
         if not mac_vod:
             return {}
         movie_detail = mac_vod_to_movie_detail(mac_vod)

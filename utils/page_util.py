@@ -55,7 +55,7 @@ class PageUtil:
         return result
 
     @classmethod
-    async def paginate(cls, db: Session, query: Select, page_num: int, page_size: int, is_page: bool = False):
+    def paginate(cls, db: Session, query: Select, page_num: int, page_size: int, is_page: bool = False):
         """
         输入查询语句和分页信息，返回分页数据列表结果
 

@@ -98,15 +98,7 @@ class MacVodDao:
             result = session.execute(query, {"split": split, "type_id_1": type_id_1}).fetchall()
             return [(row[1], row[0]) for row in result]
 
-    @staticmethod
-    def select_mac_vod_list(vod_id_list: List[int]):
-        with get_session() as session:
-            # 构建批量查询语句
-            statement = select(MacVod).where(
-                MacVod.vod_id.in_(vod_id_list)  # 使用 IN 操作符匹配多个 ID
-            )
-            results = session.exec(statement)
-            return results.all()  # 返回所有匹配结果的列表
+
 
 
 # 保存未处理的完整影片详情信息到redis
