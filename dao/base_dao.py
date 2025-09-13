@@ -1,6 +1,5 @@
 from typing import Optional
 
-from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
@@ -91,9 +90,9 @@ class BaseDao:
             items = session.query(self.model).order_by(self.model.name.desc()).all()
             return items
 
-    def paginate(self):
-        with Session(self.engine) as session:
-            return paginate(session, select(self.model).order_by(self.model.created_at))
+    # def paginate(self):
+    #     with Session(self.engine) as session:
+    #         return paginate(session, select(self.model).order_by(self.model.created_at))
 
     def page_items(self, filter_dict: dict = {},
                    order_bys: list[str] = ["id"],
