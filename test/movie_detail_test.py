@@ -207,6 +207,4 @@ def test_upsert_movie_detail():
     movie_detail_dao.upsert(movie_detail)
 
 
-def test_select_movie_detail():
-    vod_id = 100405
-    mac_vod = MacVodDao.select_mac_vod(vod_id)
+

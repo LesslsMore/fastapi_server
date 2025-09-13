@@ -6,12 +6,11 @@ from sqlalchemy import Column, JSON, UniqueConstraint
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import SQLModel, Field, select
 
+from dao.system.movies import generate_hash_key
 from demo.sql import get_session
 from model.collect.MacVod import MacVod
 from model.system.movies import MovieUrlInfo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_detail_list
-
-from dao.system.movies import generate_hash_key
 
 
 class MultipleSourceModel(SQLModel, table=True):
@@ -66,37 +65,3 @@ def get_multiple_play(site_id: str, key: str) -> Optional[List[MovieUrlInfo]]:
             play_list = json.loads(item.playList)
             return [MovieUrlInfo(**item) for item in play_list]
         return None
-
-# def get_multiple_play(site_id: str, key: str) -> Optional[List[MovieUrlInfo]]:
-#     """
-#     通过影片名hash值匹配播放源
-#     :param site_id: 站点ID
-#     :param key: 影片名hash值
-#     :return: 播放源信息列表
-#     """
-#     try:
-#         data = redis_client.hget(MULTIPLE_SITE_DETAIL % (site_id), key)
-#         if data:
-#             play_list = json.loads(data)
-#             return [MovieUrlInfo(**item) for item in play_list]
-#         return None
-#     except Exception as e:
-#         logging.info(f"获取播放源失败: {e}")
-#         return None
-#
-# def save_site_play_list(site_id: str, movie_detail_list: List[MovieDetail]):
-#     try:
-#         res = {}
-#         for movie_detail in movie_detail_list:
-#             if movie_detail.playList and len(movie_detail.playList) > 0:
-#                 data = json.dumps([item.dict() for item in movie_detail.playList[0]])
-#                 if movie_detail.descriptor.cName and "解说" in movie_detail.descriptor.cName:
-#                     continue
-#                 if movie_detail.descriptor.dbId:
-#                     res[generate_hash_key(movie_detail.descriptor.dbId)] = data
-#                 res[generate_hash_key(movie_detail.name)] = data
-#         if res:
-#             redis_client.hmset(MULTIPLE_SITE_DETAIL % site_id, res)
-#
-#     except Exception as e:
-#         logging.info(f"save_site_play_list Error: {e}")

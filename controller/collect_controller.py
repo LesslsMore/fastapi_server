@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Query
 
+from dao.collect.collect_source import FilmSource
 from dao.system.failure_record import FailureRecordService
+from model.collect.collect_source import SourceGrade, film_source_dao
 from model.system.virtual_object import RecordRequestVo
 from plugin.spider.spider import SpiderService
-from service.collect_logic import CollectLogic
-from dao.collect.collect_source import FilmSourceService
-from model.collect.collect_source import SourceGrade, film_source_dao
-from dao.collect.collect_source import FilmSource
 from plugin.spider.spider_core import collect_api_test
+from service.collect_logic import CollectLogic
 from utils.response_util import ResponseUtil
 
 collectController = APIRouter(prefix='/collect')
@@ -28,16 +27,13 @@ def FindFilmSource(id: str = Query(..., description="资源站标识")):
 
 
 @collectController.post("/update")
-def FilmSourceUpdate(s: FilmSource):
+def FilmSourceUpdate(film_source: FilmSource):
     # 参数校验
-    if not s.id:
+    if not film_source.id:
         return ResponseUtil.error(msg="参数异常, 资源站标识不能为空")
-    # 业务逻辑处理
-    result, msg = CollectLogic.update_film_source(s)
-    if result:
-        return ResponseUtil.success(msg="更新成功")
-    else:
-        return ResponseUtil.error(msg=msg)
+
+    film_source_dao.upsert(film_source)
+    return ResponseUtil.success(msg="更新成功")
 
 
 @collectController.post("/change")
@@ -46,7 +42,8 @@ def FilmSourceChange(s: FilmSource):
     if not s.id:
         return ResponseUtil.error(msg="参数异常, 资源站标识不能为空")
     # 查找对应的资源站点信息
-    fs = CollectLogic.get_film_source(s.id)
+
+    fs = film_source_dao.query_item(filter_dict={"id": s.id})
     if fs is None:
         return ResponseUtil.error(msg="数据异常,资源站信息不存在")
     # 如果采集站开启图片同步, 且采集站为附属站点则返回错误提示
@@ -65,10 +62,9 @@ def FilmSourceChange(s: FilmSource):
             "collectType": fs.collectType,
             "state": s.state
         })
-        # 更新资源站信息
-        result, msg = CollectLogic.update_film_source(updated_source)
-        if not result:
-            return ResponseUtil.error(msg=f"资源站更新失败: {msg}")
+
+        film_source_dao.upsert(updated_source)
+
     return ResponseUtil.success(msg="更新成功")
 
 
@@ -99,24 +95,24 @@ def FilmSourceDel(id: str = Query(..., description="资源站标识")):
 
 
 @collectController.post("/add")
-def FilmSourceAdd(s: FilmSource):
+def FilmSourceAdd(film_source: FilmSource):
     # 获取请求参数并校验
-    if not s:
+
+    if not film_source:
         return ResponseUtil.error(msg="请求参数异常")
-    if not s.name or not s.uri:
+    if not film_source.name or not film_source.uri:
         return ResponseUtil.error(msg="参数异常, 资源站标识、名称、地址不能为空")
     # 如果采集站开启图片同步, 且采集站为附属站点则返回错误提示
-    if s.syncPictures and s.grade == SourceGrade.SlaveCollect:
+    if film_source.syncPictures and film_source.grade == SourceGrade.SlaveCollect:
         return ResponseUtil.error(msg="附属站点无法开启图片同步功能")
     # 执行 spider 测试
     try:
-        collect_api_test(s)
+        collect_api_test(film_source)
     except Exception as e:
         return ResponseUtil.error(msg=f"资源接口测试失败, 请确认接口有效再添加: {e}")
     # 测试通过后将资源站信息添加到list
-    result, msg = CollectLogic.save_film_source(s)
-    if not result:
-        return ResponseUtil.error(msg=f"资源站添加失败: {msg}")
+    film_source_dao.upsert(film_source)
+
     return ResponseUtil.success(msg="添加成功")
 
 

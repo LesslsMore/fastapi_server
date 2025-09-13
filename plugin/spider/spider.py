@@ -1,23 +1,24 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
-from dao.collect.collect_source import FilmSourceService
-from model.system.failure_record import FailureRecord
-from dao.collect.multiple_source import save_site_play_list
-from model.collect.collect_source import SourceGrade, ResourceType, FilmSource
 from dao.collect.categories import CategoryTreeService
-from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
+from dao.collect.multiple_source import save_site_play_list
 from dao.system.failure_record import FailureRecordService
+from model.collect.collect_source import SourceGrade, ResourceType, FilmSource, film_source_dao
+from model.system.failure_record import FailureRecord
+from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 
 
 class SpiderService:
     @staticmethod
     def CollectRecover(id):
         fr = FailureRecordService.find_record_by_id(id)
-        s = FilmSourceService.find_collect_source_by_id(fr.origin_id)
-        SpiderService.collect_film(s, fr.hour, fr.page_number)
+
+        fs = film_source_dao.query_item(filter_dict={"id": fr.origin_id})
+
+        SpiderService.collect_film(fs, fr.hour, fr.page_number)
 
     @staticmethod
     def collect_film(film_source: FilmSource, h: int, pg: int, params: dict):

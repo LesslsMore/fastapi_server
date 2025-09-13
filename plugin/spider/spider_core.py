@@ -1,7 +1,7 @@
 import logging
 
-from model.collect.MacType import MacType
-from dao.collect.MacTypeDao import MacTypeDao
+from model.collect.MacType import MacType, mac_type_dao
+
 from dao.collect.categories import CategoryTreeService
 from dao.collect.MacVodDao import MacVodDao
 from dao.collect.film_list import save_film_class
@@ -131,7 +131,7 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
 
 
 def get_category_tree_by_db():
-    mac_type_list: List[MacType] = MacTypeDao.get_mac_type_list()
+    mac_type_list: List[MacType] = mac_type_dao.query_items({'type_status': 1})
     cl = [mac_type.model_dump() for mac_type in mac_type_list]
     category_tree = gen_category_tree(cl)
     save_film_class(cl)

@@ -1,28 +1,25 @@
-from typing import List, Dict, Any, Optional
 import json
+import re
+from typing import List, Dict, Any, Optional
 
-from dao.collect.MacVodDao import MacVodDao
+from config.data_config import INDEX_CACHE_KEY
+from dao.collect.categories import CategoryTreeService
+from dao.collect.multiple_source import get_multiple_play
+from dao.system.manage import ManageService
+from dao.system.movies import generate_hash_key
+from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
+    get_search_infos_by_tags, \
+    get_movie_list_by_sort, search_film_keyword, get_basic_info_by_search_info_list
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.MacVod import mac_vod_dao
 from model.collect.categories import CategoryTree
-from dao.collect.multiple_source import get_multiple_play
-from dao.collect.categories import CategoryTreeService
-
+from model.collect.collect_source import SourceGrade, film_source_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
+from model.system.virtual_object import PlayLinkVo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_to_movie_detail
 from plugin.db import redis_client
-from config.data_config import INDEX_CACHE_KEY
-from model.collect.collect_source import SourceGrade
-from dao.collect.collect_source import FilmSourceService
-from model.system.virtual_object import PlayLinkVo
-from dao.system.manage import ManageService
-from dao.system.movies import generate_hash_key
-from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
-    get_hot_movie_by_cid, get_search_infos_by_tags, \
-    get_movie_list_by_sort, search_film_keyword, get_basic_info_by_search_info_list
-import re
 
 
 class IndexLogic:
@@ -155,7 +152,8 @@ class IndexLogic:
 
     @staticmethod
     def multiple_source(detail: MovieDetail) -> List[Dict[str, Any]]:
-        master = FilmSourceService.get_collect_source_list_by_grade(SourceGrade.MasterCollect)
+
+        master = film_source_dao.query_items(filter_dict={"grade": SourceGrade.MasterCollect})
 
         play_list = [
             PlayLinkVo(**{
@@ -175,7 +173,8 @@ class IndexLogic:
                 if sep in detail.descriptor.subTitle:
                     for v in detail.descriptor.subTitle.split(sep):
                         names.add(generate_hash_key(v))
-        sc = FilmSourceService.get_collect_source_list_by_grade(SourceGrade.SlaveCollect)
+
+        sc = film_source_dao.query_items(filter_dict={"grade": SourceGrade.SlaveCollect})
         for s in sc:
             for k in names:
                 pl = get_multiple_play(s.id, k)

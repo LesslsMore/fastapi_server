@@ -27,13 +27,7 @@ class MacVodDao:
             session.execute(stmt)
             session.commit()
 
-    @staticmethod
-    def select_mac_vod(vod_id: int):
-        with get_session() as session:
-            statement = select(MacVod).where(MacVod.vod_id == vod_id)
-            results = session.exec(statement)
-            item = results.first()
-            return item
+
 
     @staticmethod
     def count_vod_class_tags(type_id_1: int) -> List[Tuple[str, int]]:
