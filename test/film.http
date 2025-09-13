@@ -18,3 +18,6 @@ http://127.0.0.1:8000/api/filmDetail?id=62662
 
 ###
 http://127.0.0.1:8000/api/manage/spider/class/cover
+
+###
+http://127.0.0.1:8000/api/navCategory

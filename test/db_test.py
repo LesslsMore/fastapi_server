@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String
 from sqlmodel import SQLModel, Field
 
 from config.database import sync_engine
+from dao.base_dao import BaseDao
 from demo.sql import get_session, BaseModel
 
 
@@ -12,11 +13,18 @@ class User(BaseModel, table=True):
     phone: str = Field(sa_column=Column(String(36), nullable=True))
 
 
+user_dao = BaseDao(User)
+
 # 创建表
 SQLModel.metadata.create_all(sync_engine)
 
+
+def test():
+    user_dao.update_item({'name': "张老三"}, update_dict={"phone": "123456"})
+
+
 # 示例操作
-if __name__ == "__main__":
+def test_main():
     # 1. 插入数据
     with get_session() as session:
         user1 = User(name="张三", phone="13800138000")

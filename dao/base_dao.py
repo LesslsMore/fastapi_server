@@ -32,8 +32,11 @@ class BaseDao:
         with get_session() as session:
             values = item.model_dump()
             stmt = insert(self.model).values(**values)
-            update_dict = {c: stmt.excluded[c] for c in values.keys() if c != "id"}
-            stmt = stmt.on_conflict_do_update(index_elements=[self.model.id], set_=update_dict)
+
+            pks = [pk.name for pk in self.model.__table__.primary_key]
+
+            update_dict = {c: stmt.excluded[c] for c in values.keys() if c not in pks}
+            stmt = stmt.on_conflict_do_update(index_elements=pks, set_=update_dict)
             session.exec(stmt)
             session.commit()
 
@@ -42,18 +45,13 @@ class BaseDao:
             table = self.model.__table__
             data = [d.dict() if hasattr(d, 'dict') else d.__dict__ for d in items]
             stmt = insert(table).values(data)
-            update_dict = {c.name: getattr(stmt.excluded, c.name) for c in table.columns if c.name != 'id'}
-            stmt = stmt.on_conflict_do_update(index_elements=['id'], set_=update_dict)
+
+            pks = [pk.name for pk in self.model.__table__.primary_key]
+
+            update_dict = {c.name: getattr(stmt.excluded, c.name) for c in table.columns if c.name not in pks}
+            stmt = stmt.on_conflict_do_update(index_elements=pks, set_=update_dict)
             session.execute(stmt)
             session.commit()
-
-        # with get_session() as session:
-        #     values = film_source.model_dump()
-        #     stmt = insert(FilmSourceModel).values(**values)
-        #     update_dict = {c: stmt.excluded[c] for c in values.keys() if c != "id"}
-        #     stmt = stmt.on_conflict_do_update(index_elements=[FilmSourceModel.id], set_=update_dict)
-        #     session.exec(stmt)
-        #     session.commit()
 
     def delete_item(self, filter_dict: dict):
         with get_session() as session:
@@ -65,15 +63,9 @@ class BaseDao:
         with get_session() as session:
             session.add(item)
 
-        # """
-        # 通过Id删除对应的采集站点信息
-        # """
-        # with get_session() as session:
-        #     stat = delete(FilmSourceModel).where(FilmSourceModel.id == id)
-        #     session.exec(stat)
-        #     session.commit()
-        #     return True
-        # return False
+    def update_item(self, filter_dict: dict, update_dict: dict):
+        with get_session() as session:
+            session.query(self.model).filter_by(**filter_dict).update(update_dict)
 
     def query_item(self, filter_dict: dict):
         with Session(self.engine) as session:
@@ -93,16 +85,6 @@ class BaseDao:
             )
             results = session.exec(statement)
             return results.all()  # 返回所有匹配结果的列表
-
-    # with get_session() as session:
-    #     statement = select(FilmSourceModel).where(FilmSourceModel.grade == grade)
-    #     results = session.exec(statement).all()
-    #     return results
-
-    # with get_session() as session:
-    #     statement = select(FilmSourceModel).where(FilmSourceModel.id == id)
-    #     results = session.exec(statement).one_or_none()
-    #     return results
 
     def query_all(self):
         with Session(self.engine) as session:
@@ -126,7 +108,6 @@ class BaseDao:
         :param is_page: 是否开启分页
         :return: 参数配置列表信息对象
         """
-        # .where(MacVod.type_id_1 == pid).order_by(MacVod.vod_time.desc())
 
         with Session(self.engine) as session:
 
@@ -143,14 +124,3 @@ class BaseDao:
                                             is_page)
 
             return config_list
-
-        # with get_session() as session:
-        #     # 计算总数
-        #     count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
-        #     page.total = count
-        #     page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
-        #
-        #     # 查询数据
-        #     query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc()) \
-        #         .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        #     search_info_list = session.exec(query).all()
