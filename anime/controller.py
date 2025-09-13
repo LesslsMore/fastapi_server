@@ -1,38 +1,20 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
+from urllib.parse import urlparse
 
 from fastapi import APIRouter
-from pydantic import BaseModel
-from sqlmodel import select
 
-from anime.anime_vod import AnimeVod, anime_vod_dao
+from anime.anime_vod import AnimeVod, anime_vod_dao, AnimeVodUpsertRequest, AnimeVodSearchRequest
 from config.constant import IOrderEnum
 from dao.base_dao import ConfigPageQueryModel
-from demo.sql import get_session
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/anime')
 
 
-# 添加新的 Pydantic 模型用于 upsert 和 search 接口
-class AnimeVodUpsertRequest(BaseModel):
-    vod_id: int
-    name: str
-    episode: str
-    url: str
-    vod_pic: str
-
-
-class AnimeVodSearchRequest(BaseModel):
-    name: str
-    episode: Optional[str] = None
-
-
 # 新增或更新 AnimeVod 接口
 @router.post("/upsert")
 def upsert_anime_vod(anime_vod_request: AnimeVodUpsertRequest):
-    from urllib.parse import urlparse
-
     name = anime_vod_request.name
     episode = anime_vod_request.episode
     url = anime_vod_request.url
@@ -43,57 +25,42 @@ def upsert_anime_vod(anime_vod_request: AnimeVodUpsertRequest):
     parsed_url = urlparse(url)
     host = parsed_url.hostname or "unknown"
 
-    with get_session() as session:
-        # 根据名称查找现有的 AnimeVod 记录
-        statement = select(AnimeVod).where(AnimeVod.vod_id == vod_id)
-        existing_anime_vod = session.exec(statement).first()
+    existing_anime_vod = anime_vod_dao.query_item(filter_dict={"vod_id": vod_id})
+    if existing_anime_vod:
+        # 如果存在记录，则更新
+        vod_play_url = existing_anime_vod.vod_play_url or {}
 
-        if existing_anime_vod:
-            # 如果存在记录，则更新
-            vod_play_url = existing_anime_vod.vod_play_url or {}
+        # 确保 host 字典存在
+        if host not in vod_play_url:
+            vod_play_url[host] = {}
 
-            # 确保 host 字典存在
-            if host not in vod_play_url:
-                vod_play_url[host] = {}
+        # 更新指定集数的 URL
+        vod_play_url[host][episode] = url
 
-            # 更新指定集数的 URL
-            vod_play_url[host][episode] = url
+        existing_anime_vod.vod_play_url = vod_play_url
+        existing_anime_vod.updated_at = datetime.now()
 
-            existing_anime_vod.vod_play_url = vod_play_url
-            existing_anime_vod.updated_at = datetime.now()
+        anime_vod_dao.update_item(filter_dict={"vod_id": vod_id},
+                                  update_dict={"vod_play_url": existing_anime_vod.vod_play_url,
+                                               "vod_pic": vod_pic,
+                                               "bangumi": anime_vod_request.bangumi,
+                                               })
+        updated_anime_vod = anime_vod_dao.query_item(filter_dict={"vod_id": vod_id})
+        return ResponseUtil.success(data=updated_anime_vod, msg="更新成功")
 
-            # 使用 SQLAlchemy 的 update 方式
-            session.exec(
-                AnimeVod.__table__.update().
-                where(AnimeVod.vod_id == existing_anime_vod.vod_id).
-                values(
-                    vod_play_url=existing_anime_vod.vod_play_url,
-                    vod_pic=vod_pic,
-                    updated_at=existing_anime_vod.updated_at
-                )
-            )
+    else:
+        # 如果不存在记录，则创建新记录
+        vod_play_url = {host: {episode: url}}
 
-            # 注意：使用 update() 后需要重新查询获取更新后的对象
-            statement = select(AnimeVod).where(AnimeVod.vod_id == existing_anime_vod.vod_id)
-            updated_anime_vod = session.exec(statement).first()
-
-            return ResponseUtil.success(data=updated_anime_vod, msg="更新成功")
-        else:
-            # 如果不存在记录，则创建新记录
-            vod_play_url = {host: {episode: url}}
-
-            new_anime_vod = AnimeVod(
-                vod_id=vod_id,
-                vod_name=name,
-                vod_play_url=vod_play_url,
-                vod_pic=vod_pic,
-            )
-
-            session.add(new_anime_vod)
-
-            session.refresh(new_anime_vod)
-
-            return ResponseUtil.success(data=new_anime_vod, msg="创建成功")
+        new_anime_vod = AnimeVod(
+            vod_id=vod_id,
+            vod_name=name,
+            vod_play_url=vod_play_url,
+            vod_pic=vod_pic,
+            bangumi=anime_vod_request.bangumi
+        )
+        anime_vod_dao.create_item(new_anime_vod)
+        return ResponseUtil.success(data=new_anime_vod, msg="创建成功")
 
 
 # 根据 name 和 episode 查询 AnimeVod 并返回所有匹配的 URLs

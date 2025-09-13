@@ -13,7 +13,7 @@ from config.database import sync_engine
 
 
 # 基础Mixin类
-class BaseModel(SQLModel):
+class BaseSQLModel(SQLModel):
     """model的基类,所有model都必须继承"""
 
     created_at: datetime = Field(sa_column=Column(DateTime, nullable=False, default=datetime.now))

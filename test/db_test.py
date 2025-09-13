@@ -3,10 +3,10 @@ from sqlmodel import SQLModel, Field
 
 from config.database import sync_engine
 from dao.base_dao import BaseDao
-from demo.sql import get_session, BaseModel
+from demo.sql import get_session, BaseSQLModel
 
 
-class User(BaseModel, table=True):
+class User(BaseSQLModel, table=True):
     __tablename__ = "user"
     id: int = Field(sa_column=Column(Integer, primary_key=True))
     name: str = Field(sa_column=Column(String(36), nullable=True))

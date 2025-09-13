@@ -3,9 +3,11 @@ POST http://localhost:8000/api/anime/upsert
 Content-Type: application/json
 
 {
-  "name": "鬼灭之刃",
-  "episode": "2",
-  "url": "https://example.com/demon-slayer/ep2.mp4"
+  "vod_id": 14491,
+  "name": "石纪元",
+  "vod_pic": "https://assets.anixplayer.net/image/poster/medium/14491-455b14c5518261c3acce26183bbe5053.jpg",
+  "episode": 11,
+  "url": "https://vip.dytt-cine.com/20250911/55633_e81b2424/index.m3u8"
 }
 
 ### 新增或更新 AnimeVod 接口测试 - 不同 host
@@ -32,7 +34,7 @@ POST http://localhost:8000/api/anime/search
 Content-Type: application/json
 
 {
-  "name": "拔作岛",
+  "name": "石纪元 新世界 第2部分",
   "episode": "7"
 }
 
@@ -41,7 +43,7 @@ POST http://localhost:8000/api/anime/search
 Content-Type: application/json
 
 {
-  "name": "拔作岛"
+  "name": "石纪元 新世界 第2部分"
 }
 
 
