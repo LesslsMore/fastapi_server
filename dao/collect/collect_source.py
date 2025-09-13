@@ -6,7 +6,7 @@ from model.collect.collect_source import FilmSource, SourceGrade, film_source_da
 class FilmSourceService:
     @staticmethod
     def find_collect_source_by_id(id: str) -> FilmSource:
-        item = film_source_dao.query(filter_dict={"id": id})
+        item = film_source_dao.query_item(filter_dict={"id": id})
         return item
 
     @staticmethod

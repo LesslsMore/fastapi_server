@@ -5,10 +5,12 @@ from typing import List, Optional
 from sqlmodel import func
 from sqlmodel import or_, select
 
+from config.constant import IOrderEnum
+from dao.base_dao import ConfigPageQueryModel
 from dao.system.search import GetPage
 from dao.system.search_tag import get_tags_by_title, handle_tag_str
 from demo.sql import get_session
-from model.collect.MacVod import MacVod
+from model.collect.MacVod import MacVod, mac_vod_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list
@@ -186,28 +188,24 @@ def get_mac_vod_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[L
     :param session: 数据库会话(通过依赖注入获取)
     :return: 影片基本信息列表
     """
+
     query = select(MacVod).where(MacVod.type_id_1 == pid)
 
     # 根据排序类型添加排序条件
     if sort_type == 0:
-        query = query.order_by(MacVod.vod_year.desc(), MacVod.vod_time_add.desc())
+        order_bys = ['vod_year', 'vod_time']
     elif sort_type == 1:
-        query = query.order_by(MacVod.vod_hits.desc())
+        order_bys = ['vod_hits']
     elif sort_type == 2:
-        query = query.order_by(MacVod.vod_time.desc())
+        order_bys = ['vod_time']
 
-    # 添加分页限制
-    query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+    page_items = mac_vod_dao.page_items({'type_id_1': pid}, order_bys, IOrderEnum.descendent,
+                                        ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
 
-    try:
-        with get_session() as session:
-            mac_vod_list = session.exec(query).all()
+    mac_vod_list = page_items.rows
 
-            movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
-            return movie_basic_info_list
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
+    movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
+    return movie_basic_info_list
 
 
 def get_search_tag_by_stat(pid: int) -> dict:

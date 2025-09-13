@@ -7,14 +7,16 @@ from sqlalchemy import text, update
 from sqlmodel import not_
 from sqlmodel import select, func, or_
 
+from config.constant import IOrderEnum
 from config.data_config import SEARCH_INFO_TEMP
+from dao.base_dao import ConfigPageQueryModel
 from dao.collect.MacVodDao import MacVodDao
 from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
 from demo.sql import get_session
-from model.collect.MacVod import MacVod
+from model.collect.MacVod import MacVod, mac_vod_dao
 from model.system.movies import MovieBasicInfo
 from model.system.response import Page
-from model.system.search import SearchInfo
+from model.system.search import SearchInfo, search_info_dao
 from model.system.virtual_object import SearchVo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_list_to_search_info_list
 from plugin.db import redis_client
@@ -22,7 +24,9 @@ from plugin.db import redis_client
 
 def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
     mids = [search_info.mid for search_info in search_info_list]
-    mac_vod_list = MacVodDao.select_mac_vod_list(mids)
+    # mac_vod_list = MacVodDao.select_mac_vod_list(mids)
+
+    mac_vod_list = mac_vod_dao.query_items_by_ids(mids)
     movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
     return movie_basic_info_list
 
@@ -31,7 +35,6 @@ def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> Li
 def reset_search_table():
     with get_session() as session:
         session.execute(text('DROP TABLE IF EXISTS search_info'))
-
 
 
 def exist_search_table() -> bool:
@@ -196,19 +199,23 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :param page: 分页参数
     :return: 影片基本信息列表
     """
-    with get_session() as session:
-        # 计算总数
-        count = session.exec(select(func.count()).select_from(MacVod).where(MacVod.type_id_1 == pid)).one()
-        page.total = count
-        page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
+    page_items = mac_vod_dao.page_items({'type_id_1': pid}, ['vod_time'], IOrderEnum.descendent,
+                                        ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
+    page.total = page_items.total
+    page.pageCount = (page_items.total + page_items.page_size - 1) // page_items.page_size
+    mac_vod_list = page_items.rows
+    # with get_session() as session:
+    #     # 计算总数
+    #     count = session.exec(select(func.count()).select_from(MacVod).where(MacVod.type_id_1 == pid)).one()
+    #
+    #
+    #     # 查询数据
+    #     query = select(MacVod).where(MacVod.type_id_1 == pid).order_by(MacVod.vod_time.desc()) \
+    #         .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+    #     mac_vod_list = session.exec(query).all()
 
-        # 查询数据
-        query = select(MacVod).where(MacVod.type_id_1 == pid).order_by(MacVod.vod_time.desc()) \
-            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        mac_vod_list = session.exec(query).all()
-
-        movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
-        return movie_basic_info_list
+    movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
+    return movie_basic_info_list
 
 
 def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
@@ -218,18 +225,24 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :param page: 分页参数
     :return: 影片基本信息列表
     """
-    with get_session() as session:
-        # 计算总数
-        count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
-        page.total = count
-        page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
+    page_items = mac_vod_dao.page_items({'type_id_1': cid}, ['vod_time'], IOrderEnum.descendent,
+                                        ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
+    page.total = page_items.total
+    page.pageCount = (page_items.total + page_items.pageSize - 1) // page_items.pageSize
+    search_info_list = page_items.rows
 
-        # 查询数据
-        query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc()) \
-            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-        search_info_list = session.exec(query).all()
+    # with get_session() as session:
+    #     # 计算总数
+    #     count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
+    #     page.total = count
+    #     page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
+    #
+    #     # 查询数据
+    #     query = select(SearchInfo).where(SearchInfo.cid == cid).order_by(SearchInfo.update_stamp.desc()) \
+    #         .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+    #     search_info_list = session.exec(query).all()
 
-        return get_basic_info_by_search_info_list(search_info_list)
+    return get_basic_info_by_search_info_list(search_info_list)
 
 
 def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:

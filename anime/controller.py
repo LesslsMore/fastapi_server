@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from anime.anime_vod import AnimeVod, anime_vod_dao
+from config.constant import IOrderEnum
 from dao.base_dao import ConfigPageQueryModel
 from demo.sql import get_session
 from utils.response_util import ResponseUtil
@@ -101,7 +102,7 @@ def search_anime_vod_by_name_and_episode(search_request: AnimeVodSearchRequest):
     name = search_request.name
     episode = search_request.episode
 
-    anime_vod = anime_vod_dao.query(filter_dict={"vod_name": name})
+    anime_vod = anime_vod_dao.query_item(filter_dict={"vod_name": name})
 
     if not anime_vod:
         return ResponseUtil.error(msg="未找到该影片")
@@ -130,7 +131,7 @@ def search_anime_vod_by_name_and_episode(search_request: AnimeVodSearchRequest):
 async def get_anime_vods(
         config_page_query: ConfigPageQueryModel
 ):
-    anime_vods = await anime_vod_dao.page(config_page_query, is_page=True)
+    anime_vods = anime_vod_dao.page_items({}, ['vod_id'], IOrderEnum.descendent, config_page_query)
     # with get_session() as session:
     #     anime_vods = await AnimeDao.get_config_list(session, config_page_query, is_page=True)
     return ResponseUtil.success(data=anime_vods, msg="获取成功")

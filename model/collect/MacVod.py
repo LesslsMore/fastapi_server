@@ -1,6 +1,8 @@
 from typing import Optional, List, Any
 from sqlmodel import SQLModel, Field
 
+from dao.base_dao import BaseDao
+
 
 class MacVod(SQLModel, table=True):
     __tablename__ = "mac_vod"
@@ -88,6 +90,8 @@ class MacVod(SQLModel, table=True):
     vod_plot_detail: Optional[str] = Field(default=None, description="分集剧情详情")
     type_name: Optional[str] = Field(default=None, description="分类名称")
 
+
+mac_vod_dao = BaseDao(MacVod)
 
 class FilmDetailLPage(SQLModel):
     code: int
