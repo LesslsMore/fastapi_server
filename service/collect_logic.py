@@ -1,5 +1,5 @@
 from dao.collect.collect_source import FilmSourceService
-from model.collect.collect_source import FilmSource, SourceGrade
+from model.collect.collect_source import FilmSource, SourceGrade, film_source_dao
 
 
 class CollectLogic:
@@ -21,7 +21,9 @@ class CollectLogic:
         if s.grade == SourceGrade.MasterCollect:
             raise ValueError("主站点无法直接删除, 请先降级为附属站点再进行删除")
         # 删除采集源信息
-        return FilmSourceService.del_collect_resource(id)
+
+        film_source_dao.delete_item({"id": id})
+        return True
 
     @staticmethod
     def save_film_source(fs: FilmSource) -> bool:

@@ -5,7 +5,7 @@ from model.system.virtual_object import RecordRequestVo
 from plugin.spider.spider import SpiderService
 from service.collect_logic import CollectLogic
 from dao.collect.collect_source import FilmSourceService
-from model.collect.collect_source import SourceGrade
+from model.collect.collect_source import SourceGrade, film_source_dao
 from dao.collect.collect_source import FilmSource
 from plugin.spider.spider_core import collect_api_test
 from utils.response_util import ResponseUtil
@@ -15,16 +15,16 @@ collectController = APIRouter(prefix='/collect')
 
 @collectController.get("/list")
 def FilmSourceList():
-    data = FilmSourceService.get_collect_source_list()
-    return ResponseUtil.success(data=data, msg="影视源站点信息获取成功")
+    items = film_source_dao.query_all()
+    return ResponseUtil.success(data=items, msg="影视源站点信息获取成功")
 
 
 @collectController.get("/find")
 def FindFilmSource(id: str = Query(..., description="资源站标识")):
-    fs = FilmSourceService.find_collect_source_by_id(id)
-    if fs is None:
+    item = film_source_dao.query(filter_dict={"id": id})
+    if item is None:
         return ResponseUtil.error(msg="数据异常,资源站信息不存在")
-    return ResponseUtil.success(data=fs, msg="原站点详情信息查找成功")
+    return ResponseUtil.success(data=item, msg="原站点详情信息查找成功")
 
 
 @collectController.post("/update")
@@ -122,14 +122,14 @@ def FilmSourceAdd(s: FilmSource):
 
 @collectController.get("/options")
 def GetNormalFilmSource():
-    data = FilmSourceService.get_collect_source_list()
-    return ResponseUtil.success(data=data, msg="影视源信息获取成功")
+    items = film_source_dao.query_all()
+    return ResponseUtil.success(data=items, msg="影视源信息获取成功")
 
 
 @collectController.get("/record/list")
 def FailureRecordList(vo: RecordRequestVo = Query(...)):
     failure_record_list = FailureRecordService.failure_record_list()
-    collect_source_list = FilmSourceService.get_collect_source_list()
+    collect_source_list = film_source_dao.query_all()
     vo.paging = vo
     vo.beginTime = "0001-01-01T00:00:00Z"
     vo.endTime = "0001-01-01T00:00:00Z"

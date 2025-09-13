@@ -4,6 +4,7 @@ from sqlmodel import SQLModel, Field
 import json
 from pydantic import BaseModel
 
+from dao.base_dao import BaseDao
 from plugin.common.util.string_util import generate_salt
 
 
@@ -52,3 +53,6 @@ class FilmSourceModel(SQLModel, FilmSource, table=True):
     __tablename__ = 'film_source'
     id: str = Field(default_factory=generate_salt, primary_key=True)
     uri: str = Field(default=None, unique=True)
+
+
+film_source_dao = BaseDao(FilmSourceModel)

@@ -1,20 +1,20 @@
+import hashlib
 import logging
+from datetime import datetime, timedelta
+from typing import List
+from typing import Union
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from datetime import datetime, timedelta
-from typing import Union
 
-from plugin.db import pg_engine
+from config.database import sync_engine
 from service.spider_logic import SpiderLogic
-import hashlib
-from typing import List
 
 # from utils.log_util import logger
 
 job_stores = {
-    'default': SQLAlchemyJobStore(engine=pg_engine)
+    'default': SQLAlchemyJobStore(engine=sync_engine)
 }
 
 scheduler = AsyncIOScheduler()

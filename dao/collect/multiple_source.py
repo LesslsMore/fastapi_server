@@ -6,10 +6,11 @@ from sqlalchemy import Column, JSON, UniqueConstraint
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import SQLModel, Field, select
 
+from demo.sql import get_session
 from model.collect.MacVod import MacVod
 from model.system.movies import MovieUrlInfo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_detail_list
-from plugin.db import redis_client, get_session
+
 from dao.system.movies import generate_hash_key
 
 

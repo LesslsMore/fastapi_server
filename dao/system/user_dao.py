@@ -1,12 +1,10 @@
-from sqlalchemy import text
-from sqlmodel import SQLModel, Field, Session
 from typing import Optional
 
-from model.system.user import User
-from plugin.common.util.string_util import generate_salt, password_encrypt
-from plugin.db import get_session, pg_engine
-import logging
-from sqlmodel import select
+from sqlalchemy import text
+
+from demo.sql import get_session
+from model.system.user import User, users_dao
+from plugin.common.util.string_util import password_encrypt
 
 
 # 创建用户表
@@ -41,47 +39,32 @@ def exist_user_table() -> bool:
 
 # 初始化管理员账户
 def init_admin_account():
-    try:
-        session = get_session()
+    # user = get_user_by_name_or_email(session, "admin")
+    user = None
+    if user:
+        return
+    u = User(
+        user_name="admin",
+        password="admin",
+        salt='4600d290531a589b',
+        email="administrator@gmail.com",
+        gender=2,
+        nick_name="Zero",
+        avatar="empty",
+        status=0
+    )
+    u.password = password_encrypt(u.password, u.salt)
 
-        # user = get_user_by_name_or_email(session, "admin")
-        user = None
-        if user:
-            return
-        u = User(
-            user_name="admin",
-            password="admin",
-            salt=generate_salt(),
-            email="administrator@gmail.com",
-            gender=2,
-            nick_name="Zero",
-            avatar="empty",
-            status=0
-        )
-        u.password = password_encrypt(u.password, u.salt)
-        session.add(u)
-        session.commit()
-    except Exception as e:
-        logging.error(e)
+    users_dao.create_item(u)
 
 
 # 根据用户名或邮箱获取用户信息
 def get_user_by_name_or_email(user_name: str) -> Optional[User]:
-    session = get_session()
-    result = session.execute(text("SELECT * FROM users WHERE user_name = :user_name OR email = :user_name"),
-                             {"user_name": user_name}).mappings().fetchone()
-    if result:
-        return User(**result)
-    return None
-
-
-# 根据ID获取用户信息
-def get_user_by_id(id: int) -> Optional[User]:
-    session = get_session()
-    statement = select(User).where(User.id == id)
-    result = session.exec(statement).first()
-    if result:
-        return result
+    with get_session() as session:
+        result = session.execute(text("SELECT * FROM users WHERE user_name = :user_name OR email = :user_name"),
+                                 {"user_name": user_name}).mappings().fetchone()
+        if result:
+            return User(**result)
     return None
 
 
@@ -90,11 +73,11 @@ def update_user_info(u: User):
     session = get_session()
     session.execute(text(
         "UPDATE users SET password = :password, email = :email, nick_name = :nick_name, status = :status WHERE id = :id"),
-                    {
-                        "password": u.password,
-                        "email": u.email,
-                        "nick_name": u.nick_name,
-                        "status": u.status,
-                        "id": u.id
-                    })
+        {
+            "password": u.password,
+            "email": u.email,
+            "nick_name": u.nick_name,
+            "status": u.status,
+            "id": u.id
+        })
     session.commit()

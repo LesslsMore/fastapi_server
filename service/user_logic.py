@@ -1,4 +1,5 @@
-from dao.system.user_dao import get_user_by_id, get_user_by_name_or_email
+from dao.system.user_dao import get_user_by_name_or_email
+from model.system.user import users_dao
 from plugin.common.util.string_util import password_encrypt
 from plugin.middleware.jwt_token import gen_token, save_user_token
 
@@ -7,7 +8,7 @@ class UserLogic:
     @staticmethod
     def get_user_info(id: int) -> dict:
         # 通过用户ID查询对应的用户信息
-        user = get_user_by_id(id)
+        user = users_dao.query(filter_dict={"id": id})
         if user:
             # 去除user信息中的不必要信息
             user_info = {
