@@ -2,9 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import SQLModel
 
+from config.database import sync_engine
+from dao.system.user_dao import init_admin_account
 from plugin.db.redis_client import close_redis
-from plugin.init.db_init import table_init
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
 from utils.get_scheduler import SchedulerUtil
@@ -12,7 +14,9 @@ from utils.get_scheduler import SchedulerUtil
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    table_init()
+    SQLModel.metadata.create_all(sync_engine)
+
+    init_admin_account()
 
     film_source_init()
     basic_config_init()
