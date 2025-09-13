@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from dao.collect.collect_source import FilmSourceService
-from model.collect.collect_source import FilmSource, SourceGrade, CollectResultModel, ResourceType
+from model.collect.collect_source import FilmSource, SourceGrade, CollectResultModel, ResourceType, film_source_dao
 from plugin.common.util.string_util import generate_salt
 
 
@@ -11,7 +11,7 @@ def film_source_init():
     # 首先获取filmSourceList数据, 如果存在则直接返回
     if FilmSourceService.exist_collect_source_list():
         return
-    l: List[FilmSource] = [
+    items: List[FilmSource] = [
         FilmSource(id=generate_salt(), type_id=-1, name="天涯资源", uri="https://tyyszy.com/api.php/provide/vod",
                    resultModel=CollectResultModel.JsonResult, grade=SourceGrade.SlaveCollect, syncPictures=False,
                    collectType=ResourceType.CollectVideo, state=False),
@@ -39,6 +39,9 @@ def film_source_init():
         FilmSource(id=generate_salt(), type_id=-1, name="HD(DB)", uri="https://caiji.dbzy.tv/api.php/provide/vod/from/dbm3u8/at/josn/", resultModel=CollectResultModel.JsonResult, grade=SourceGrade.SlaveCollect, syncPictures=False, collectType=ResourceType.CollectVideo, state=False),
         FilmSource(id=generate_salt(), type_id=-1, name="HD(IK)", uri="https://ikunzyapi.com/api.php/provide/vod/at/json", resultModel=CollectResultModel.JsonResult, grade=SourceGrade.SlaveCollect, syncPictures=False, collectType=ResourceType.CollectVideo, state=False),
     ]
-    err = FilmSourceService.save_collect_source_list(l)
-    if err:
-        logging.info(f"SaveSourceApiList Error: {err}")
+
+    film_source_dao.upsert_items(items)
+
+    # err = FilmSourceService.save_collect_source_list(l)
+    # if err:
+    #     logging.info(f"SaveSourceApiList Error: {err}")

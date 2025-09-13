@@ -4,7 +4,7 @@ from sqlalchemy import Column, JSON, UniqueConstraint
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import SQLModel, Field
 
-from plugin.db import get_session
+from demo.sql import get_session
 
 
 class KVModel(SQLModel, table=True):
@@ -36,7 +36,7 @@ class KVDao:
             update_dict = {c: stmt.excluded[c] for c in values.keys() if c != "key"}
             stmt = stmt.on_conflict_do_update(index_elements=['key'], set_=update_dict)
             session.exec(stmt)
-            session.commit()
+
 
     @staticmethod
     def exists(key: str):

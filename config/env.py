@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from functools import lru_cache
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
@@ -13,15 +13,15 @@ class AppSettings(BaseSettings):
     应用配置
     """
 
-    app_env: str = 'dev'
-    app_name: str = 'RuoYi-FasAPI'
-    app_root_path: str = '/dev-api'
-    app_host: str = '0.0.0.0'
-    app_port: int = 9099
-    app_version: str = '1.0.0'
-    app_reload: bool = True
-    app_ip_location_query: bool = True
-    app_same_time_login: bool = True
+    app_env: str
+    app_name: str
+    app_root_path: str
+    app_host: str
+    app_port: int
+    app_version: str
+    app_reload: bool
+    app_ip_location_query: bool
+    app_same_time_login: bool
 
 
 class JwtSettings(BaseSettings):
@@ -51,6 +51,7 @@ class DataBaseSettings(BaseSettings):
     db_pool_size: int = 50
     db_pool_recycle: int = 3600
     db_pool_timeout: int = 30
+    POSTGRES_URL: str
 
     @computed_field
     @property
@@ -229,16 +230,24 @@ class GetConfig:
 
 
 # 实例化获取配置类
-get_config = GetConfig()
-# 应用配置
-AppConfig = get_config.get_app_config()
-# Jwt配置
-JwtConfig = get_config.get_jwt_config()
+# get_config = GetConfig()
+# # 应用配置
+# AppConfig = get_config.get_app_config()
+# # Jwt配置
+# JwtConfig = get_config.get_jwt_config()
+
+# # 代码生成配置
+# GenConfig = get_config.get_gen_config()
+# # 上传配置
+# UploadConfig = get_config.get_upload_config()
+
+env_file = '.env.dev'
+# 运行环境不为空时按命令行参数加载对应.env文件
+
+# 加载配置
+load_dotenv(find_dotenv(env_file))
+
 # 数据库配置
-DataBaseConfig = get_config.get_database_config()
+DataBaseConfig = DataBaseSettings()
 # Redis配置
-RedisConfig = get_config.get_redis_config()
-# 代码生成配置
-GenConfig = get_config.get_gen_config()
-# 上传配置
-UploadConfig = get_config.get_upload_config()
+RedisConfig = RedisSettings()

@@ -3,6 +3,7 @@ from typing import Any
 import json
 
 from dao.collect.MacVodDao import MacVodDao
+from demo.sql import get_session
 from plugin.db import redis_client
 from sqlalchemy import text
 from config.data_config import SEARCH_TITLE, SEARCH_TAG
@@ -11,7 +12,7 @@ from datetime import datetime
 from model.system.search import SearchInfo
 
 from typing import List, Optional
-from plugin.db import get_session
+
 from dao.collect.categories import CategoryTreeService
 
 
@@ -24,9 +25,9 @@ def film_zero():
         keys = redis_client.keys(pattern)
         if keys:
             redis_client.delete(*keys)
-    session = get_session()
-    session.execute(text('TRUNCATE TABLE search_info'))
-    session.commit()
+    with get_session() as session:
+        session.execute(text('TRUNCATE TABLE search_info'))
+        session.commit()
 
 
 # 清空附加播放源信息

@@ -1,16 +1,16 @@
-from typing import Optional, List
-from sqlmodel import Field, SQLModel, Session, select
+from typing import List
 
+from sqlmodel import select
+
+from demo.sql import get_session
 from model.collect.MacType import MacType
-from plugin.db import get_session, pg_engine
 
 
 class MacTypeDao:
 
     @staticmethod
     def get_mac_type_list() -> List[MacType]:
-        with Session(pg_engine) as session:
+        with get_session() as session:
             statement = select(MacType).where(MacType.type_status == 1)
             results = session.exec(statement).all()
             return results
-

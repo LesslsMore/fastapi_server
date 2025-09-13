@@ -32,8 +32,8 @@ POST http://localhost:8000/api/anime/search
 Content-Type: application/json
 
 {
-  "name": "未知动漫",
-  "episode": "1"
+  "name": "拔作岛",
+  "episode": "7"
 }
 
 ### 测试不存在的集数
@@ -41,7 +41,7 @@ POST http://localhost:8000/api/anime/search
 Content-Type: application/json
 
 {
-  "name": "新石纪第二季"
+  "name": "拔作岛"
 }
 
 
@@ -76,7 +76,7 @@ Content-Type: application/json
 
 {
   "page_num": 1,
-  "page_size": 1
+  "page_size": 10
 }
 
 ### 根据 ID 获取单个 AnimeVod 记录

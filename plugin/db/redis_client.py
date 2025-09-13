@@ -4,7 +4,7 @@ import redis
 from config import data_config, config
 import os
 
-
+from plugin.db import redis_client
 
 
 def init_redis_conn():
@@ -37,3 +37,11 @@ def init_redis_conn():
 
 
 
+
+
+def get_redis_client():
+    return redis_client
+
+
+def close_redis():
+    redis_client.close()

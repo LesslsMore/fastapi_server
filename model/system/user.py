@@ -1,5 +1,7 @@
 from sqlmodel import SQLModel, Field
 
+from dao.base_dao import BaseDao
+
 
 class User(SQLModel, table=True):
     __tablename__ = 'users'
@@ -7,7 +9,7 @@ class User(SQLModel, table=True):
     user_name: str = Field(default=None, nullable=True)
     password: str = Field(default=None, nullable=True)
     salt: str = Field(default=None, nullable=True)
-    email: str = Field(default=None, nullable=True, unique=True)
+    email: str = Field(default=None, nullable=True)
     gender: int = Field(default=None, nullable=True)
     nick_name: str = Field(default=None, nullable=True)
     avatar: str = Field(default=None, nullable=True)
@@ -15,3 +17,6 @@ class User(SQLModel, table=True):
     reserve1: str = Field(default=None, nullable=True)
     reserve2: str = Field(default=None, nullable=True)
     reserve3: str = Field(default=None, nullable=True)
+
+
+users_dao = BaseDao(User)

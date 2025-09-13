@@ -1,23 +1,23 @@
-import logging
-from sqlmodel import not_
 import json
+import logging
+from datetime import datetime, timedelta
+from typing import List, Optional
 
+from sqlalchemy import text, update
+from sqlmodel import not_
+from sqlmodel import select, func, or_
+
+from config.data_config import SEARCH_INFO_TEMP
 from dao.collect.MacVodDao import MacVodDao
+from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
+from demo.sql import get_session
 from model.collect.MacVod import MacVod
+from model.system.movies import MovieBasicInfo
+from model.system.response import Page
+from model.system.search import SearchInfo
 from model.system.virtual_object import SearchVo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_list_to_search_info_list
-from plugin.db import redis_client, pg_engine
-from sqlalchemy import text, update
-from config.data_config import SEARCH_INFO_TEMP
-from datetime import datetime, timedelta
-from model.system.movies import MovieBasicInfo
-from model.system.search import SearchInfo
-
-from typing import List, Optional
-from sqlmodel import Session, select, func, or_
-from plugin.db import get_session
-from model.system.response import Page
-from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
+from plugin.db import redis_client
 
 
 def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> List[MovieBasicInfo]:
@@ -29,37 +29,36 @@ def get_basic_info_by_search_info_list(search_info_list: List[SearchInfo]) -> Li
 
 # 重置Search表
 def reset_search_table():
-    session = get_session()
-    session.execute(text('DROP TABLE IF EXISTS search_info'))
-    session.commit()
+    with get_session() as session:
+        session.execute(text('DROP TABLE IF EXISTS search_info'))
+
 
 
 def exist_search_table() -> bool:
     """
     判断是否存在Search Table
     """
-    session = get_session()
-    result = session.execute("""
-    SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'search_info'
-    )
-    """).fetchone()
-    return result[0]
+    with get_session() as session:
+        result = session.execute("""
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_name = 'search_info'
+        )
+        """).fetchone()
+        return result[0]
 
 
 # 判断是否存在影片检索信息
 def exist_search_info(mid: int):
-    session = get_session()
-    result = session.execute(text("SELECT COUNT(*) FROM search_info WHERE mid=:mid"), {"mid": mid})
-    return result.scalar() > 0
+    with get_session() as session:
+        result = session.execute(text("SELECT COUNT(*) FROM search_info WHERE mid=:mid"), {"mid": mid})
+        return result.scalar() > 0
 
 
 # 截断search_info表
 def truncate_search_table():
-    session = get_session()
-    session.execute(text('TRUNCATE TABLE search_info'))
-    session.commit()
+    with get_session() as session:
+        session.execute(text('TRUNCATE TABLE search_info'))
 
 
 # 影片检索相关的其他函数
@@ -70,8 +69,7 @@ def get_search_infos_by_tags(st: dict, page: Page) -> Optional[List[SearchInfo]]
     :param page: 分页参数
     :return: 符合条件的SearchInfo列表
     """
-    try:
-        session = get_session()
+    with get_session() as session:
         query = select(SearchInfo)
 
         # 处理各标签条件
@@ -118,16 +116,13 @@ def get_search_infos_by_tags(st: dict, page: Page) -> Optional[List[SearchInfo]]
 
         search_infos = session.exec(query).all()
         return search_infos
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def GetPage(query, page: Page):
     count_query = select(func.count()).select_from(query.subquery())  # 计数查询
 
     # 执行获取数量
-    with Session(pg_engine) as session:
+    with get_session() as session:
         total = session.exec(count_query).one_or_none()
         if total:
             page.total = int(total)
@@ -137,7 +132,7 @@ def GetPage(query, page: Page):
 
 
 def GetSearchPage(s: SearchVo) -> List[SearchInfo]:
-    with Session(pg_engine) as session:
+    with get_session() as session:
         # 构建基础查询
         query = select(MacVod)
 
@@ -201,8 +196,7 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :param page: 分页参数
     :return: 影片基本信息列表
     """
-    try:
-        session = get_session()
+    with get_session() as session:
         # 计算总数
         count = session.exec(select(func.count()).select_from(MacVod).where(MacVod.type_id_1 == pid)).one()
         page.total = count
@@ -215,9 +209,6 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
 
         movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
@@ -227,8 +218,7 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
     :param page: 分页参数
     :return: 影片基本信息列表
     """
-    try:
-        session = get_session()
+    with get_session() as session:
         # 计算总数
         count = session.exec(select(func.count()).select_from(SearchInfo).where(SearchInfo.cid == cid)).one()
         page.total = count
@@ -240,9 +230,6 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
         search_info_list = session.exec(query).all()
 
         return get_basic_info_by_search_info_list(search_info_list)
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
@@ -252,8 +239,7 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
     :param page: 分页参数
     :return: 搜索信息列表
     """
-    try:
-        session = get_session()
+    with get_session() as session:
         # 当前时间偏移一个月
         t = datetime.now() - timedelta(days=30)
 
@@ -266,9 +252,6 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
         mac_vod_list = session.exec(query).all()
         search_info_list = mac_vod_list_to_search_info_list(mac_vod_list)
         return search_info_list
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
@@ -278,8 +261,7 @@ def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
     :param page: 分页参数
     :return: 搜索信息列表
     """
-    try:
-        session = get_session()
+    with get_session() as session:
         # 当前时间偏移一个月
         t = datetime.now() - timedelta(days=30)
 
@@ -290,9 +272,6 @@ def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
             .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
 
         return session.exec(query).all()
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
@@ -317,14 +296,10 @@ def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[Lis
     # 添加分页限制
     query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
 
-    try:
-        session = get_session()
+    with get_session() as session:
         search_infos = session.exec(query).all()
         return get_basic_info_by_search_info_list(search_infos)
         # return get_basic_info_by_search_infos(search_infos)
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List[MovieBasicInfo]]:
@@ -340,8 +315,7 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
     """
     import re
     from sqlmodel import or_, select
-    try:
-        session = get_session()
+    with get_session() as session:
         # 确保分页参数 current 至少为 1
         page.current = max(1, page.current)
         # 处理影片名称，去除季、数字、剧场版等
@@ -374,9 +348,6 @@ def get_relate_movie_basic_info(search: SearchInfo, page: Page) -> Optional[List
         query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
         search_info_list = session.exec(query).all()
         return get_basic_info_by_search_info_list(search_info_list)
-    except Exception as e:
-        logging.info(f"查询相关影片失败: {e}")
-        return None
 
 
 def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
@@ -386,8 +357,7 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
     :param page: 分页参数
     :return: SearchInfo列表
     """
-    try:
-        session = get_session()
+    with get_session() as session:
         # 统计满足条件的数据量
         count = session.exec(
             select(func.count()).select_from(SearchInfo)
@@ -415,28 +385,23 @@ def search_film_keyword(keyword: str, page: Page) -> Optional[List[SearchInfo]]:
         )
         search_list = session.exec(query).all()
         return search_list
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
 
 
 def save_search_info(search_info: SearchInfo) -> None:
     # Save search information to the database
-    session = get_session()
-    if not exist_search_info(search_info.mid):
-        session.add(search_info)
-        session.commit()
-        batch_handle_search_tag([search_info])
-    else:
-        session.query(SearchInfo).filter(SearchInfo.mid == search_info.mid).update({
-            SearchInfo.update_stamp: search_info.update_stamp,
-            SearchInfo.hits: search_info.hits,
-            SearchInfo.state: search_info.state,
-            SearchInfo.remarks: search_info.remarks,
-            SearchInfo.score: search_info.score,
-            SearchInfo.release_stamp: search_info.release_stamp
-        })
-        session.commit()
+    with get_session() as session:
+        if not exist_search_info(search_info.mid):
+            session.add(search_info)
+            batch_handle_search_tag([search_info])
+        else:
+            session.query(SearchInfo).filter(SearchInfo.mid == search_info.mid).update({
+                SearchInfo.update_stamp: search_info.update_stamp,
+                SearchInfo.hits: search_info.hits,
+                SearchInfo.state: search_info.state,
+                SearchInfo.remarks: search_info.remarks,
+                SearchInfo.score: search_info.score,
+                SearchInfo.release_stamp: search_info.release_stamp
+            })
 
 
 def sync_search_info(model: int) -> None:
@@ -450,31 +415,24 @@ def sync_search_info(model: int) -> None:
 
 def exist_search_info(mid: int) -> bool:
     # Check if search information exists in the database
-    session = get_session()
-    count = session.query(SearchInfo).filter(SearchInfo.mid == mid).count()
-    return count > 0
+    with get_session() as session:
+        count = session.query(SearchInfo).filter(SearchInfo.mid == mid).count()
+        return count > 0
 
 
 def truncate_search_table() -> None:
     # Truncate the search_info table
-    session = get_session()
-    session.execute('TRUNCATE TABLE search_info')
-    session.commit()
+    with get_session() as session:
+        session.execute('TRUNCATE TABLE search_info')
 
 
 # Additional functions can be implemented similarly based on the Go code
 
 
 def batch_save(search_info_list: List[SearchInfo]) -> None:
-    session = get_session()
-    try:
+    with get_session() as session:
         session.bulk_save_objects(search_info_list)
         batch_handle_search_tag(search_info_list)
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        logging.info(f"批量保存失败: {e}")
-        logging.error(f"批量保存失败: {e}")
 
 
 def search_info_to_mdb(model: int) -> None:
@@ -500,50 +458,48 @@ def search_info_to_mdb(model: int) -> None:
 
 
 def batch_save_or_update(list_: List[SearchInfo]) -> None:
-    session = get_session()
-    for info in list_:
-        existing_info = session.exec(select(SearchInfo).where(SearchInfo.mid == info.mid)).first()
-        if existing_info:
-            try:
-                session.exec(
-                    update(SearchInfo)
-                    .where(SearchInfo.mid == info.mid)
-                    .values(
-                        update_stamp=info.update_stamp,
-                        hits=info.hits,
-                        state=info.state,
-                        remarks=info.remarks,
-                        score=info.score,
-                        release_stamp=info.release_stamp
+    with get_session() as session:
+        for info in list_:
+            existing_info = session.exec(select(SearchInfo).where(SearchInfo.mid == info.mid)).first()
+            if existing_info:
+                try:
+                    session.exec(
+                        update(SearchInfo)
+                        .where(SearchInfo.mid == info.mid)
+                        .values(
+                            update_stamp=info.update_stamp,
+                            hits=info.hits,
+                            state=info.state,
+                            remarks=info.remarks,
+                            score=info.score,
+                            release_stamp=info.release_stamp
+                        )
                     )
-                )
-            except Exception as e:
-                session.rollback()
-                logging.error(f"batch_save_or_update: {e}")
-        else:
-            try:
-                session.add(info)
-                batch_handle_search_tag([info])
-            except Exception as e:
-                session.rollback()
-                logging.error(f"batch_handle_search_tag: {e}")
-    session.commit()
+                except Exception as e:
+                    session.rollback()
+                    logging.error(f"batch_save_or_update: {e}")
+            else:
+                try:
+                    session.add(info)
+                    batch_handle_search_tag([info])
+                except Exception as e:
+                    logging.error(f"batch_handle_search_tag: {e}")
 
 
 def add_search_index() -> None:
-    session = get_session()
-    session.exec(text("CREATE UNIQUE INDEX idx_mid ON search (mid)"))
-    session.exec(text("CREATE INDEX idx_time ON search (update_stamp DESC)"))
-    session.exec(text("CREATE INDEX idx_hits ON search (hits DESC)"))
-    session.exec(text("CREATE INDEX idx_score ON search (score DESC)"))
-    session.exec(text("CREATE INDEX idx_release ON search (release_stamp DESC)"))
-    session.exec(text("CREATE INDEX idx_year ON search (year DESC)"))
+    with get_session() as session:
+        session.exec(text("CREATE UNIQUE INDEX idx_mid ON search (mid)"))
+        session.exec(text("CREATE INDEX idx_time ON search (update_stamp DESC)"))
+        session.exec(text("CREATE INDEX idx_hits ON search (hits DESC)"))
+        session.exec(text("CREATE INDEX idx_score ON search (score DESC)"))
+        session.exec(text("CREATE INDEX idx_release ON search (release_stamp DESC)"))
+        session.exec(text("CREATE INDEX idx_year ON search (year DESC)"))
 
 
 def get_search_info(id):
     # 通过ID获取影片搜索信息
-    session = get_session()
-    search_info = session.exec(
-        select(SearchInfo).where(SearchInfo.mid == id)
-    ).first()
-    return search_info
+    with get_session() as session:
+        search_info = session.exec(
+            select(SearchInfo).where(SearchInfo.mid == id)
+        ).first()
+        return search_info
