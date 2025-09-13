@@ -1,32 +1,30 @@
-# 创建Session和Base
 import contextlib
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import Column, Integer, DateTime, String
+from sqlalchemy import Column, DateTime
 from sqlmodel import Session, SQLModel, Field
 
 from config.database import sync_engine
 
 
-# Session = sessionmaker(bind=engine)
-# Base = declarative_base(engine)
+# 定义 UTC+8 时区
+def get_time(hours: int = 8):
+    return datetime.now(timezone(timedelta(hours=hours)))
 
 
 # 基础Mixin类
 class BaseSQLModel(SQLModel):
     """model的基类,所有model都必须继承"""
 
-    created_at: datetime = Field(sa_column=Column(DateTime, nullable=False, default=datetime.now))
+    created_at: datetime = Field(sa_column=Column(DateTime, nullable=False, default=get_time))
     updated_at: datetime = Field(sa_column=Column(
         DateTime,
         nullable=False,
-        default=datetime.now,
-        onupdate=datetime.now,
+        default=get_time,
+        onupdate=get_time,
         index=True
     ))
     deleted_at: datetime = Field(sa_column=Column(DateTime))  # 可以为空, 如果非空, 则为软删
-
-
 
 
 # 会话上下文管理器
@@ -41,7 +39,6 @@ def get_session():
         raise e
     finally:
         session.close()
-
 
 # 定义User模型
 # class User(BaseModel, table=True):
