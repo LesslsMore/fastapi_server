@@ -1,5 +1,6 @@
-from typing import Optional
 from sqlmodel import Field, SQLModel
+
+from dao.base_dao import BaseDao
 
 
 class MacTypeBase(SQLModel):
@@ -27,3 +28,6 @@ class MacTypeBase(SQLModel):
 class MacType(MacTypeBase, table=True):
     __tablename__ = "mac_type"
     type_id: int = Field(default=None, primary_key=True, nullable=True)  # smallint unsigned + auto-increment
+
+
+mac_type_dao = BaseDao(MacType)

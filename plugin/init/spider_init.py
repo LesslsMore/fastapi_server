@@ -1,7 +1,5 @@
-import logging
 from typing import List
 
-from dao.collect.collect_source import FilmSourceService
 from model.collect.collect_source import FilmSource, SourceGrade, CollectResultModel, ResourceType, film_source_dao
 from plugin.common.util.string_util import generate_salt
 
@@ -9,7 +7,8 @@ from plugin.common.util.string_util import generate_salt
 # FilmSourceInit 初始化预存站点信息，提供一些预存采集连Api链接
 def film_source_init():
     # 首先获取filmSourceList数据, 如果存在则直接返回
-    if FilmSourceService.exist_collect_source_list():
+    items = film_source_dao.query_all()
+    if len(items) > 0:
         return
     items: List[FilmSource] = [
         FilmSource(id=generate_salt(), type_id=-1, name="天涯资源", uri="https://tyyszy.com/api.php/provide/vod",
