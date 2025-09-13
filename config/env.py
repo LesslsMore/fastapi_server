@@ -35,6 +35,12 @@ class JwtSettings(BaseSettings):
     jwt_redis_expire_minutes: int = 30
 
 
+class DanmuSettings(BaseSettings):
+    DANMU_APP_ID: str = ''
+    DANMU_APP_SECRET: str = ''
+    TARGET_SERVER: str = "https://api.dandanplay.net"
+
+
 class DataBaseSettings(BaseSettings):
     """
     数据库配置
@@ -251,3 +257,4 @@ load_dotenv(find_dotenv(env_file))
 DataBaseConfig = DataBaseSettings()
 # Redis配置
 RedisConfig = RedisSettings()
+DanmuConfig = DanmuSettings()

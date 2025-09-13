@@ -1,11 +1,12 @@
 import logging
-import os
 
 import httpx
 from fastapi import FastAPI
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import FileResponse, Response
+
+from config.env import DanmuConfig
 
 
 def app_handler(app: FastAPI):
@@ -18,19 +19,16 @@ def app_handler(app: FastAPI):
     @app.api_route("/proxy/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
     async def proxy(full_path: str, request: Request):
         # 从环境变量读取敏感信息（需提前配置）
-        DANMU_APP_ID = os.getenv("danmu_appId")
-        DANMU_APP_SECRET = os.getenv("danmu_appSecret")
-        TARGET_SERVER = "https://api.dandanplay.net"
 
         # 构造目标 URL
-        url = f"{TARGET_SERVER}/{full_path}"
+        url = f"{DanmuConfig.TARGET_SERVER}/{full_path}"
         logging.info("Proxying request to:", url)
 
         # 读取请求体和请求头
         body = await request.body()
         headers = dict(request.headers)
-        headers["X-AppId"] = DANMU_APP_ID
-        headers["X-AppSecret"] = DANMU_APP_SECRET
+        headers["X-AppId"] = DanmuConfig.DANMU_APP_ID
+        headers["X-AppSecret"] = DanmuConfig.DANMU_APP_SECRET
         headers.pop("host", None)  # 避免 Host 被错误传递
 
         # 创建异步客户端请求
