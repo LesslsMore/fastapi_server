@@ -1,0 +1,2 @@
+### 重置分类信息
+GET {{url}}/api/manage/spider/class/cover

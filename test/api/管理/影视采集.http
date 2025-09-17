@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+###
+GET http://127.0.0.1:8000/api/manage/collect/options
+
+###
+GET http://127.0.0.1:8000/api/manage/collect/find?id=47a1453218ad027f
+
+
+###
+GET {{url}}/api/manage/collect/list
+
+###
+POST {{url}}/api/manage/collect/test
+Content-Type: application/json
+
+{
+  "resultModel": 0,
+  "id": "ca0090b9c9ff7dfd",
+  "syncPictures": false,
+  "type_id": 30,
+  "interval": 0,
+  "grade": 0,
+  "name": "HD(LZ)",
+  "uri": "https://cj.lziapi.com/api.php/provide/vod/",
+  "collectType": 0,
+  "state": true
+}
+
+###
+POST {{url}}/api/manage/spider/start
+Content-Type: application/json
+
+{
+  "id": "ca0090b9c9ff7dfd",
+  "time": 24,
+  "batch": false
+}
