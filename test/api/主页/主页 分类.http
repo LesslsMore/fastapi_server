@@ -1,0 +1,9 @@
+###
+GET {{url}}/api/filmClassify?pid=0
+
+###
+GET {{url}}/api/filmDetail?id=62662
+
+
+###
+GET {{url}}/api/filmClassifySearch?Pid=0

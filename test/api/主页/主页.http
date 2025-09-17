@@ -1,0 +1,6 @@
+###
+GET {{url}}/api/index
+###
+GET {{url}}/api/navCategory
+###
+GET {{url}}/api/config/basic
