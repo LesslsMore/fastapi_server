@@ -10,13 +10,12 @@ from sqlmodel import select, func, or_
 from config.constant import IOrderEnum
 from config.data_config import SEARCH_INFO_TEMP
 from dao.base_dao import ConfigPageQueryModel
-from dao.collect.MacVodDao import MacVodDao
 from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
 from demo.sql import get_session
 from model.collect.MacVod import MacVod, mac_vod_dao
 from model.system.movies import MovieBasicInfo
-from model.system.response import Page
-from model.system.search import SearchInfo, search_info_dao
+from model.system.response import Page, set_page
+from model.system.search import SearchInfo
 from model.system.virtual_object import SearchVo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_list_to_search_info_list
 from plugin.db import redis_client
@@ -201,8 +200,9 @@ def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]
     """
     page_items = mac_vod_dao.page_items({'type_id_1': pid}, ['vod_time'], IOrderEnum.descendent,
                                         ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
-    page.total = page_items.total
-    page.pageCount = (page_items.total + page_items.page_size - 1) // page_items.page_size
+
+    set_page(page, page_items)
+
     mac_vod_list = page_items.rows
 
     movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
@@ -218,11 +218,8 @@ def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]
     """
     page_items = mac_vod_dao.page_items({'type_id': cid}, ['vod_time'], IOrderEnum.descendent,
                                         ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
-    page.total = page_items.total
-    page.pageCount = (page_items.total + page_items.pageSize - 1) // page_items.pageSize
+    set_page(page, page_items)
     mac_vod_list = page_items.rows
-
-
 
     movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
     return movie_basic_info_list

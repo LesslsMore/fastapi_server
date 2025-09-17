@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class Category(BaseModel):
     id: Optional[int] = None
     pid: Optional[int] = None
+    Pid: Optional[int] = None
     name: Optional[str] = None
     show: Optional[bool] = None
 
