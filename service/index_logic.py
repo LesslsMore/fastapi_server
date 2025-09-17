@@ -37,18 +37,18 @@ class IndexLogic:
         info["category"] = tree.model_dump()
         # 2. 首页内容
         content = []
-        for c in tree.children:
+        for child in tree.children:
             page = Page(pageSize=14, current=1)
-            if c.children:
-                movies = get_movie_list_by_pid(c.id, page)
-                hot_movies = get_hot_movie_by_pid(c.id, page)
+            if child.children:
+                movies = get_movie_list_by_pid(child.id, page)
+                hot_movies = get_hot_movie_by_pid(child.id, page)
             else:
                 # movies = get_movie_list_by_pid(c.id, page)
                 # hot_movies = get_hot_movie_by_pid(c.id, page)
 
-                movies = get_movie_list_by_cid(c.id, page)
+                movies = get_movie_list_by_cid(child.id, page)
                 # hot_movies = get_hot_movie_by_cid(c.id, page)
-                hot_movies = get_hot_movie_by_pid(c.id, page)
+                hot_movies = get_hot_movie_by_pid(child.id, page)
             movies_data = []
             if movies:
                 movies_data = [m.model_dump() for m in movies]
@@ -56,7 +56,7 @@ class IndexLogic:
             if hot_movies:
                 hot_movies_data = [h.model_dump() for h in hot_movies]
             item = {
-                "nav": c.model_dump(),
+                "nav": child.model_dump(),
                 "movies": movies_data,
                 "hot": hot_movies_data,
             }

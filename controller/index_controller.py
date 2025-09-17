@@ -96,7 +96,7 @@ def search_film(
 
 @indexController.get("/filmClassify")
 def film_classify(request: Request, category: Category = Query(...)):
-    pid = category.pid
+    pid = category.pid if isinstance(category.pid, int) else category.Pid
     title = IndexLogic.get_pid_category(pid)
     page = {"pageSize": 21, "current": 1}
     # content = IndexLogic.get_film_classify(pid, 1, 21)

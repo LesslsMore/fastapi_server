@@ -2,10 +2,12 @@ import logging
 import re
 from typing import List, Optional
 
+from sqlmodel import Session
 from sqlmodel import func
 from sqlmodel import or_, select
 
 from config.constant import IOrderEnum
+from config.database import sync_engine
 from dao.base_dao import ConfigPageQueryModel
 from dao.system.search import GetPage
 from dao.system.search_tag import get_tags_by_title, handle_tag_str
@@ -24,7 +26,7 @@ def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
     :return: 符合条件的SearchInfo列表
     """
     try:
-        with get_session() as session:
+        with Session(sync_engine) as session:
             query = select(MacVod)
 
             # 处理各标签条件

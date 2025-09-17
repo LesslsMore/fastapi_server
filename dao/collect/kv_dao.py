@@ -25,7 +25,8 @@ class KVDao:
     @staticmethod
     def get_value(key: str) -> str:
         item = key_value_dao.query_item(filter_dict={'key': key})
-        return item.value
+        if item:
+            return item.value
 
     @staticmethod
     def set_value(key: str, value: str) -> dict:

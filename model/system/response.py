@@ -13,6 +13,10 @@ class Page(BaseModel):
     # def pageCount(self) -> int:
     #     return (self.total + self.pageSize - 1) // self.pageSize if self.pageSize > 0 else 0
 
+def set_page(page: Page, page_items):
+    page.total = page_items.total
+    page.pageCount = (page_items.total + page_items.page_size - 1) // page_items.page_size
+
 
 class PagingData(BaseModel):
     list: List[Any]
