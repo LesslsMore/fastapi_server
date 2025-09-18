@@ -9,7 +9,7 @@ from config.constant import IOrderEnum
 from dao.base_dao import ConfigPageQueryModel
 from utils.response_util import ResponseUtil
 
-router = APIRouter(prefix='/anime')
+router = APIRouter(prefix='/anime', tags=["弹幕动漫"])
 
 
 # 新增或更新 AnimeVod 接口

@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from utils.response_util import ResponseUtil  # 假设 ResponseUtil 在此路径
 
-userController = APIRouter()
+userController = APIRouter( tags=['用户'])
 
 
 class LoginRequest(BaseModel):

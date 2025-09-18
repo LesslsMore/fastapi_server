@@ -1,6 +1,8 @@
-###
+### 主页
 GET {{url}}/api/index
-###
+
+### 导航分类
 GET {{url}}/api/navCategory
-###
+
+### 基础配置
 GET {{url}}/api/config/basic

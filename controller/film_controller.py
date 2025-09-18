@@ -5,7 +5,7 @@ from model.system.response import Page
 from model.system.virtual_object import SearchVo
 from utils.response_util import ResponseUtil
 
-filmController = APIRouter(prefix='/film')
+filmController = APIRouter(prefix='/film', tags=['影视'])
 
 
 @filmController.post("/add")

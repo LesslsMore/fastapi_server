@@ -1,17 +1,15 @@
+import json
 import logging
+from typing import Dict, Any, Optional, List
 
-from model.collect.MacType import MacType, mac_type_dao
+import requests
 
 from dao.collect.categories import CategoryTreeService
-from dao.collect.MacVodDao import MacVodDao
 from dao.collect.film_list import save_film_class
-from model.collect.collect_source import FilmSource, CollectResultModel
-
-import json
+from model.collect.MacType import MacType, mac_type_dao
 from model.collect.MacVod import MacVod, mac_vod_dao
+from model.collect.collect_source import FilmSource, CollectResultModel
 from plugin.common.conver.collect import gen_category_tree
-import requests
-from typing import Dict, Any, Optional, List
 
 
 def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 10) -> Optional[
@@ -45,7 +43,7 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
         # 保存原始详情到 redis
         mac_vod_list = [MacVod(**item) for item in film_detail_list]
         mac_vod_dao.upsert_items(mac_vod_list)
-        # MacVodDao.batch_save_film_detail(mac_vod_list)
+
         logging.info(f"保存原始详情成功: {len(mac_vod_list)}")
         # 转换为业务 MovieDetail
         # movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])

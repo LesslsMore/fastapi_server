@@ -9,7 +9,7 @@ from dao.system.manage import ManageService
 from dao.system.movies import generate_hash_key
 from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
     get_search_infos_by_tags, \
-    get_movie_list_by_sort, search_film_keyword, get_basic_info_by_search_info_list, get_hot_movie_by_cid
+    search_film_keyword, get_basic_info_by_search_info_list
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.MacVod import mac_vod_dao
@@ -26,9 +26,9 @@ class IndexLogic:
     @staticmethod
     def index_page() -> Dict[str, Any]:
         # 首页数据处理逻辑
-        info = redis_client.get(INDEX_CACHE_KEY)
-        if info:
-            return json.loads(info)
+        # info = redis_client.get(INDEX_CACHE_KEY)
+        # if info:
+        #     return json.loads(info)
         info = {}
         # 1. 分类信息
         tree = CategoryTree(**{"id": 0, "name": "分类信息"})
@@ -209,15 +209,6 @@ class IndexLogic:
         """
         # return get_search_tag(pid)
         return get_search_tag_by_stat(pid)
-
-    @staticmethod
-    def get_film_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:
-        page_obj = Page(**{"pageSize": pageSize, "current": page})
-        return {
-            "news": get_movie_list_by_sort(0, pid, page_obj),
-            "top": get_movie_list_by_sort(1, pid, page_obj),
-            "recent": get_movie_list_by_sort(2, pid, page_obj)
-        }
 
     @staticmethod
     def get_mac_vod_list_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:

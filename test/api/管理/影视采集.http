@@ -1,17 +1,9 @@
 
-
-
-
-
-
-
-
+###
+GET {{url}}/api/manage/collect/options
 
 ###
-GET http://127.0.0.1:8000/api/manage/collect/options
-
-###
-GET http://127.0.0.1:8000/api/manage/collect/find?id=47a1453218ad027f
+GET {{url}}/api/manage/collect/find?id=47a1453218ad027f
 
 
 ###

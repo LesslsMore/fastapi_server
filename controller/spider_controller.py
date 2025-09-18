@@ -7,7 +7,7 @@ from service.spider_logic import SpiderLogic
 from utils.response_util import ResponseUtil
 from typing import Optional, List
 
-spiderController = APIRouter(prefix='/spider')
+spiderController = APIRouter(prefix='/spider', tags=['爬虫'])
 
 
 class CollectParams(BaseModel):

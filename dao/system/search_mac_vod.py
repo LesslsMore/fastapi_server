@@ -3,83 +3,176 @@ import re
 from typing import List, Optional
 
 from sqlmodel import Session
-from sqlmodel import func
 from sqlmodel import or_, select
 
 from config.constant import IOrderEnum
 from config.database import sync_engine
-from dao.base_dao import ConfigPageQueryModel
-from dao.system.search import GetPage
+from dao.base_dao import ConfigPageQueryModel, FilterModel, SortModel, PageModel
 from dao.system.search_tag import get_tags_by_title, handle_tag_str
-from demo.sql import get_session
 from model.collect.MacVod import MacVod, mac_vod_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list
 
 
+# def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
+#     """
+#     根据标签条件筛选影片信息
+#     :param st: 搜索标签参数字典
+#     :param page: 分页参数
+#     :return: 符合条件的SearchInfo列表
+#     """
+#     try:
+#         with Session(sync_engine) as session:
+#             query = select(MacVod)
+#
+#             # 处理各标签条件
+#             if st.get('Pid'):
+#                 query = query.where(MacVod.type_id_1 == st['Pid'])
+#             if st.get('Cid'):
+#                 query = query.where(MacVod.type_id == st['Cid'])
+#             if st.get('Year'):
+#                 query = query.where(MacVod.vod_year == st['Year'])
+#
+#             # 处理特殊标签条件
+#             if st.get('Area') == '其它':
+#                 tags = get_tags_by_title(st['Pid'], 'Area')
+#                 exclude_areas = [t.split(':')[1] for t in tags]
+#                 query = query.where(MacVod.vod_area.not_in(exclude_areas))
+#             elif st.get('Area'):
+#                 query = query.where(MacVod.vod_area == st['Area'])
+#
+#             if st.get('Language') == '其它':
+#                 tags = get_tags_by_title(st['Pid'], 'Language')
+#                 exclude_langs = [t.split(':')[1] for t in tags]
+#                 query = query.where(MacVod.vod_lang.not_in(exclude_langs))
+#             elif st.get('Language'):
+#                 query = query.where(MacVod.vod_lang == st['Language'])
+#
+#             if st.get('Plot') == '其它':
+#                 tags = get_tags_by_title(st['Pid'], 'Plot')
+#                 exclude_plots = [t.split(':')[1] for t in tags]
+#                 for plot in exclude_plots:
+#                     query = query.where(MacVod.vod_class.not_like(f'%{plot}%'))
+#             elif st.get('Plot'):
+#                 query = query.where(MacVod.vod_class.like(f'%{st["Plot"]}%'))
+#
+#             # 处理排序
+#             if st.get('Sort') == 'release_stamp':
+#                 query = query.order_by(MacVod.vod_year.desc(), MacVod.vod_time_add.desc())
+#             elif st.get('Sort') == 'update_stamp':
+#                 query = query.order_by(MacVod.vod_time.desc())
+#             elif st.get('Sort') == 'hits':
+#                 query = query.order_by(MacVod.vod_hits.desc())
+#             elif st.get('Sort') == 'score':
+#                 query = query.order_by(MacVod.vod_douban_score.desc())
+#
+#             # 返回分页参数
+#             GetPage(query, page)
+#             # 添加分页
+#             query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+#
+#             mac_vod_list = session.exec(query).all()
+#             return mac_vod_list
+#     except Exception as e:
+#         logging.info(f"查询失败: {e}")
+#         return None
+
 def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
-    """
-    根据标签条件筛选影片信息
-    :param st: 搜索标签参数字典
-    :param page: 分页参数
-    :return: 符合条件的SearchInfo列表
-    """
-    try:
-        with Session(sync_engine) as session:
-            query = select(MacVod)
+    # 构建过滤条件
+    filters = []
 
-            # 处理各标签条件
-            if st.get('Pid'):
-                query = query.where(MacVod.type_id_1 == st['Pid'])
-            if st.get('Cid'):
-                query = query.where(MacVod.type_id == st['Cid'])
-            if st.get('Year'):
-                query = query.where(MacVod.vod_year == st['Year'])
+    # 处理各标签条件
+    if st.get('Pid'):
+        filters.append(FilterModel(field_name='type_id_1', field_ops='==', field_value=st['Pid']))
 
-            # 处理特殊标签条件
-            if st.get('Area') == '其它':
-                tags = get_tags_by_title(st['Pid'], 'Area')
-                exclude_areas = [t.split(':')[1] for t in tags]
-                query = query.where(MacVod.vod_area.not_in(exclude_areas))
-            elif st.get('Area'):
-                query = query.where(MacVod.vod_area == st['Area'])
+    if st.get('Cid'):
+        filters.append(FilterModel(field_name='type_id', field_ops='==', field_value=st['Cid']))
 
-            if st.get('Language') == '其它':
-                tags = get_tags_by_title(st['Pid'], 'Language')
-                exclude_langs = [t.split(':')[1] for t in tags]
-                query = query.where(MacVod.vod_lang.not_in(exclude_langs))
-            elif st.get('Language'):
-                query = query.where(MacVod.vod_lang == st['Language'])
+    if st.get('Year'):
+        filters.append(FilterModel(field_name='vod_year', field_ops='==', field_value=st['Year']))
 
-            if st.get('Plot') == '其它':
-                tags = get_tags_by_title(st['Pid'], 'Plot')
-                exclude_plots = [t.split(':')[1] for t in tags]
-                for plot in exclude_plots:
-                    query = query.where(MacVod.vod_class.not_like(f'%{plot}%'))
-            elif st.get('Plot'):
-                query = query.where(MacVod.vod_class.like(f'%{st["Plot"]}%'))
+    # 处理特殊标签条件
+    if st.get('Area') == '其它':
+        tags = get_tags_by_title(st['Pid'], 'Area')
+        exclude_areas = [t.split(':')[1] for t in tags]
+        filters.append(FilterModel(field_name='vod_area', field_ops='not_in', field_value=exclude_areas))
+    elif st.get('Area'):
+        filters.append(FilterModel(field_name='vod_area', field_ops='==', field_value=st['Area']))
 
-            # 处理排序
-            if st.get('Sort') == 'release_stamp':
-                query = query.order_by(MacVod.vod_year.desc(), MacVod.vod_time_add.desc())
-            elif st.get('Sort') == 'update_stamp':
-                query = query.order_by(MacVod.vod_time.desc())
-            elif st.get('Sort') == 'hits':
-                query = query.order_by(MacVod.vod_hits.desc())
-            elif st.get('Sort') == 'score':
-                query = query.order_by(MacVod.vod_douban_score.desc())
+    if st.get('Language') == '其它':
+        tags = get_tags_by_title(st['Pid'], 'Language')
+        exclude_langs = [t.split(':')[1] for t in tags]
+        filters.append(FilterModel(field_name='vod_lang', field_ops='not_in', field_value=exclude_langs))
+    elif st.get('Language'):
+        filters.append(FilterModel(field_name='vod_lang', field_ops='==', field_value=st['Language']))
 
-            # 返回分页参数
-            GetPage(query, page)
-            # 添加分页
-            query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+    # 处理剧情条件（简化处理，实际可能需要更复杂的逻辑）
+    if st.get('Plot') and st.get('Plot') != '其它':
+        filters.append(FilterModel(field_name='vod_class', field_ops='like', field_value=f'%{st["Plot"]}%'))
 
-            mac_vod_list = session.exec(query).all()
-            return mac_vod_list
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
+    # 构建排序条件
+    sorts = []
+    if st.get('Sort') == 'release_stamp':
+        sorts.append(SortModel(field='vod_year', order='desc'))
+        sorts.append(SortModel(field='vod_time_add', order='desc'))
+    elif st.get('Sort') == 'update_stamp':
+        sorts.append(SortModel(field='vod_time', order='desc'))
+    elif st.get('Sort') == 'hits':
+        sorts.append(SortModel(field='vod_hits', order='desc'))
+    elif st.get('Sort') == 'score':
+        sorts.append(SortModel(field='vod_douban_score', order='desc'))
+
+    # 使用 BaseDao 的 get_items 方法查询数据
+    # 构造分页参数
+    page_model = PageModel(page_no=page.current, page_size=page.pageSize)
+
+    # 调用 get_items 方法获取数据
+    mac_vod_list, total = mac_vod_dao.get_items(page=page_model, sorts=sorts, filters=filters)
+
+    # 返回结果
+    return mac_vod_list
+
+
+# def search_mac_vod_keyword(keyword: str, page: Page) -> Optional[List[MacVod]]:
+#     """
+#     根据关键字对影片名称和副标题进行模糊查询，支持分页，返回符合条件的影片信息列表。
+#     :param keyword: 搜索关键字
+#     :param page: 分页参数
+#     :return: SearchInfo列表
+#     """
+#     try:
+#         with Session(sync_engine) as session:
+#             # 统计满足条件的数据量
+#             count = session.exec(
+#                 select(func.count()).select_from(MacVod)
+#                 .where(
+#                     or_(
+#                         MacVod.vod_name.contains(keyword),
+#                         MacVod.vod_sub.contains(keyword)
+#                     )
+#                 )
+#             ).one()
+#             page.total = count
+#             page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
+#             # 查询满足条件的数据
+#             query = (
+#                 select(MacVod)
+#                 .where(
+#                     or_(
+#                         MacVod.vod_name.contains(keyword),
+#                         MacVod.vod_sub.contains(keyword)
+#                     )
+#                 )
+#                 .order_by(MacVod.vod_year.desc(), MacVod.vod_time_add.desc())
+#                 .offset((page.current - 1) * page.pageSize)
+#                 .limit(page.pageSize)
+#             )
+#             search_list = session.exec(query).all()
+#             return search_list
+#     except Exception as e:
+#         logging.info(f"查询失败: {e}")
+#         return None
 
 
 def search_mac_vod_keyword(keyword: str, page: Page) -> Optional[List[MacVod]]:
@@ -89,38 +182,34 @@ def search_mac_vod_keyword(keyword: str, page: Page) -> Optional[List[MacVod]]:
     :param page: 分页参数
     :return: SearchInfo列表
     """
-    try:
-        with get_session() as session:
-            # 统计满足条件的数据量
-            count = session.exec(
-                select(func.count()).select_from(MacVod)
-                .where(
-                    or_(
-                        MacVod.vod_name.contains(keyword),
-                        MacVod.vod_sub.contains(keyword)
-                    )
-                )
-            ).one()
-            page.total = count
-            page.pageCount = (page.total + page.pageSize - 1) // page.pageSize
-            # 查询满足条件的数据
-            query = (
-                select(MacVod)
-                .where(
-                    or_(
-                        MacVod.vod_name.contains(keyword),
-                        MacVod.vod_sub.contains(keyword)
-                    )
-                )
-                .order_by(MacVod.vod_year.desc(), MacVod.vod_time_add.desc())
-                .offset((page.current - 1) * page.pageSize)
-                .limit(page.pageSize)
-            )
-            search_list = session.exec(query).all()
-            return search_list
-    except Exception as e:
-        logging.info(f"查询失败: {e}")
-        return None
+
+    # 构建过滤条件 - 使用 like 操作符实现 contains 功能
+    filters = [
+        FilterModel(
+            field_name='vod_name',
+            field_ops='like',
+            field_value=keyword
+        ),
+        FilterModel(
+            field_name='vod_sub',
+            field_ops='like',
+            field_value=keyword
+        )
+    ]
+
+    # 构建排序条件
+    sorts = [
+        SortModel(field='vod_year', order='desc'),
+        SortModel(field='vod_time_add', order='desc')
+    ]
+
+    # 构造分页参数
+    page_model = PageModel(page_no=page.current, page_size=page.pageSize)
+
+    # 调用 get_items 方法获取数据
+    search_list, total = mac_vod_dao.get_items(page=page_model, sorts=sorts, filters=filters)
+
+    return search_list
 
 
 def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Optional[List[MovieBasicInfo]]:
@@ -141,15 +230,19 @@ def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Opti
     # language = movie_detail.descriptor.language,
 
     try:
-        with get_session() as session:
+        with Session(sync_engine) as session:
             # 确保分页参数 current 至少为 1
             page.current = max(1, page.current)
+
             # 处理影片名称，去除季、数字、剧场版等
             name = re.sub(r'(第.{1,3}季.*)|([0-9]{1,3})|(剧场版)|([\s\S]*$)|(之.*)|([^u4e00-u9fa5\w].*)', '',
                           movie_detail.name)
             # 如果处理后长度没变且大于10，做截断
             if len(name) == len(movie_detail.name) and len(name) > 10:
                 name = name[:((len(name) // 5) * 3)]
+            # 剧情标签模糊匹配
+            class_tag = (movie_detail.descriptor.classTag or '').replace(' ', '')
+
             # 名称相似匹配
             query = select(MacVod).where(
                 MacVod.type_id == movie_detail.cid,
@@ -158,8 +251,7 @@ def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Opti
             # 排除自身mid
             if movie_detail.id:
                 query = query.where(MacVod.vod_id != movie_detail.id)
-            # 剧情标签模糊匹配
-            class_tag = (movie_detail.descriptor.classTag or '').replace(' ', '')
+
             tag_conditions = []
             if ',' in class_tag:
                 for t in class_tag.split(','):
@@ -174,6 +266,7 @@ def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Opti
             # 分页
             query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
             mac_vod_list = session.exec(query).all()
+
             movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
             return movie_basic_info_list
     except Exception as e:
@@ -190,8 +283,6 @@ def get_mac_vod_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[L
     :param session: 数据库会话(通过依赖注入获取)
     :return: 影片基本信息列表
     """
-
-    query = select(MacVod).where(MacVod.type_id_1 == pid)
 
     # 根据排序类型添加排序条件
     if sort_type == 0:
