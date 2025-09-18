@@ -1,2 +1,8 @@
 ### 重置分类信息
 GET {{url}}/api/manage/spider/class/cover
+
+### 海报管理
+GET {{url}}/api/manage/banner/list
+
+### 海报管理 清除缓存
+GET {{url}}/api/cache/del

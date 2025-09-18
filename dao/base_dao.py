@@ -10,7 +10,12 @@ from config.constant import IOrderEnum
 from config.database import sync_engine
 from demo.sql import get_session
 from utils.page_util import PageUtil
-
+from typing import List, Optional, Tuple
+from sqlalchemy import select, func, asc, desc, and_
+# from sqlalchemy.orm import Session
+from sqlmodel import SQLModel, Field
+from pydantic import BaseModel
+import contextlib
 
 class ConfigPageQueryModel(SQLModel):
     """
@@ -20,6 +25,38 @@ class ConfigPageQueryModel(SQLModel):
     page_num: Optional[int] = Field(default=1, description='当前页码')
     page_size: Optional[int] = Field(default=10, description='每页记录数')
 
+
+# 1. 统一模型定义和操作映射
+OP_MAPPING = {
+    "==": lambda f, v: f == v,
+    ">": lambda f, v: f > v,
+    "<": lambda f, v: f < v,
+    ">=": lambda f, v: f >= v,
+    "<=": lambda f, v: f <= v,
+    "!=": lambda f, v: f != v,
+    "like": lambda f, v: f.ilike(f"%{v}%") if not v.startswith(('%', '_')) else f.ilike(v),
+    "in": lambda f, v: f.in_(v),
+    "not_in": lambda f, v: ~f.in_(v),
+    "is_null": lambda f, _: f.is_(None),
+    "not_null": lambda f, _: f.is_not(None)
+}
+
+# 2. 简化模型定义
+class PageModel(BaseModel):
+    page_no: int = Field(default=1, ge=1)
+    page_size: int = Field(default=10, ge=1, le=100)
+    result: List = None
+    total: int = None
+    header: List = None
+
+class SortModel(BaseModel):
+    field: str
+    order: str = "asc"  # 默认值
+
+class FilterModel(BaseModel):
+    field_name: str
+    field_ops: str
+    field_value: Optional[object] = None
 
 class BaseDao:
     def __init__(self, model: SQLModel, engine: Engine = sync_engine):
@@ -123,3 +160,82 @@ class BaseDao:
                                             is_page)
 
             return config_list
+
+    def get_items(self, page: PageModel = None,
+                  sorts: List[SortModel] = None,
+                  filters: List[FilterModel] = None,
+                  distinct_fields: List[str] = None) -> Tuple[List, int]:
+        """
+        获取分页数据及总数
+
+        :return: (数据列表, 总数)
+        """
+        # 基础查询
+        query = select(self.model)
+        count_query = select(func.count()).select_from(self.model)
+
+        # 应用过滤条件
+        if filters:
+            conditions = self._build_conditions(filters)
+            query = query.where(and_(*conditions))
+            count_query = count_query.where(and_(*conditions))
+
+        # 应用排序
+        if sorts:
+            query = self._apply_sort(query, sorts)
+
+        # 应用去重
+        if distinct_fields:
+            distinct_cols = [getattr(self.model, field) for field in distinct_fields]
+            query = query.distinct(*distinct_cols)
+            # 计数查询也需要去重
+            count_query = select(func.count()).select_from(query.subquery())
+
+        # 应用分页
+        if page:
+            query = query.offset((page.page_no - 1) * page.page_size).limit(page.page_size)
+        paginated_data = []
+        # 执行查询
+        with Session(self.engine) as session:
+            items = session.exec(query).all()
+            total = session.scalar(count_query) if not distinct_fields else session.scalar(count_query)
+            for row in items:
+                if row and len(row) == 1:
+                    paginated_data.append(row[0])
+                else:
+                    paginated_data.append(row)
+
+        return paginated_data, total
+
+    def _build_conditions(self, filters: List[FilterModel]) -> List:
+        """构建过滤条件"""
+        conditions = []
+        for filt in filters:
+            if not hasattr(self.model, filt.field_name):
+                raise ValueError(f"无效字段: {filt.field_name}")
+
+            field = getattr(self.model, filt.field_name)
+            op_func = OP_MAPPING.get(filt.field_ops)
+
+            if not op_func:
+                raise ValueError(f"无效操作符: {filt.field_ops}")
+
+            # 处理特殊操作符
+            if filt.field_ops in ["in", "not_in"] and not isinstance(filt.field_value, list):
+                filt.field_value = [filt.field_value]
+
+            conditions.append(op_func(field, filt.field_value))
+
+        return conditions
+
+    def _apply_sort(self, query, sorts: List[SortModel]):
+        """应用排序"""
+        order_clauses = []
+        for sort in sorts:
+            if not hasattr(self.model, sort.field):
+                raise ValueError(f"无效排序字段: {sort.field}")
+
+            field = getattr(self.model, sort.field)
+            order_clauses.append(desc(field) if sort.order == "desc" else asc(field))
+
+        return query.order_by(*order_clauses)

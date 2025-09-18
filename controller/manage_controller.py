@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
-from service.manage_logic import ManageLogic
+from fastapi import APIRouter, Depends, Query
+
+from controller.index_controller import indexController
 from model.system.manage import BasicConfig, Banner
-from utils.response_util import ResponseUtil
-from typing import List, Optional
-
 from plugin.middleware.handle_jwt import AuthToken
+from service.index_logic import IndexLogic
+from service.manage_logic import ManageLogic
+from utils.response_util import ResponseUtil
 
-manageController = APIRouter(prefix='/manage', dependencies=[Depends(AuthToken)])
+manageController = APIRouter(prefix='/manage', tags=["管理"], dependencies=[Depends(AuthToken)])
 
 
 # /manage/index
@@ -47,10 +48,16 @@ def reset_site_basic():
 
 
 # /manage/banner/list
-@manageController.get("/manage/banner/list")
+@manageController.get("/banner/list", summary="轮播图列表")
 def banner_list():
     banners = ManageLogic.get_banners()
     return ResponseUtil.success(data=banners, msg="轮播图列表获取成功")
+
+
+@indexController.get("/cache/del", summary="首页缓存删除")
+def index_cache_del():
+    IndexLogic.clear_index_cache()
+    return ResponseUtil.success(msg="首页数据获取成功")
 
 
 # /manage/banner/find

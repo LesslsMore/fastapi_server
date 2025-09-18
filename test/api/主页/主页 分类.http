@@ -1,9 +1,15 @@
-###
+### 分类数据
 GET {{url}}/api/filmClassify?pid=0
 
-###
+### 分类搜索数据
+GET {{url}}/api/filmClassifySearch?Pid=0
+
+
+### 搜索数据
+GET {{url}}/api/searchFilm?keyword=%E7%97%85
+
+### 详情数据
 GET {{url}}/api/filmDetail?id=62662
 
-
-###
-GET {{url}}/api/filmClassifySearch?Pid=0
+### 播放数据
+GET {{url}}/api/filmPlayInfo?id=107540&playFrom=0&episode=0

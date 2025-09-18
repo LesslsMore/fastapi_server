@@ -9,7 +9,7 @@ from sqlmodel import select, func, or_
 
 from config.constant import IOrderEnum
 from config.data_config import SEARCH_INFO_TEMP
-from dao.base_dao import ConfigPageQueryModel
+from dao.base_dao import ConfigPageQueryModel, FilterModel, SortModel, PageModel
 from dao.system.search_tag import batch_handle_search_tag, get_tags_by_title
 from demo.sql import get_session
 from model.collect.MacVod import MacVod, mac_vod_dao
@@ -232,39 +232,30 @@ def get_hot_movie_by_pid(pid: int, page: Page) -> Optional[List[SearchInfo]]:
     :param page: 分页参数
     :return: 搜索信息列表
     """
-    with get_session() as session:
-        # 当前时间偏移一个月
-        t = datetime.now() - timedelta(days=30)
 
-        query = select(MacVod).where(
-            MacVod.type_id_1 == pid,
-            MacVod.vod_time_add > t.timestamp()
-        ).order_by(MacVod.vod_year.desc(), MacVod.vod_hits.desc()) \
-            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+    # 当前时间偏移一个月
+    t = datetime.now() - timedelta(days=30)
 
-        mac_vod_list = session.exec(query).all()
-        search_info_list = mac_vod_list_to_search_info_list(mac_vod_list)
-        return search_info_list
+    # 构造过滤条件
+    filters = [
+        FilterModel(field_name="type_id_1", field_ops="==", field_value=pid),
+        FilterModel(field_name="vod_time_add", field_ops=">", field_value=t.timestamp())
+    ]
 
+    # 构造排序条件
+    sorts = [
+        SortModel(field="vod_year", order="desc"),
+        SortModel(field="vod_hits", order="desc")
+    ]
 
-def get_hot_movie_by_cid(cid: int, page: Page) -> Optional[List[SearchInfo]]:
-    """
-    获取当前分类下的热门影片
-    :param cid: 分类ID
-    :param page: 分页参数
-    :return: 搜索信息列表
-    """
-    with get_session() as session:
-        # 当前时间偏移一个月
-        t = datetime.now() - timedelta(days=30)
+    # 构造分页参数
+    page_model = PageModel(page_no=page.current, page_size=page.pageSize)
 
-        query = select(SearchInfo).where(
-            SearchInfo.cid == cid,
-            SearchInfo.update_stamp > t.timestamp()
-        ).order_by(SearchInfo.year.desc(), SearchInfo.hits.desc()) \
-            .offset((page.current - 1) * page.pageSize).limit(page.pageSize)
+    # 调用 get_items 方法
+    items, total = mac_vod_dao.get_items(page=page_model, sorts=sorts, filters=filters)
 
-        return session.exec(query).all()
+    search_info_list = mac_vod_list_to_search_info_list(items)
+    return search_info_list
 
 
 def get_movie_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[List[MovieBasicInfo]]:

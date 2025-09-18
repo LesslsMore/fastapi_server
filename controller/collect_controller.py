@@ -8,7 +8,7 @@ from plugin.spider.spider_core import collect_api_test
 from service.collect_logic import CollectLogic
 from utils.response_util import ResponseUtil
 
-collectController = APIRouter(prefix='/collect')
+collectController = APIRouter(prefix='/collect', tags=["采集"])
 
 
 @collectController.get("/list")

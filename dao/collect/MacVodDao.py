@@ -1,33 +1,17 @@
+from typing import List, Tuple
+from typing import Optional
 
 from sqlalchemy import text, func
-
-from demo.sql import get_session
-from model.system.movies import MovieUrlInfo
-from typing import List, Tuple
-from model.collect.MacVod import MacVod
-from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
-from plugin.db import redis_client
-from typing import Optional
-from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import select
+
+from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
+from demo.sql import get_session
+from model.collect.MacVod import MacVod
+from model.system.movies import MovieUrlInfo
+from plugin.db import redis_client
 
 
 class MacVodDao:
-    @staticmethod
-    # 批量保存原始影片详情数据到MySQL（伪实现，需结合ORM完善）
-    def batch_save_film_detail(film_detail_list: List[MacVod]):
-        with get_session() as session:
-            if not film_detail_list:
-                return
-            table = MacVod.__table__
-            data = [d.dict() if hasattr(d, 'dict') else d.__dict__ for d in film_detail_list]
-            stmt = insert(table).values(data)
-            update_dict = {c.name: getattr(stmt.excluded, c.name) for c in table.columns if c.name != 'vod_id'}
-            stmt = stmt.on_conflict_do_update(index_elements=['vod_id'], set_=update_dict)
-            session.execute(stmt)
-            session.commit()
-
-
 
     @staticmethod
     def count_vod_class_tags(type_id_1: int) -> List[Tuple[str, int]]:
@@ -91,8 +75,6 @@ class MacVodDao:
 
             result = session.execute(query, {"split": split, "type_id_1": type_id_1}).fetchall()
             return [(row[1], row[0]) for row in result]
-
-
 
 
 # 保存未处理的完整影片详情信息到redis
