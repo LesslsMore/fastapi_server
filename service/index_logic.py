@@ -7,9 +7,7 @@ from dao.collect.categories import CategoryTreeService
 from dao.collect.multiple_source import get_multiple_play
 from dao.system.manage import ManageService
 from dao.system.movies import generate_hash_key
-from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid, \
-    get_search_infos_by_tags, \
-    search_film_keyword, get_basic_info_by_search_info_list
+from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.MacVod import mac_vod_dao
@@ -97,21 +95,6 @@ class IndexLogic:
         return cl
 
     @staticmethod
-    def search_film_info(keyword: str, page: Page) -> list:
-        """
-        根据关键字和分页参数检索影片基本信息列表
-        :param keyword: 检索关键字
-        :param page: 当前页码
-        :param pageSize: 每页数量
-        :return: 影片基本信息列表
-        """
-
-        search_info_list = search_film_keyword(keyword, page)
-
-        movie_basic_info_list = get_basic_info_by_search_info_list(search_info_list)
-        return movie_basic_info_list
-
-    @staticmethod
     def search_mac_vod_info(keyword: str, page: Page) -> list:
         """
         根据关键字和分页参数检索影片基本信息列表
@@ -188,11 +171,6 @@ class IndexLogic:
                     )
                     break
         return play_list
-
-    @staticmethod
-    def get_films_by_tags(tags: Dict[str, Any], page: Page) -> List[Dict[str, Any]]:
-        search_info_list = get_search_infos_by_tags(tags, page)
-        return get_basic_info_by_search_info_list(search_info_list)
 
     @staticmethod
     def get_mac_vod_list_by_tags(tags: Dict[str, Any], page: Page) -> List[Dict[str, Any]]:

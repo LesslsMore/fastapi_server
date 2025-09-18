@@ -121,7 +121,7 @@ def GetNormalFilmSource():
     return ResponseUtil.success(data=items, msg="影视源信息获取成功")
 
 
-@collectController.get("/record/list")
+@collectController.get("/record/list", summary="获取采集失败记录列表")
 def FailureRecordList(vo: RecordRequestVo = Query(...)):
     failure_record_list = FailureRecordService.failure_record_list()
     collect_source_list = film_source_dao.query_all()

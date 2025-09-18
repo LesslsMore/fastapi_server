@@ -9,13 +9,6 @@ from model.system.failure_record import FailureRecord
 
 class FailureRecordService:
 
-
-    @staticmethod
-    def save_failure_record(fr: FailureRecord):
-        with get_session() as session:
-            session.add(fr)
-            session.commit()
-
     @staticmethod
     def failure_record_list(origin_id: Optional[str] = None, status: Optional[int] = None,
                             begin_time: Optional[datetime] = None, end_time: Optional[datetime] = None, page: int = 1,
@@ -32,11 +25,6 @@ class FailureRecordService:
             return session.exec(stmt).all()
 
     @staticmethod
-    def find_record_by_id(id: int) -> Optional[FailureRecord]:
-        with get_session() as session:
-            return session.get(FailureRecord, id)
-
-    @staticmethod
     def change_record(fr: FailureRecord, status: int):
         with get_session() as session:
             fr.status = status
@@ -48,10 +36,4 @@ class FailureRecordService:
     def del_done_record():
         with get_session() as session:
             session.exec(select(FailureRecord).where(FailureRecord.status == 0)).delete()
-            session.commit()
-
-    @staticmethod
-    def truncate_record_table():
-        with get_session() as session:
-            session.exec(f'TRUNCATE TABLE {FailureRecord.__tablename__}')
             session.commit()

@@ -6,3 +6,10 @@ GET {{url}}/api/manage/banner/list
 
 ### 海报管理 清除缓存
 GET {{url}}/api/cache/del
+
+
+### 分类树
+GET {{url}}/api/manage/film/class/tree
+
+### 影视信息
+GET {{url}}/api/manage/film/search/list?name=&pid=0&cid=0&plot=&area=&language=&year=&remarks=&beginTime=&endTime=&current=1&pageSize=10
