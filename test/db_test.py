@@ -19,12 +19,12 @@ user_dao = BaseDao(User)
 SQLModel.metadata.create_all(sync_engine)
 
 
-def test():
+def test_update_item():
     user_dao.update_item({'name': "张老三"}, update_dict={"phone": "123456"})
 
 
 # 示例操作
-def test_main():
+def test_add():
     # 1. 插入数据
     with get_session() as session:
         user1 = User(name="张三", phone="13800138000")
@@ -33,6 +33,7 @@ def test_main():
         session.add(user2)
         # 提交在上下文管理器退出时自动完成
 
+def test_query():
     # 2. 查询数据
     with get_session() as session:
         # 查询所有用户
@@ -47,6 +48,7 @@ def test_main():
         user = session.query(User).filter(User.name == "李四").first()
         print("找到的用户:", user.name if user else "未找到")
 
+def test_update():
     # 3. 更新数据
     with get_session() as session:
         user = session.query(User).filter_by(name="张三").first()
@@ -54,6 +56,7 @@ def test_main():
             user.name = "张老三"
             # 提交在上下文管理器退出时自动完成
 
+def test_delete():
     # 4. 删除数据
     with get_session() as session:
         user = session.query(User).filter_by(name="李四").first()
@@ -61,6 +64,7 @@ def test_main():
             session.delete(user)
             # 提交在上下文管理器退出时自动完成
 
+def test_all():
     # 验证操作结果
     with get_session() as session:
         remaining_users = session.query(User).all()

@@ -1,19 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Query
 
-from service.film_logic import FilmLogic
 from model.system.response import Page
 from model.system.virtual_object import SearchVo
+from service.film_logic import FilmLogic
 from utils.response_util import ResponseUtil
 
 filmController = APIRouter(prefix='/film', tags=['影视'])
 
 
-@filmController.post("/add")
-async def FilmAdd():
-    return ResponseUtil.success(data=None, msg="添加成功")
+@filmController.get("/class/tree", summary="分类树")
+async def FilmClassTree():
+    tree = FilmLogic.GetFilmClassTree()
+    return ResponseUtil.success(data=tree, msg="影片分类信息获取成功")
 
 
-@filmController.get("/search/list")
+@filmController.get("/search/list", summary="影片分页")
 async def FilmSearchPage(s: SearchVo = Query(...)):
     s.paging = Page(current=s.current, pageSize=s.pageSize)
     # 提供检索tag options
@@ -28,15 +29,14 @@ async def FilmSearchPage(s: SearchVo = Query(...)):
     return ResponseUtil.success(data=data, msg="影片分页信息获取成功")
 
 
+@filmController.post("/add")
+async def FilmAdd():
+    return ResponseUtil.success(data=None, msg="添加成功")
+
+
 @filmController.get("/search/del")
 async def FilmDelete():
     return ResponseUtil.success(data=None, msg="删除成功")
-
-
-@filmController.get("/class/tree")
-async def FilmClassTree():
-    tree = FilmLogic.GetFilmClassTree()
-    return ResponseUtil.success(data=tree, msg="影片分类信息获取成功")
 
 
 @filmController.get("/class/find")

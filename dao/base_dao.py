@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from pydantic import BaseModel
+from sqlalchemy import select, func, asc, desc, and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
+# from sqlalchemy.orm import Session
 from sqlmodel import SQLModel, Field
 from sqlmodel import Session
 
@@ -10,12 +12,7 @@ from config.constant import IOrderEnum
 from config.database import sync_engine
 from demo.sql import get_session
 from utils.page_util import PageUtil
-from typing import List, Optional, Tuple
-from sqlalchemy import select, func, asc, desc, and_
-# from sqlalchemy.orm import Session
-from sqlmodel import SQLModel, Field
-from pydantic import BaseModel
-import contextlib
+
 
 class ConfigPageQueryModel(SQLModel):
     """
@@ -41,6 +38,7 @@ OP_MAPPING = {
     "not_null": lambda f, _: f.is_not(None)
 }
 
+
 # 2. 简化模型定义
 class PageModel(BaseModel):
     page_no: int = Field(default=1, ge=1)
@@ -49,14 +47,17 @@ class PageModel(BaseModel):
     total: int = None
     header: List = None
 
+
 class SortModel(BaseModel):
     field: str
     order: str = "asc"  # 默认值
+
 
 class FilterModel(BaseModel):
     field_name: str
     field_ops: str
     field_value: Optional[object] = None
+
 
 class BaseDao:
     def __init__(self, model: SQLModel, engine: Engine = sync_engine):

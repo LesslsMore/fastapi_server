@@ -1,31 +1,36 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import field_serializer, ConfigDict
-from pydantic.alias_generators import to_camel, to_pascal
-from sqlmodel import SQLModel, Field
-from datetime import datetime
+from pydantic.alias_generators import to_camel
+from sqlalchemy import Column, Integer
+from sqlmodel import Field
+
+from dao.base_dao import BaseDao
+from demo.sql import BaseSQLModel
 
 
-class FailureRecord(SQLModel, table=True):
-    __tablename__ = "failure_records"
+class FailureRecord(BaseSQLModel, table=True):
+    __tablename__ = "failure_record"
 
-    id: Optional[int] = Field(
-        default=None,
-        primary_key=True,
-        alias="ID"  # JSON 键名强制大写
-    )
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(),
-        alias="CreatedAt",
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(),
-        alias="UpdatedAt",
-    )
-    deleted_at: Optional[datetime] = Field(
-        default=None,
-        alias="DeletedAt"
-    )
+    id: int = Field(sa_column=Column(Integer, primary_key=True))
+    # id: Optional[int] = Field(
+    #     default=None,
+    #     primary_key=True,
+    #     alias="ID"  # JSON 键名强制大写
+    # )
+    # created_at: datetime = Field(
+    #     default_factory=lambda: datetime.now(),
+    #     alias="CreatedAt",
+    # )
+    # updated_at: datetime = Field(
+    #     default_factory=lambda: datetime.now(),
+    #     alias="UpdatedAt",
+    # )
+    # deleted_at: Optional[datetime] = Field(
+    #     default=None,
+    #     alias="DeletedAt"
+    # )
 
     origin_id: str = Field(index=True, description="采集站唯一ID", alias="originId")
     origin_name: str = Field(description="采集站名称", alias="originName")
@@ -51,3 +56,6 @@ class FailureRecord(SQLModel, table=True):
         alias_generator=to_camel,
         populate_by_name=True  # 允许通过别名初始化模型
     )
+
+
+failure_record_dao = BaseDao(FailureRecord)

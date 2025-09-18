@@ -7,15 +7,15 @@ from dao.collect.categories import CategoryTreeService
 from dao.collect.multiple_source import save_site_play_list
 from dao.system.failure_record import FailureRecordService
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource, film_source_dao
-from model.system.failure_record import FailureRecord
+from model.system.failure_record import FailureRecord, failure_record_dao
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 
 
 class SpiderService:
     @staticmethod
     def CollectRecover(id):
-        fr = FailureRecordService.find_record_by_id(id)
 
+        fr = failure_record_dao.query_item(filter_dict={"id": id})
         fs = film_source_dao.query_item(filter_dict={"id": fr.origin_id})
 
         SpiderService.collect_film(fs, fr.hour, fr.page_number)
@@ -49,7 +49,10 @@ class SpiderService:
                 created_at=datetime.now(),
                 updated_at=datetime.now()
             )
-            FailureRecordService.save_failure_record(fr)
+
+
+            failure_record_dao.upsert(fr)
+
             logging.error(f"GetMovieDetail Error: {err}")
             return
         # 通过采集站 Grade 类型, 执行不同的存储逻辑
