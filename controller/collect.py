@@ -8,16 +8,16 @@ from plugin.spider.spider_core import collect_api_test
 from service.collect_logic import CollectLogic
 from utils.response_util import ResponseUtil
 
-collectController = APIRouter(prefix='/collect', tags=["采集"])
+router = APIRouter(prefix='/collect', tags=["采集"])
 
 
-@collectController.get("/list")
+@router.get("/list")
 def FilmSourceList():
     items = film_source_dao.query_all()
     return ResponseUtil.success(data=items, msg="影视源站点信息获取成功")
 
 
-@collectController.get("/find")
+@router.get("/find")
 def FindFilmSource(id: str = Query(..., description="资源站标识")):
     item = film_source_dao.query_item(filter_dict={"id": id})
     if item is None:
@@ -25,7 +25,7 @@ def FindFilmSource(id: str = Query(..., description="资源站标识")):
     return ResponseUtil.success(data=item, msg="原站点详情信息查找成功")
 
 
-@collectController.post("/update")
+@router.post("/update")
 def FilmSourceUpdate(film_source: FilmSource):
     # 参数校验
     if not film_source.id:
@@ -35,7 +35,7 @@ def FilmSourceUpdate(film_source: FilmSource):
     return ResponseUtil.success(msg="更新成功")
 
 
-@collectController.post("/change")
+@router.post("/change")
 def FilmSourceChange(s: FilmSource):
     # 参数校验
     if not s.id:
@@ -67,7 +67,7 @@ def FilmSourceChange(s: FilmSource):
     return ResponseUtil.success(msg="更新成功")
 
 
-@collectController.post("/test")
+@router.post("/test")
 def FilmSourceTest(s: dict):
     # 参数校验
     try:
@@ -82,7 +82,7 @@ def FilmSourceTest(s: dict):
     return ResponseUtil.success(msg="测试成功!!!")
 
 
-@collectController.get("/del")
+@router.get("/del")
 def FilmSourceDel(id: str = Query(..., description="资源站标识")):
     # 参数校验
     if not id:
@@ -93,7 +93,7 @@ def FilmSourceDel(id: str = Query(..., description="资源站标识")):
     return ResponseUtil.success(msg="删除成功")
 
 
-@collectController.post("/add")
+@router.post("/add")
 def FilmSourceAdd(film_source: FilmSource):
     # 获取请求参数并校验
 
@@ -115,70 +115,9 @@ def FilmSourceAdd(film_source: FilmSource):
     return ResponseUtil.success(msg="添加成功")
 
 
-@collectController.get("/options")
+@router.get("/options")
 def GetNormalFilmSource():
     items = film_source_dao.query_all()
     return ResponseUtil.success(data=items, msg="影视源信息获取成功")
 
 
-@collectController.get("/record/list", summary="获取采集失败记录列表")
-def FailureRecordList(vo: RecordRequestVo = Query(...)):
-    failure_record_list = FailureRecordService.failure_record_list()
-    collect_source_list = film_source_dao.query_all()
-    vo.paging = vo
-    vo.beginTime = "0001-01-01T00:00:00Z"
-    vo.endTime = "0001-01-01T00:00:00Z"
-    data = {
-        'params': vo,
-        'list': [record.model_dump(by_alias=True) for record in failure_record_list],
-        "options": {
-            'origin': collect_source_list,
-            'status': [
-                {
-                    "name": "全部",
-                    "value": -1
-                },
-                {
-                    "name": "待重试",
-                    "value": 1
-                },
-                {
-                    "name": "已处理",
-                    "value": 0
-                }
-            ],
-            'collectType': [
-                {
-                    "name": "全部",
-                    "value": -1
-                },
-                {
-                    "name": "影片详情",
-                    "value": 0
-                },
-                {
-                    "name": "文章",
-                    "value": 1
-                },
-                {
-                    "name": "演员",
-                    "value": 2
-                },
-                {
-                    "name": "角色",
-                    "value": 3
-                },
-                {
-                    "name": "网站",
-                    "value": 4
-                }
-            ],
-        },
-    }
-    return ResponseUtil.success(data=data, msg="影视源信息获取成功")
-
-
-@collectController.get("/record/retry")
-def CollectRecover(id: str = Query(..., description="资源站标识")):
-    SpiderService.CollectRecover(id)
-    return ResponseUtil.success(msg="采集重试已开启, 请勿重复操作")

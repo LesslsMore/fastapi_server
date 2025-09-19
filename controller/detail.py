@@ -7,33 +7,12 @@ from model.collect.categories import Category
 from model.system.movies import MovieDetail
 from model.system.response import Page
 from service.index_logic import IndexLogic
-from service.manage_logic import ManageLogic
 from utils.response_util import ResponseUtil
 
-indexController = APIRouter(tags=["主页"])
+router = APIRouter(tags=["详情"])
 
 
-@indexController.get("/index", summary="主页")
-def index_page():
-    data = IndexLogic.index_page()
-    return ResponseUtil.success(data=data, msg="首页数据获取成功")
-
-
-@indexController.get("/config/basic", summary="基础配置")
-def site_basic_config():
-    data = ManageLogic.get_site_basic_config()
-    return ResponseUtil.success(data=data, msg="基础配置信息获取成功")
-
-
-@indexController.get("/navCategory", summary="导航分类")
-def categories_info():
-    data = IndexLogic.get_nav_category()
-    if not data:
-        return ResponseUtil.error(msg="暂无分类信息")
-    return ResponseUtil.success(data=data, msg="分类信息获取成功")
-
-
-@indexController.get("/filmClassify", summary="分类数据")
+@router.get("/filmClassify", summary="分类数据")
 def film_classify(request: Request, category: Category = Query(...)):
     pid = category.pid if isinstance(category.pid, int) else category.Pid
     title = IndexLogic.get_pid_category(pid)
@@ -44,7 +23,7 @@ def film_classify(request: Request, category: Category = Query(...)):
     return ResponseUtil.success(data=data, msg="分类影片信息获取成功")
 
 
-@indexController.get("/filmClassifySearch", summary="分类搜索数据")
+@router.get("/filmClassifySearch", summary="分类搜索数据")
 def film_tag_search(
         Pid: int = Query(...),
         Category: Optional[int] = Query(None),
@@ -82,7 +61,7 @@ def film_tag_search(
     return ResponseUtil.success(data=data, msg="分类影片数据获取成功")
 
 
-@indexController.get("/searchFilm", summary="搜索数据")
+@router.get("/searchFilm", summary="搜索数据")
 def search_film(
         keyword: str = Query(""),
         current: int = Query(1),
@@ -100,7 +79,7 @@ def search_film(
     return ResponseUtil.success(data=data, msg="影片搜索成功")
 
 
-@indexController.get("/filmDetail", summary="详情数据")
+@router.get("/filmDetail", summary="详情数据")
 def film_detail(id: int = Query(...)):
     detail = IndexLogic.get_film_detail(id)
     page = Page(**{"pageSize": 14, "current": 0})
@@ -109,7 +88,7 @@ def film_detail(id: int = Query(...)):
     return ResponseUtil.success(data=data, msg="影片详情信息获取成功")
 
 
-@indexController.get("/filmPlayInfo", summary="播放数据")
+@router.get("/filmPlayInfo", summary="播放数据")
 def film_play_info(
         id: int = Query(...),
         playFrom: Optional[str] = Query(""),
@@ -133,9 +112,3 @@ def film_play_info(
         "relate": relate
     }
     return ResponseUtil.success(data=data, msg="影片播放信息获取成功")
-
-
-# @indexController.get("/cache/del")
-# def index_cache_del():
-#     IndexLogic.clear_index_cache()
-#     return ResponseUtil.success(msg="首页数据获取成功")

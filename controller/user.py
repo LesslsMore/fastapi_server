@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from service.user_logic import UserLogic
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
+from service.user_logic import UserLogic
 from utils.response_util import ResponseUtil  # 假设 ResponseUtil 在此路径
 
-userController = APIRouter( tags=['用户'])
+router = APIRouter(tags=['用户'])
 
 
 class LoginRequest(BaseModel):
@@ -12,7 +12,7 @@ class LoginRequest(BaseModel):
     password: str
 
 
-@userController.post("/login")
+@router.post("/login")
 async def user_login(req: LoginRequest):
     if not req.userName or not req.password:
         return ResponseUtil.error(msg="用户名和密码信息不能为空")
@@ -23,7 +23,7 @@ async def user_login(req: LoginRequest):
     return ResponseUtil.success(msg="登录成功!!!", headers={"new-token": token}, media_type="application/json")
 
 
-@userController.get("/user/info")
+@router.get("/user/info")
 async def user_info():
     # 模拟从token中获取用户ID
     user_id = 1  # 这里需要根据实际情况从token中解析出用户ID
