@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import Request
+from pydantic import BaseModel, field_validator
 
 from service.user_logic import UserLogic
 from utils.response_util import ResponseUtil  # 假设 ResponseUtil 在此路径
@@ -11,11 +12,21 @@ class LoginRequest(BaseModel):
     userName: str
     password: str
 
+    @field_validator('userName')
+    def username_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('用户名不能为空')
+        return v.strip()
+
+    @field_validator('password')
+    def password_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('密码不能为空')
+        return v.strip()
+
 
 @router.post("/login")
 async def user_login(req: LoginRequest):
-    if not req.userName or not req.password:
-        return ResponseUtil.error(msg="用户名和密码信息不能为空")
     token, err = UserLogic.user_login(req.userName, req.password)
     if err:
         return ResponseUtil.error(msg=err)
@@ -24,7 +35,7 @@ async def user_login(req: LoginRequest):
 
 
 @router.get("/user/info")
-async def user_info():
+async def user_info(request: Request):
     # 模拟从token中获取用户ID
     user_id = 1  # 这里需要根据实际情况从token中解析出用户ID
     # 获取用户信息

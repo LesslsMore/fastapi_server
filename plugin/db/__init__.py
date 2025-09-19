@@ -1,8 +1,6 @@
-from sqlmodel import Session
-
 from dotenv import load_dotenv, find_dotenv
+
 from plugin.db.postgres import init_postgres
-from plugin.db.redis_client import init_redis_conn
 
 # config = load_config()
 # load_dotenv('../config/.env.win')
@@ -23,6 +21,4 @@ env_file = '.env.dev'
 # 加载配置
 load_dotenv(find_dotenv(env_file))
 
-redis_client = init_redis_conn()
-
-
+# redis_client = init_redis_conn()

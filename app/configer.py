@@ -6,7 +6,6 @@ from sqlmodel import SQLModel
 
 from config.database import sync_engine
 from dao.system.user_dao import init_admin_account
-from plugin.db.redis_client import close_redis
 from plugin.init.spider_init import film_source_init
 from plugin.init.web_init import basic_config_init, banners_init
 from utils.get_scheduler import SchedulerUtil
@@ -25,7 +24,6 @@ async def lifespan(app: FastAPI):
     yield
     await SchedulerUtil.close_system_scheduler()
     # Clean up the ML models and release the resources
-    close_redis()
 
 
 def app_config(app: FastAPI):

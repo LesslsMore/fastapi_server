@@ -1,6 +1,5 @@
-
+from dao.system.manage import ManageService
 from model.system.manage import BasicConfig, Banner
-from dao.system.manage import save_site_basic, save_banners, ManageService
 
 
 def basic_config_init():

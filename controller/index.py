@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from config.data_config import INDEX_CACHE_KEY
+from dao.collect.kv_dao import KVDao
 from service.index_logic import IndexLogic
 from service.manage_logic import ManageLogic
 from utils.response_util import ResponseUtil
@@ -26,7 +28,8 @@ def categories_info():
         return ResponseUtil.error(msg="暂无分类信息")
     return ResponseUtil.success(data=data, msg="分类信息获取成功")
 
-# @indexController.get("/cache/del")
-# def index_cache_del():
-#     IndexLogic.clear_index_cache()
-#     return ResponseUtil.success(msg="首页数据获取成功")
+
+@router.get("/cache/del", summary="首页缓存删除")
+def index_cache_del():
+    KVDao.delete_key(INDEX_CACHE_KEY)
+    return ResponseUtil.success(msg="首页缓存数据已清除!!!")

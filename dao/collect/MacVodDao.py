@@ -1,14 +1,11 @@
 from typing import List, Tuple
-from typing import Optional
 
 from sqlalchemy import text, func
 from sqlmodel import select
 
-from config.privide_config import ORIGINAL_FILM_DETAIL_KEY, RESOURCE_EXPIRED
 from demo.sql import get_session
 from model.collect.MacVod import MacVod
 from model.system.movies import MovieUrlInfo
-from plugin.db import redis_client
 
 
 class MacVodDao:
@@ -77,33 +74,6 @@ class MacVodDao:
             return [(row[1], row[0]) for row in result]
 
 
-# 保存未处理的完整影片详情信息到redis
-def save_original_detail(fd: MacVod):
-    data = fd.json(ensure_ascii=False)
-    # redis = redis_client or init_redis_conn()
-    redis_client.set(ORIGINAL_FILM_DETAIL_KEY % (fd.vod_id), data, ex=RESOURCE_EXPIRED)
-
-
-# 保存未处理的完整影片详情信息到mysql（伪实现）
-def save_original_detail2mysql(fd: MacVod):
-    session = get_session()
-    # 假设 FilmDetail 已继承 SQLModel 并映射表结构，否则需补充
-    session.bulk_save_objects(fd)
-    session.commit()
-
-
-# 根据ID获取原始影片详情数据
-def get_original_detail_by_id(id: int) -> Optional[MacVod]:
-    data = redis_client.get(ORIGINAL_FILM_DETAIL_KEY % (id))
-    if not data:
-        return None
-    try:
-        fd = MacVod.parse_raw(data)
-        return fd
-    except Exception:
-        return None
-
-
 def gen_film_play_list(play_url: str, separator: str) -> List[List[MovieUrlInfo]]:
     res = []
     if separator:
@@ -113,16 +83,6 @@ def gen_film_play_list(play_url: str, separator: str) -> List[List[MovieUrlInfo]
     else:
         if ".m3u8" in play_url or ".mp4" in play_url:
             res.append(convert_play_url(play_url))
-    return res
-
-
-def gen_all_film_play_list(play_url: str, separator: str) -> List[List[MovieUrlInfo]]:
-    res = []
-    if separator:
-        for l in play_url.split(separator):
-            res.append(convert_play_url(l))
-        return res
-    res.append(convert_play_url(play_url))
     return res
 
 

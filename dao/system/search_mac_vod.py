@@ -15,69 +15,6 @@ from model.system.response import Page
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list
 
 
-# def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
-#     """
-#     根据标签条件筛选影片信息
-#     :param st: 搜索标签参数字典
-#     :param page: 分页参数
-#     :return: 符合条件的SearchInfo列表
-#     """
-#     try:
-#         with Session(sync_engine) as session:
-#             query = select(MacVod)
-#
-#             # 处理各标签条件
-#             if st.get('Pid'):
-#                 query = query.where(MacVod.type_id_1 == st['Pid'])
-#             if st.get('Cid'):
-#                 query = query.where(MacVod.type_id == st['Cid'])
-#             if st.get('Year'):
-#                 query = query.where(MacVod.vod_year == st['Year'])
-#
-#             # 处理特殊标签条件
-#             if st.get('Area') == '其它':
-#                 tags = get_tags_by_title(st['Pid'], 'Area')
-#                 exclude_areas = [t.split(':')[1] for t in tags]
-#                 query = query.where(MacVod.vod_area.not_in(exclude_areas))
-#             elif st.get('Area'):
-#                 query = query.where(MacVod.vod_area == st['Area'])
-#
-#             if st.get('Language') == '其它':
-#                 tags = get_tags_by_title(st['Pid'], 'Language')
-#                 exclude_langs = [t.split(':')[1] for t in tags]
-#                 query = query.where(MacVod.vod_lang.not_in(exclude_langs))
-#             elif st.get('Language'):
-#                 query = query.where(MacVod.vod_lang == st['Language'])
-#
-#             if st.get('Plot') == '其它':
-#                 tags = get_tags_by_title(st['Pid'], 'Plot')
-#                 exclude_plots = [t.split(':')[1] for t in tags]
-#                 for plot in exclude_plots:
-#                     query = query.where(MacVod.vod_class.not_like(f'%{plot}%'))
-#             elif st.get('Plot'):
-#                 query = query.where(MacVod.vod_class.like(f'%{st["Plot"]}%'))
-#
-#             # 处理排序
-#             if st.get('Sort') == 'release_stamp':
-#                 query = query.order_by(MacVod.vod_year.desc(), MacVod.vod_time_add.desc())
-#             elif st.get('Sort') == 'update_stamp':
-#                 query = query.order_by(MacVod.vod_time.desc())
-#             elif st.get('Sort') == 'hits':
-#                 query = query.order_by(MacVod.vod_hits.desc())
-#             elif st.get('Sort') == 'score':
-#                 query = query.order_by(MacVod.vod_douban_score.desc())
-#
-#             # 返回分页参数
-#             GetPage(query, page)
-#             # 添加分页
-#             query = query.offset((page.current - 1) * page.pageSize).limit(page.pageSize)
-#
-#             mac_vod_list = session.exec(query).all()
-#             return mac_vod_list
-#     except Exception as e:
-#         logging.info(f"查询失败: {e}")
-#         return None
-
 def get_mac_vod_list_by_tags(st: dict, page: Page) -> Optional[List[MacVod]]:
     # 构建过滤条件
     filters = []

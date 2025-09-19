@@ -1,9 +1,9 @@
-import json
 import re
 from typing import List, Dict, Any, Optional
 
 from config.data_config import INDEX_CACHE_KEY
 from dao.collect.categories import CategoryTreeService
+from dao.collect.kv_dao import KVDao
 from dao.collect.multiple_source import get_multiple_play
 from dao.system.manage import ManageService
 from dao.system.movies import generate_hash_key
@@ -17,16 +17,15 @@ from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
 from model.system.virtual_object import PlayLinkVo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_to_movie_detail
-from plugin.db import redis_client
 
 
 class IndexLogic:
     @staticmethod
     def index_page() -> Dict[str, Any]:
         # 首页数据处理逻辑
-        # info = redis_client.get(INDEX_CACHE_KEY)
-        # if info:
-        #     return json.loads(info)
+        info = KVDao.get_value(INDEX_CACHE_KEY)
+        if info:
+            return info
         info = {}
         # 1. 分类信息
         tree = CategoryTree(**{"id": 0, "name": "分类信息"})
@@ -62,12 +61,8 @@ class IndexLogic:
         info["content"] = content
         # 3. 轮播
         info["banners"] = [b.model_dump() for b in ManageService.get_banners()]
-        redis_client.set(INDEX_CACHE_KEY, json.dumps(info), ex=3600)
+        KVDao.set_value(INDEX_CACHE_KEY, info, 3600)
         return info
-
-    @staticmethod
-    def clear_index_cache():
-        redis_client.delete("index_page_cache")
 
     @staticmethod
     def get_category_info() -> Dict[str, Any]:
