@@ -1,40 +1,7 @@
 from typing import Optional
 
-from sqlalchemy import text
-
-from demo.sql import get_session
 from model.system.user import User, users_dao
 from plugin.common.util.string_util import password_encrypt
-
-
-# 创建用户表
-def create_user_table():
-    session = get_session()
-    if not exist_user_table():
-        session.execute(
-            '''CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            user_name VARCHAR(255),
-            password VARCHAR(255),
-            salt VARCHAR(255),
-            email VARCHAR(255),
-            gender INT,
-            nick_name VARCHAR(255),
-            avatar VARCHAR(255),
-            status INT,
-            reserve1 VARCHAR(255),
-            reserve2 VARCHAR(255),
-            reserve3 VARCHAR(255)
-        )'''
-        )
-        session.commit()
-
-
-# 判断用户表是否存在
-def exist_user_table() -> bool:
-    session = get_session()
-    result = session.execute(text("SELECT to_regclass('users')")).fetchone()
-    return result[0] is not None
 
 
 # 初始化管理员账户
@@ -59,24 +26,24 @@ def init_admin_account():
 
 # 根据用户名或邮箱获取用户信息
 def get_user_by_name_or_email(user_name: str) -> Optional[User]:
-    with get_session() as session:
-        result = session.execute(text("SELECT * FROM users WHERE user_name = :user_name OR email = :user_name"),
-                                 {"user_name": user_name}).mappings().fetchone()
-        if result:
-            return User(**result)
-    return None
+    # 先通过用户名查找
+    user = users_dao.query_item({"user_name": user_name})
+    if user:
+        return user
+
+    # 如果没找到，再通过邮箱查找
+    user = users_dao.query_item({"email": user_name})
+    return user
 
 
 # 更新用户信息
 def update_user_info(u: User):
-    session = get_session()
-    session.execute(text(
-        "UPDATE users SET password = :password, email = :email, nick_name = :nick_name, status = :status WHERE id = :id"),
-        {
+    users_dao.update_item(
+        filter_dict={"id": u.id},
+        update_dict={
             "password": u.password,
             "email": u.email,
             "nick_name": u.nick_name,
-            "status": u.status,
-            "id": u.id
-        })
-    session.commit()
+            "status": u.status
+        }
+    )

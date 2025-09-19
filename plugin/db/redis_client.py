@@ -1,9 +1,9 @@
 import logging
-
-import redis
-from config import data_config, config
 import os
 
+import redis
+
+from config import config
 from plugin.db import redis_client
 
 
@@ -34,9 +34,6 @@ def init_redis_conn():
             logging.error(f"Redis连接失败: {e}")
             # raise Exception(f"Redis连接失败: {e}")
     return redis_client
-
-
-
 
 
 def get_redis_client():

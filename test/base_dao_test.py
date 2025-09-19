@@ -1,4 +1,6 @@
 from anime.anime_vod import anime_vod_dao
+from config.data_config import INDEX_CACHE_KEY
+from dao.collect.kv_dao import KVDao
 from dao.system.search import get_hot_movie_by_pid
 from model.system.response import Page
 
@@ -19,3 +21,7 @@ def test_page():
     cid = 4
     hot_movies = get_hot_movie_by_pid(cid, page)
     print(hot_movies)
+
+def test_delete():
+    res = KVDao.delete_key(INDEX_CACHE_KEY)
+    print(res)

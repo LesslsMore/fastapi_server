@@ -1,8 +1,10 @@
-import jwt
 import os
 from datetime import datetime, timedelta
+
+import jwt
+
 from config.security_config import PRIVATE_KEY, PUBLIC_KEY, AUTH_TOKEN_EXPIRES, USER_TOKEN_KEY, ISSUER
-from plugin.db import redis_client
+from dao.collect.kv_dao import KVDao
 
 ALGORITHM = "RS256"
 
@@ -77,13 +79,13 @@ def parse_token(token_str):
 
 def save_user_token(token, user_id):
     expire = AUTH_TOKEN_EXPIRES * 3600 + 7 * 24 * 3600
-    redis_client.set(USER_TOKEN_KEY % user_id, token, ex=expire)
+    # redis_client.set(USER_TOKEN_KEY % user_id, token, ex=expire)
+
+    KVDao.set_value(USER_TOKEN_KEY % user_id, token, expire)
 
 
 def get_user_token_by_id(user_id):
-    token = redis_client.get(USER_TOKEN_KEY % user_id)
+    # token = redis_client.get(USER_TOKEN_KEY % user_id)
+
+    token = KVDao.get_value(USER_TOKEN_KEY % user_id)
     return token or ""
-
-
-def clear_user_token(user_id):
-    redis_client.delete(USER_TOKEN_KEY % user_id)

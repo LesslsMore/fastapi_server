@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional, List
 import requests
 
 from dao.collect.categories import CategoryTreeService
-from dao.collect.film_list import save_film_class
 from model.collect.MacType import MacType, mac_type_dao
 from model.collect.MacVod import MacVod, mac_vod_dao
 from model.collect.collect_source import FilmSource, CollectResultModel
@@ -96,7 +95,7 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
         # from plugin.common.conver.Collect import gen_category_tree
         # from model.collect.film_list import save_film_class
         tree = gen_category_tree(cl)
-        save_film_class(cl)
+
         return tree
     except Exception as e:
         logging.error(f"解析分类树失败: {e}")
@@ -118,11 +117,9 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
     try:
         film_list_page = json.loads(resp_bytes)
         cl = film_list_page.get('class', [])
-        # 假设有 GenCategoryTree、SaveFilmClass 方法
-        # from plugin.common.conver.Collect import gen_category_tree
-        # from model.collect.film_list import save_film_class
+
         tree = gen_category_tree(cl)
-        save_film_class(cl)
+
         return tree
     except Exception as e:
         logging.error(f"解析分类树失败: {e}")
@@ -133,7 +130,7 @@ def get_category_tree_by_db():
     mac_type_list: List[MacType] = mac_type_dao.query_items({'type_status': 1})
     cl = [mac_type.model_dump() for mac_type in mac_type_list]
     category_tree = gen_category_tree(cl)
-    save_film_class(cl)
+
     CategoryTreeService.save_category_tree(category_tree)
 
 
