@@ -5,16 +5,16 @@ from model.system.virtual_object import SearchVo
 from service.film_logic import FilmLogic
 from utils.response_util import ResponseUtil
 
-filmController = APIRouter(prefix='/film', tags=['影视'])
+router = APIRouter(prefix='/film', tags=['影视'])
 
 
-@filmController.get("/class/tree", summary="分类树")
+@router.get("/class/tree", summary="分类树")
 async def FilmClassTree():
     tree = FilmLogic.GetFilmClassTree()
     return ResponseUtil.success(data=tree, msg="影片分类信息获取成功")
 
 
-@filmController.get("/search/list", summary="影片分页")
+@router.get("/search/list", summary="影片分页")
 async def FilmSearchPage(s: SearchVo = Query(...)):
     s.paging = Page(current=s.current, pageSize=s.pageSize)
     # 提供检索tag options
@@ -29,26 +29,26 @@ async def FilmSearchPage(s: SearchVo = Query(...)):
     return ResponseUtil.success(data=data, msg="影片分页信息获取成功")
 
 
-@filmController.post("/add")
+@router.post("/add")
 async def FilmAdd():
     return ResponseUtil.success(data=None, msg="添加成功")
 
 
-@filmController.get("/search/del")
+@router.get("/search/del")
 async def FilmDelete():
     return ResponseUtil.success(data=None, msg="删除成功")
 
 
-@filmController.get("/class/find")
+@router.get("/class/find")
 async def FindFilmClass():
     return ResponseUtil.success(data=None, msg="查找成功")
 
 
-@filmController.post("/class/update")
+@router.post("/class/update")
 async def UpdateFilmClass():
     return ResponseUtil.success(data=None, msg="更新成功")
 
 
-@filmController.get("/class/del")
+@router.get("/class/del")
 async def DelFilmClass():
     return ResponseUtil.success(data=None, msg="删除成功")

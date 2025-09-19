@@ -7,7 +7,7 @@ from service.spider_logic import SpiderLogic
 from utils.response_util import ResponseUtil
 from typing import Optional, List
 
-spiderController = APIRouter(prefix='/spider', tags=['爬虫'])
+router = APIRouter(prefix='/spider', tags=['爬虫'])
 
 
 class CollectParams(BaseModel):
@@ -17,7 +17,7 @@ class CollectParams(BaseModel):
     id: Optional[str] = None
 
 
-@spiderController.post("/start")
+@router.post("/start")
 def star_spider(params: CollectParams):
     logging.info(f"开始采集任务, 采集时长: {params.time}, 资源站Id: {params.id}, 资源站Ids: {params.ids}, 批量采集: {params.batch}")
     if params.time == 0:
@@ -36,7 +36,7 @@ def star_spider(params: CollectParams):
     return ResponseUtil.success(msg="采集任务已成功开启!!!")
 
 
-@spiderController.get("/class/cover")
+@router.get("/class/cover")
 def CoverFilmClass():
     SpiderLogic.FilmClassCollect()
     return ResponseUtil.success(msg="影视分类信息重置成功, 请稍等片刻后刷新页面")
