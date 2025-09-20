@@ -5,11 +5,11 @@ from model.system.manage import BasicConfig, Banner
 def basic_config_init():
     # Initialize website basic configuration
     basic_config = BasicConfig(
-        siteName="GoFilm",
+        siteName="资源帝",
         domain="http://127.0.0.1:3600",
         logo="https://s2.loli.net/2023/12/05/O2SEiUcMx5aWlv4.jpg",
         keyword="在线视频, 免费观影",
-        describe="自动采集, 多播放源集成,在线观影网站",
+        describe="你想要的我都有!",
         state=True,
         hint="网站升级中, 暂时无法访问 !!!"
     )

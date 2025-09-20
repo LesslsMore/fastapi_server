@@ -20,13 +20,5 @@ class SpiderLogic:
                     executor.submit(SpiderService.handle_collect, h, film_source)
 
     @staticmethod
-    def start_collect(id: str, h: int):
-        with ThreadPoolExecutor() as executor:
-            film_source = film_source_dao.query_item(filter_dict={"id": id})
-
-            if film_source and film_source.state:
-                executor.submit(SpiderService.handle_collect, h, film_source)
-
-    @staticmethod
     def FilmClassCollect():
         get_category_tree_by_db()

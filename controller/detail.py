@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Query
+from pydantic import BaseModel
 from starlette.requests import Request
 
 from model.collect.categories import Category
@@ -23,33 +24,37 @@ def film_classify(request: Request, category: Category = Query(...)):
     return ResponseUtil.success(data=data, msg="分类影片信息获取成功")
 
 
+class FilmClassifySearchRequest(BaseModel):
+    Pid: int
+    Category: Optional[int] = None
+    Plot: Optional[str] = ""
+    Area: Optional[str] = ""
+    Language: Optional[str] = ""
+    Year: Optional[int] = None
+    Sort: str = "update_stamp"
+    current: int = 1
+
+
 @router.get("/filmClassifySearch", summary="分类搜索数据")
 def film_tag_search(
-        Pid: int = Query(...),
-        Category: Optional[int] = Query(None),
-        Plot: Optional[str] = Query(""),
-        Area: Optional[str] = Query(""),
-        Language: Optional[str] = Query(""),
-        Year: Optional[int] = Query(None),
-        Sort: str = Query("update_stamp"),
-        current: int = Query(1),
+        request: FilmClassifySearchRequest = Query(...)
 ):
     params = {
-        "Pid": str(Pid),
-        "Cid": str(Category) if Category else "",
-        "Plot": Plot,
-        "Area": Area,
-        "Language": Language,
-        "Year": str(Year) if Year else "",
-        "Sort": Sort
+        "Pid": str(request.Pid),
+        "Cid": str(request.Category) if request.Category else "",
+        "Plot": request.Plot,
+        "Area": request.Area,
+        "Language": request.Language,
+        "Year": str(request.Year) if request.Year else "",
+        "Sort": request.Sort
     }
     # pageSize = 49
     # page = {"pageSize": pageSize, "current": current}
-    page = Page(pageSize=49, current=current)
+    page = Page(pageSize=49, current=request.current)
     # film_list = IndexLogic.get_films_by_tags(params, page)
     film_list = IndexLogic.get_mac_vod_list_by_tags(params, page)
-    title = IndexLogic.get_pid_category(Pid) if IndexLogic.get_pid_category(Pid) else ""
-    search = IndexLogic.search_tags(Pid)
+    title = IndexLogic.get_pid_category(request.Pid) if IndexLogic.get_pid_category(request.Pid) else ""
+    search = IndexLogic.search_tags(request.Pid)
     params['Category'] = params.pop('Cid')
     data = {
         "title": title,
