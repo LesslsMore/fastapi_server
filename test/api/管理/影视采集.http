@@ -11,7 +11,7 @@ GET {{url}}/api/manage/collect/find?id=47a1453218ad027f
 ###
 GET {{url}}/api/manage/collect/list
 
-###
+### 采集测试
 POST {{url}}/api/manage/collect/test
 Content-Type: application/json
 

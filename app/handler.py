@@ -54,4 +54,6 @@ def app_handler(app: FastAPI):
     # 捕获 404 异常并返回前端入口文件
     @app.exception_handler(404)
     async def spa_fallback(request: Request, exc: HTTPException):
-        return FileResponse("dist/index.html")
+        return FileResponse("static/dist/index.html")
+
+        # return FileResponse("static/danmu/index.html")

@@ -182,24 +182,7 @@ def failure_record(info: Dict[str, Any]):
     logging.info(f"FailureRecord: {info}")
 
 
-def film_detail_retry(uri: str, params: Dict[str, Any], retry: int = 1, headers: Optional[Dict[str, str]] = None,
-                      timeout: int = 10):
-    """
-    影片详情重试机制。
-    """
-    for i in range(retry):
-        movie_list, err = get_film_detail(uri, params, headers, timeout)
-        if not err:
-            return movie_list
-    return []
-
-
 def collect_api_test(film_source: FilmSource) -> None:
-    """
-    测试采集接口是否可用，参考Go版CollectApiTest实现。
-    :param s: FilmSource对象或dict，需包含uri、collect_type、result_model等字段
-    :raises Exception: 若接口不可用或数据格式不符则抛出异常
-    """
     uri = film_source.uri
     collect_type = film_source.collectType
     result_model = film_source.resultModel

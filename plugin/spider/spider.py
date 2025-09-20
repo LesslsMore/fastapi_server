@@ -5,7 +5,6 @@ from datetime import datetime
 
 from dao.collect.categories import CategoryTreeService
 from dao.collect.multiple_source import save_site_play_list
-from dao.system.failure_record import FailureRecordService
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource, film_source_dao
 from model.system.failure_record import FailureRecord, failure_record_dao
 from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
@@ -50,22 +49,12 @@ class SpiderService:
                 updated_at=datetime.now()
             )
 
-
             failure_record_dao.upsert(fr)
 
             logging.error(f"GetMovieDetail Error: {err}")
             return
-        # 通过采集站 Grade 类型, 执行不同的存储逻辑
-        if film_source.grade == SourceGrade.MasterCollect:
-            pass
-            # 主站点  保存完整影片详情信息到 redis
 
-            # try:
-            #     save_movie_detail_list(movie_detail_list)
-            # except Exception as e:
-            #     logging.info(f"SaveDetails Error: {e}")
-            #     logging.error('save_details: %s', e)
-        elif film_source.grade == SourceGrade.SlaveCollect:
+        if film_source.grade == SourceGrade.SlaveCollect:
             # 附属站点 仅保存影片播放信息到redis
             save_site_play_list(film_source.id, mac_vod_list)
 
@@ -77,22 +66,10 @@ class SpiderService:
         :param id: 采集站ID
         :param h: 时长参数
         """
-        # 1. 获取采集站信息
-        # film_source = FilmSourceService.find_collect_source_by_id(id)
-        if not film_source:
-            logging.info("Cannot Find Collect Source Site")
-            return "Cannot Find Collect Source Site"
-        elif not film_source.state:
-            logging.info("The acquisition site was disabled")
-            return "The acquisition site was disabled"
         # 主站点先采集分类树
         if film_source.grade == SourceGrade.MasterCollect and film_source.state:
             if not CategoryTreeService.exists_category_tree():
                 SpiderService.collect_category(film_source)
-        # h 参数校验
-        if h == 0:
-            logging.info("Collect time cannot be zero")
-            return "Collect time cannot be zero"
         # 组装请求参数
         params = {}
         if h > 0:
@@ -108,11 +85,9 @@ class SpiderService:
         elif film_source.type_id and film_source.type_id > 0:
             params['t'] = str(film_source.type_id)
         # 2. 获取分页数，失败重试一次
-        try:
-            page_count = get_page_count(film_source.uri, params)
-        except Exception as e:
-            logging.error(f"GetPageCount Error: {e}")
-            return str(e)
+
+        page_count = get_page_count(film_source.uri, params)
+
         # 3. 按采集类型分支
         if film_source.collectType == ResourceType.CollectVideo:
             # 采集视频资源
@@ -131,29 +106,6 @@ class SpiderService:
                     for i in range(1, page_count + 1):
                         executor.submit(SpiderService.collect_film, film_source, h, i, params)
         logging.info("Spider Task Exercise Success")
-
-    @staticmethod
-    def collect_film_by_id(ids: str, film_source: FilmSource):
-        """
-        采集指定ID的影片信息，兼容Go collectFilmById。
-        """
-        uri = film_source.uri
-        params = {'pg': '1', 'ids': ids}
-        mac_vod_list, err = get_film_detail(uri, params)
-        if err:
-            logging.info(f"get_film_detail Error: {err}")
-            return
-        if film_source.grade == SourceGrade.MasterCollect:
-            pass
-            # save_movie_detail(movie_detail_list[0])
-
-            # if getattr(fs, 'syncPictures', False):
-            #     try:
-            #         save_virtual_pic(convert_virtual_picture(movie_list))
-            #     except Exception as e:
-            #         logging.info(f"SaveVirtualPic Error: {e}")
-        elif film_source.grade == SourceGrade.SlaveCollect:
-            save_site_play_list(film_source.id, mac_vod_list)
 
     @staticmethod
     def collect_category(s):

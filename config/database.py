@@ -1,11 +1,9 @@
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase
+import logging
 from urllib.parse import quote_plus
-from config.env import DataBaseConfig
+
 from sqlmodel import create_engine
 
+from config.env import DataBaseConfig
 from plugin.db.postgres import get_pg_config
 
 # ASYNC_SQLALCHEMY_DATABASE_URL = (
@@ -14,6 +12,7 @@ from plugin.db.postgres import get_pg_config
 # )
 database, host, password, port, user = get_pg_config(DataBaseConfig.POSTGRES_URL)
 
+
 def set_pg_config(database, host, password, port, user):
     DataBaseConfig.db_username = user
     DataBaseConfig.db_password = password
@@ -21,14 +20,16 @@ def set_pg_config(database, host, password, port, user):
     DataBaseConfig.db_port = port
     DataBaseConfig.db_database = database
 
-set_pg_config(database, host, password, port, user)
 
+set_pg_config(database, host, password, port, user)
 
 # if DataBaseConfig.db_type == 'postgresql':
 ASYNC_SQLALCHEMY_DATABASE_URL = (
     f'postgresql+psycopg2://{DataBaseConfig.db_username}:{quote_plus(DataBaseConfig.db_password)}@'
     f'{DataBaseConfig.db_host}:{DataBaseConfig.db_port}/{DataBaseConfig.db_database}'
 )
+
+logging.info(f"init postgres: {ASYNC_SQLALCHEMY_DATABASE_URL}")
 
 sync_engine = create_engine(
     ASYNC_SQLALCHEMY_DATABASE_URL,
