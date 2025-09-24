@@ -3,7 +3,7 @@ from fastapi import APIRouter, Query
 from dao.system.failure_record import FailureRecordService
 from model.collect.collect_source import film_source_dao
 from model.system.virtual_object import RecordRequestVo
-from plugin.spider.spider import SpiderService
+from service.spider.spider import SpiderService
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/record', tags=["记录"])

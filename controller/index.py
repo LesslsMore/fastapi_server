@@ -22,7 +22,7 @@ def site_basic_config():
 
 
 @router.get("/navCategory", summary="导航分类")
-def categories_info():
+def category_info():
     data = IndexLogic.get_nav_category()
     if not data:
         return ResponseUtil.error(msg="暂无分类信息")

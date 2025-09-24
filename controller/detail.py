@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from model.collect.categories import Category
+from model.collect.category import Category
 from model.system.movies import MovieDetail
 from model.system.response import Page
 from service.index_logic import IndexLogic

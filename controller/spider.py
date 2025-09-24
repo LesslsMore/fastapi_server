@@ -2,10 +2,12 @@ import logging
 from typing import Optional, List
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from service.spider_logic import SpiderLogic
+from dao.collect.category import CategoryService
+from service.spider.spider import SpiderService
+
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/spider', tags=['爬虫'])
@@ -49,9 +51,9 @@ async def star_spider(params: CollectParams):
 
     try:
         if params.batch:
-            SpiderLogic.batch_collect(params.time, params.ids)
+            SpiderService.batch_collect(params.time, params.ids)
         else:
-            SpiderLogic.batch_collect(params.time, [params.id])
+            SpiderService.batch_collect(params.time, [params.id])
         return ResponseUtil.success(msg="采集任务已成功开启!!!")
     except Exception as e:
         return ResponseUtil.error(msg=f"采集任务开启失败: {str(e)}")
@@ -59,5 +61,5 @@ async def star_spider(params: CollectParams):
 
 @router.get("/class/cover")
 def CoverFilmClass():
-    SpiderLogic.FilmClassCollect()
+    CategoryService.get_category_tree_by_db()
     return ResponseUtil.success(msg="影视分类信息重置成功, 请稍等片刻后刷新页面")

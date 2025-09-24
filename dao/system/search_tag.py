@@ -4,7 +4,7 @@ from typing import List
 
 from config.data_config import SEARCH_TAG
 from dao.collect.MacVodDao import MacVodDao
-from dao.collect.categories import CategoryTreeService
+from dao.collect.category import CategoryService
 
 
 def handle_tag_str(title: str, tags: List[str]) -> List[dict]:
@@ -42,7 +42,7 @@ def get_tags_by_title(pid: int, t: str) -> List[str]:
     tags = []
     # 过滤分类tag
     if t == "Category":
-        children = CategoryTreeService.get_children_tree(pid)
+        children = CategoryService.get_children_tree(pid)
         if children:
             for c in children:
                 if c.show:
