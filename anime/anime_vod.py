@@ -1,7 +1,8 @@
 from typing import Optional
 
 from pydantic import BaseModel
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field
 
 from dao.base_dao import BaseDao
@@ -12,9 +13,9 @@ class AnimeVod(BaseSQLModel, table=True):
     __tablename__ = "anime_vod"
     vod_id: int = Field(primary_key=True, sa_column_kwargs={"autoincrement": True}, description="影片ID")
     vod_name: str = Field(description="影片名称")
-    vod_play_url: Optional[dict] = Field(default={}, sa_column=Column(JSON), description="播放地址")
+    vod_play_url: Optional[dict] = Field(default={}, sa_column=Column(JSONB), description="播放地址")
     vod_pic: str = Field(description="图片地址")
-    bangumi: Optional[dict] = Field(default={}, sa_column=Column(JSON), description="番剧信息")
+    bangumi: Optional[dict] = Field(default={}, sa_column=Column(JSONB), description="番剧信息")
     # created_at: datetime = Field(default_factory=lambda: datetime.now())
     # updated_at: datetime = Field(default_factory=lambda: datetime.now())
 

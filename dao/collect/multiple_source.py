@@ -2,8 +2,8 @@ import json
 import logging
 from typing import List, Optional
 
-from sqlalchemy import Column, JSON, UniqueConstraint
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import Column, UniqueConstraint
+from sqlalchemy.dialects.postgresql import insert, JSONB
 from sqlmodel import SQLModel, Field, select
 
 from dao.system.movies import generate_hash_key
@@ -18,7 +18,7 @@ class MultipleSourceModel(SQLModel, table=True):
     id: int = Field(primary_key=True)
     site_id: Optional[str]
     key: Optional[str]
-    playList: Optional[List[MovieUrlInfo]] = Field(default_factory=list, sa_column=Column(JSON))
+    playList: Optional[List[MovieUrlInfo]] = Field(default_factory=list, sa_column=Column(JSONB))
     __table_args__ = (
         UniqueConstraint('site_id', 'key', name='uq_site_key'),
         # {"sqlite_autoincrement": True},

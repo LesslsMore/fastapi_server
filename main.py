@@ -9,23 +9,38 @@ from app.handler import app_handler
 from app.router import app_router
 from exceptions.handle import handle_exception
 
-app = FastAPI(lifespan=lifespan)
+# app = FastAPI()
 
-# 加载全局异常处理方法
-handle_exception(app)
-
-app_handler(app)
-
-app_router(app)
-
-app_config(app)
+app_api = FastAPI(lifespan=lifespan)
 
 static = os.path.join(os.path.dirname(__file__), "static")
 
-# app.mount("/danmu", StaticFiles(directory=os.path.join(static, "danmu")), name="danmu")
-app.mount("/", StaticFiles(directory=os.path.join(static, "dist")), name="dist")
+
+
+# 加载全局异常处理方法
+handle_exception(app_api)
+
+app_handler(app_api)
+
+app_router(app_api)
+
+app_config(app_api)
+
+# app_cms = FastAPI()
+# app_play = FastAPI()
+
+# app_play.mount("/", StaticFiles(directory=os.path.join(static, "danmu")), name="danmu")
+
+
+app_api.mount("/", StaticFiles(directory=os.path.join(static, "dist")), name="dist")
+
+# app.mount("/", app_api)
+# # app.mount("/danmu", app_play)
+# app.mount("/", app_cms)
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8888))
     logging_config = "logging.ini"  # 假设你把上面的配置保存为 logging.ini
-    uvicorn.run(app, host="0.0.0.0", port=port, log_config=logging_config)
+    uvicorn.run(app_api, host="0.0.0.0", port=port, log_config=logging_config)

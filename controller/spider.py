@@ -19,7 +19,7 @@ class CollectParams(BaseModel):
 
     @field_validator('time')
     @classmethod
-    def validate_ids(cls, v, info: ValidationInfo):
+    def validate_time(cls, v, info: ValidationInfo):
         # 在 Pydantic V2 中，需要通过 info.data 获取其他字段的值
         if v == 0:
             raise ValueError('time 不能为零')

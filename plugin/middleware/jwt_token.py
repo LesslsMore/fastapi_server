@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 
@@ -46,7 +46,7 @@ class UserClaims:
 #     return PUBLIC_KEY.encode()
 
 def gen_token(user_id, user_name):
-    now = datetime.now()
+    now = datetime.now(tz=timezone.utc)
     exp = now + timedelta(hours=AUTH_TOKEN_EXPIRES)
     claims = UserClaims(
         user_id=user_id,

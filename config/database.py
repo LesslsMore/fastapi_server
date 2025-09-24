@@ -38,6 +38,7 @@ sync_engine = create_engine(
     pool_size=DataBaseConfig.db_pool_size,
     pool_recycle=DataBaseConfig.db_pool_recycle,
     pool_timeout=DataBaseConfig.db_pool_timeout,
+    pool_pre_ping=True,
 )
 
 # async_engine = create_async_engine(

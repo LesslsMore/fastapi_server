@@ -15,9 +15,9 @@ class Category(BaseModel):
 class CategoryTree(Category):
     children: Optional[List['CategoryTree']] = []
 
-    class Config:
-        orm_mode = True
-        arbitrary_types_allowed = True
+    # class Config:
+    #     orm_mode = True
+    #     arbitrary_types_allowed = True
 
 
 CategoryTree.update_forward_refs()

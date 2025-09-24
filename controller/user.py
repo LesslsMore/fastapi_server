@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi import Request
 from pydantic import BaseModel, field_validator
 
-from service.user_logic import UserLogic
+from service.user import UserService
 from utils.response_util import ResponseUtil  # 假设 ResponseUtil 在此路径
 
 router = APIRouter(tags=['用户'])
@@ -27,7 +27,7 @@ class LoginRequest(BaseModel):
 
 @router.post("/login")
 async def user_login(req: LoginRequest):
-    token, err = UserLogic.user_login(req.userName, req.password)
+    token, err = UserService.user_login(req.userName, req.password)
     if err:
         return ResponseUtil.error(msg=err)
     # Go 端是通过 Header 返回新 token，这里也加上
@@ -37,9 +37,9 @@ async def user_login(req: LoginRequest):
 @router.get("/user/info")
 async def user_info(request: Request):
     # 模拟从token中获取用户ID
-    user_id = 1  # 这里需要根据实际情况从token中解析出用户ID
+    user_id = request.state.user_claims.user_id  # 这里需要根据实际情况从token中解析出用户ID
     # 获取用户信息
-    user_info = UserLogic.get_user_info(user_id)
+    user_info = UserService.get_user_info(user_id)
     if not user_info:
         raise HTTPException(status_code=404, detail="User not found")
     return ResponseUtil.success(data=user_info, msg="成功获取用户信息")

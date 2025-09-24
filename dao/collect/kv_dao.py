@@ -2,7 +2,7 @@ from typing import Optional
 from datetime import datetime, timedelta
 
 from sqlalchemy import Column, JSON
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert, JSONB
 from sqlmodel import SQLModel, Field
 
 from dao.base_dao import BaseDao
@@ -13,7 +13,7 @@ class KVModel(SQLModel, table=True):
     __tablename__ = 'key_value'
     id: int = Field(primary_key=True)
     key: Optional[str] = Field(default=None, description="key", unique=True)
-    value: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    value: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     expire_at: Optional[datetime] = Field(default=None, description="过期时间")
 
 
