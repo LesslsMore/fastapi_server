@@ -1,0 +1,19 @@
+###
+POST {{url}}/api/login
+accept: application/json
+Content-Type: application/json
+
+{
+  "userName": "admin",
+  "password": "admin"
+}
+> {%
+    client.global.set("auth_token", response.headers.valueOf("new-token"));
+%}
+
+###
+
+GET {{url}}/api/manage/user/info
+accept: application/json
+Content-Type: application/json
+auth-token: {{auth_token}}

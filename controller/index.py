@@ -2,8 +2,8 @@ from fastapi import APIRouter
 
 from config.data_config import INDEX_CACHE_KEY
 from dao.collect.kv_dao import KVDao
+from dao.system.manage import ManageService
 from service.index_logic import IndexLogic
-from service.manage_logic import ManageLogic
 from utils.response_util import ResponseUtil
 
 router = APIRouter(tags=["主页"])
@@ -17,7 +17,7 @@ def index_page():
 
 @router.get("/config/basic", summary="基础配置")
 def site_basic_config():
-    data = ManageLogic.get_site_basic_config()
+    data = ManageService.get_site_basic()
     return ResponseUtil.success(data=data, msg="基础配置信息获取成功")
 
 

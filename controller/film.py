@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query
 
+from dao.collect.categories import CategoryTreeService
+from dao.system.search import GetSearchPage
 from model.system.response import Page
 from model.system.virtual_object import SearchVo
-from service.film_logic import FilmLogic
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/film', tags=['影视'])
@@ -10,7 +11,7 @@ router = APIRouter(prefix='/film', tags=['影视'])
 
 @router.get("/class/tree", summary="分类树")
 async def FilmClassTree():
-    tree = FilmLogic.GetFilmClassTree()
+    tree = CategoryTreeService.get_category_tree()
     return ResponseUtil.success(data=tree, msg="影片分类信息获取成功")
 
 
@@ -18,9 +19,9 @@ async def FilmClassTree():
 async def FilmSearchPage(s: SearchVo = Query(...)):
     s.paging = Page(current=s.current, pageSize=s.pageSize)
     # 提供检索tag options
-    options = FilmLogic.GetSearchOptions()
+    options = None
     # 检索条件
-    sl = FilmLogic.GetFilmPage(s)
+    sl = GetSearchPage(s)
     data = {
         "params": s.model_dump(),
         "list": [s.model_dump(by_alias=True) for s in sl],

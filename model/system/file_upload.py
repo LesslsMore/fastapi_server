@@ -16,8 +16,8 @@ class FileInfo(BaseModel):
     fid: str
     file_type: str  # txt, png, jpg
 
-    class Config:
-        orm_mode = True
+    # class Config:
+    #     orm_mode = True
 
 
 class VirtualPicture(BaseModel):

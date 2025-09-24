@@ -15,10 +15,11 @@ from controller.user import router as user_controller
 
 
 def app_router(app: FastAPI):
-    app.include_router(prefix='/api', router=anime_controller)
-    app.include_router(prefix='/api', router=index_controller)
-    app.include_router(prefix='/api', router=detail_controller)
-    app.include_router(prefix='/api', router=user_controller)
+    pre = '/api'
+    app.include_router(prefix=pre, router=anime_controller)
+    app.include_router(prefix=pre, router=index_controller)
+    app.include_router(prefix=pre, router=detail_controller)
+    app.include_router(prefix=pre, router=user_controller)
     # 系统相关
     manage_controller.include_router(config_controller)
     # 轮播相关
@@ -33,4 +34,4 @@ def app_router(app: FastAPI):
     manage_controller.include_router(spider_controller)
     # 影视管理
     manage_controller.include_router(film_controller)
-    app.include_router(prefix='/api', router=manage_controller)
+    app.include_router(prefix=pre, router=manage_controller)

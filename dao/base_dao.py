@@ -1,7 +1,8 @@
+import logging
 from typing import List, Optional, Tuple
 
 from pydantic import BaseModel
-from sqlalchemy import select, func, asc, desc, and_
+from sqlalchemy import select, func, asc, desc, and_, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
 # from sqlalchemy.orm import Session
@@ -58,6 +59,26 @@ class FilterModel(BaseModel):
     field_ops: str
     field_value: Optional[object] = None
 
+def db_view_init(sql_path, db_engine=sync_engine):
+    """
+    删除在执行表中没有的任务
+    """
+    # 执行DELETE语句
+    with Session(db_engine) as session:
+        # 读取 SQL 文件
+        with open(sql_path, 'r', encoding='utf-8') as f:
+            sql_content = f.read().strip()
+
+        # 按分号分割 SQL 语句，过滤掉空语句
+        sql_list = [sql.strip() for sql in sql_content.split(';') if sql.strip()]
+        for sql in sql_list:
+            try:
+                session.exec(text(sql))
+                session.commit()  # 提交事务
+            except Exception as e:
+                session.rollback()  # 回滚事务
+                logging.error(f'sql exec fail', e)
+        logging.info('视图创建完成...')
 
 class BaseDao:
     def __init__(self, model: SQLModel, engine: Engine = sync_engine):

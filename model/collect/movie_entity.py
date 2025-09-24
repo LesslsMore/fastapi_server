@@ -1,6 +1,7 @@
 from typing import Optional, List
 
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import SQLModel, Field
 
 from dao.base_dao import BaseDao
@@ -10,10 +11,10 @@ from model.system.movies import MovieDetail, MovieBasicInfo, MovieUrlInfo, Movie
 class MovieDetailModel(SQLModel, MovieDetail):
     __tablename__ = 'movie_detail'
     id: int = Field(primary_key=True)
-    playFrom: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON))
-    playList: Optional[List[List[MovieUrlInfo]]] = Field(default_factory=list, sa_column=Column(JSON))
-    downloadList: Optional[List[List[MovieUrlInfo]]] = Field(default_factory=list, sa_column=Column(JSON))
-    descriptor: Optional[MovieDescriptor] = Field(default=None, sa_column=Column(JSON))
+    playFrom: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSONB))
+    playList: Optional[List[List[MovieUrlInfo]]] = Field(default_factory=list, sa_column=Column(JSONB))
+    downloadList: Optional[List[List[MovieUrlInfo]]] = Field(default_factory=list, sa_column=Column(JSONB))
+    descriptor: Optional[MovieDescriptor] = Field(default=None, sa_column=Column(JSONB))
 
 
 class MovieBasicInfoModel(SQLModel, MovieBasicInfo):
