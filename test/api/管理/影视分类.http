@@ -1,5 +1,7 @@
 ### 重置分类信息
 GET {{url}}/api/manage/spider/class/cover
+Content-Type: application/json
+auth-token: {{auth_token}}
 
 ### 海报管理
 GET {{url}}/api/manage/banner/list

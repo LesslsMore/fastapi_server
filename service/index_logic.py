@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Any, Optional
 
 from config.data_config import INDEX_CACHE_KEY
-from dao.collect.categories import CategoryTreeService
+from dao.collect.category import CategoryService
 from dao.collect.kv_dao import KVDao
 from dao.collect.multiple_source import get_multiple_play
 from dao.system.manage import ManageService
@@ -11,7 +11,7 @@ from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_m
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.MacVod import mac_vod_dao
-from model.collect.categories import CategoryTree
+from model.collect.category import CategoryTree
 from model.collect.collect_source import SourceGrade, film_source_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
@@ -29,7 +29,7 @@ class IndexLogic:
         info = {}
         # 1. 分类信息
         tree = CategoryTree(**{"id": 0, "name": "分类信息"})
-        sys_tree = CategoryTreeService.get_category_tree()
+        sys_tree = CategoryService.get_category_tree()
         tree.children = [c for c in sys_tree.children if c.show]
         info["category"] = tree.model_dump()
         # 2. 首页内容
@@ -67,7 +67,7 @@ class IndexLogic:
     @staticmethod
     def get_category_info() -> Dict[str, Any]:
         nav = {}
-        tree = CategoryTreeService.get_category_tree()
+        tree = CategoryService.get_category_tree()
         for t in tree.children:
             name = t.category.name
             if name in ["动漫", "动漫片"]:
@@ -82,7 +82,7 @@ class IndexLogic:
 
     @staticmethod
     def get_nav_category() -> List[Dict[str, Any]]:
-        tree = CategoryTreeService.get_category_tree()
+        tree = CategoryService.get_category_tree()
         cl = []
         for c in tree.children:
             if c.show:
@@ -115,7 +115,7 @@ class IndexLogic:
     def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
         if pid == 0:
             pid = 4
-        tree = CategoryTreeService.get_category_tree()
+        tree = CategoryService.get_category_tree()
         for t in tree.children:
             if t.id == pid:
                 return t.dict()

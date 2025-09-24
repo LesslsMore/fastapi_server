@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 
-from dao.collect.categories import CategoryTreeService
+from dao.collect.category import CategoryService
 from dao.system.search import GetSearchPage
 from model.system.response import Page
 from model.system.virtual_object import SearchVo
@@ -11,7 +11,7 @@ router = APIRouter(prefix='/film', tags=['影视'])
 
 @router.get("/class/tree", summary="分类树")
 async def FilmClassTree():
-    tree = CategoryTreeService.get_category_tree()
+    tree = CategoryService.get_category_tree()
     return ResponseUtil.success(data=tree, msg="影片分类信息获取成功")
 
 

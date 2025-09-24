@@ -1,14 +1,12 @@
 import json
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 
 import requests
 
-from dao.collect.categories import CategoryTreeService
-from model.collect.MacType import MacType, mac_type_dao
+from dao.collect.category import CategoryService
 from model.collect.MacVod import MacVod, mac_vod_dao
 from model.collect.collect_source import FilmSource, CollectResultModel
-from plugin.common.conver.collect import gen_category_tree
 
 
 def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 10) -> Optional[
@@ -92,46 +90,12 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
         film_list_page = json.loads(resp_bytes)
         cl = film_list_page.get('class', [])
         # 假设有 GenCategoryTree、SaveFilmClass 方法
-        # from plugin.common.conver.Collect import gen_category_tree
-        # from model.collect.film_list import save_film_class
-        tree = gen_category_tree(cl)
+        tree = CategoryService.gen_category_tree(cl)
 
         return tree
     except Exception as e:
         logging.error(f"解析分类树失败: {e}")
         raise Exception(f'解析分类树失败: {e}')
-
-
-def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
-                      timeout: int = 10):
-    """
-    获取影视分类树，对应Go GetCategoryTree。
-    """
-    params = params.copy() if params else {}
-    params['ac'] = 'list'
-    params['pg'] = '1'
-    resp_bytes = api_get(film_source.uri, params, headers, timeout)
-    if not resp_bytes:
-        logging.error('filmListPage 数据获取异常 : Resp Is Empty')
-        raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
-    try:
-        film_list_page = json.loads(resp_bytes)
-        cl = film_list_page.get('class', [])
-
-        tree = gen_category_tree(cl)
-
-        return tree
-    except Exception as e:
-        logging.error(f"解析分类树失败: {e}")
-        raise Exception(f'解析分类树失败: {e}')
-
-
-def get_category_tree_by_db():
-    mac_type_list: List[MacType] = mac_type_dao.query_items({'type_status': 1})
-    cl = [mac_type.model_dump() for mac_type in mac_type_list]
-    category_tree = gen_category_tree(cl)
-
-    CategoryTreeService.save_category_tree(category_tree)
 
 
 def custom_search(uri: str, wd: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
@@ -172,14 +136,6 @@ def get_single_film(uri: str, ids: str, params: Dict[str, Any] = None, headers: 
         return MacVod(**detail_list[0]) if detail_list else None
     except Exception:
         return None
-
-
-def failure_record(info: Dict[str, Any]):
-    """
-    记录采集失败信息。
-    """
-    # 可扩展为写入redis或数据库
-    logging.info(f"FailureRecord: {info}")
 
 
 def collect_api_test(film_source: FilmSource) -> None:

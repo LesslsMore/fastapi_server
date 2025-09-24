@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from config.database import sync_engine
-from service.spider_logic import SpiderLogic
+from service.spider.spider import SpiderService
 
 # from utils.log_util import logger
 
@@ -132,7 +132,7 @@ class SchedulerUtil:
         #     job_executor = 'default'
         scheduler.add_job(
             # func=eval(job_info.invoke_target),
-            func=SpiderLogic.batch_collect,
+            func=SpiderService.batch_collect,
             trigger=MyCronTrigger.from_crontab(cron_expression),
             args=(time, ids),
             # kwargs=json.loads(job_info.job_kwargs) if job_info.job_kwargs else None,

@@ -2,12 +2,13 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from typing import List
 
-from dao.collect.categories import CategoryTreeService
+from dao.collect.category import CategoryService
 from dao.collect.multiple_source import save_site_play_list
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource, film_source_dao
 from model.system.failure_record import FailureRecord, failure_record_dao
-from plugin.spider.spider_core import get_category_tree, get_page_count, get_film_detail
+from service.spider.spider_core import get_category_tree, get_page_count, get_film_detail
 
 
 class SpiderService:
@@ -59,6 +60,14 @@ class SpiderService:
             save_site_play_list(film_source.id, mac_vod_list)
 
     @staticmethod
+    def batch_collect(h: int, ids: List[str]):
+        with ThreadPoolExecutor() as executor:
+            for id in ids:
+                film_source = film_source_dao.query_item(filter_dict={"id": id})
+                if film_source and film_source.state:
+                    executor.submit(SpiderService.handle_collect, h, film_source)
+
+    @staticmethod
     def handle_collect(h: int, film_source: FilmSource):
         ""
         """
@@ -68,7 +77,7 @@ class SpiderService:
         """
         # 主站点先采集分类树
         if film_source.grade == SourceGrade.MasterCollect and film_source.state:
-            if not CategoryTreeService.exists_category_tree():
+            if not CategoryService.exists_category_tree():
                 SpiderService.collect_category(film_source)
         # 组装请求参数
         params = {}
@@ -118,4 +127,4 @@ class SpiderService:
         except Exception as err:
             logging.info(f"GetCategoryTree Error: {err}")
             return
-        CategoryTreeService.save_category_tree(category_tree)
+        CategoryService.save_category_tree(category_tree)
