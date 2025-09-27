@@ -5,9 +5,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from dao.collect.category import CategoryService
+from model.collect.collect_source import film_source_dao, SourceGrade
 from service.spider.spider import SpiderService
-
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/spider', tags=['爬虫'])
@@ -59,7 +58,13 @@ async def star_spider(params: CollectParams):
         return ResponseUtil.error(msg=f"采集任务开启失败: {str(e)}")
 
 
-@router.get("/class/cover")
+@router.get("/class/cover", summary="影视分类信息重置")
 def CoverFilmClass():
-    CategoryService.get_category_tree_by_db()
+    film_source_list = film_source_dao.query_items({
+        'grade': SourceGrade.MasterCollect,
+        'state': True,
+    })
+    for film_source in film_source_list:
+        SpiderService.collect_category(film_source)
+
     return ResponseUtil.success(msg="影视分类信息重置成功, 请稍等片刻后刷新页面")

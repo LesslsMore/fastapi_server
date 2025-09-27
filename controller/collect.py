@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Query
 
 from model.collect.collect_source import SourceGrade, film_source_dao, FilmSource
-from service.spider.spider_core import collect_api_test
 from service.collect_logic import CollectLogic
+from service.spider.spider_core import collect_api_test
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/collect', tags=["采集"])
@@ -10,7 +10,7 @@ router = APIRouter(prefix='/collect', tags=["采集"])
 
 @router.get("/list")
 def FilmSourceList():
-    items = film_source_dao.query_all()
+    items = film_source_dao.query_all(['name'])
     return ResponseUtil.success(data=items, msg="影视源站点信息获取成功")
 
 
@@ -114,7 +114,5 @@ def FilmSourceAdd(film_source: FilmSource):
 
 @router.get("/options")
 def GetNormalFilmSource():
-    items = film_source_dao.query_all()
+    items = film_source_dao.query_all(['name'])
     return ResponseUtil.success(data=items, msg="影视源信息获取成功")
-
-

@@ -59,6 +59,7 @@ class FilterModel(BaseModel):
     field_ops: str
     field_value: Optional[object] = None
 
+
 def db_view_init(sql_path, db_engine=sync_engine):
     """
     删除在执行表中没有的任务
@@ -79,6 +80,7 @@ def db_view_init(sql_path, db_engine=sync_engine):
                 session.rollback()  # 回滚事务
                 logging.error(f'sql exec fail', e)
         logging.info('视图创建完成...')
+
 
 class BaseDao:
     def __init__(self, model: SQLModel, engine: Engine = sync_engine):
@@ -117,6 +119,10 @@ class BaseDao:
             if item:
                 session.delete(item)
 
+    def delete_items(self):
+        with get_session() as session:
+            session.query(self.model).delete()
+
     def create_item(self, item):
         with get_session() as session:
             session.add(item)
@@ -144,9 +150,16 @@ class BaseDao:
             results = session.exec(statement)
             return results.all()  # 返回所有匹配结果的列表
 
-    def query_all(self):
+    def query_all(self, order_bys: list[str] = ["id"], order: IOrderEnum = IOrderEnum.descendent):
         with Session(self.engine) as session:
-            items = session.query(self.model).order_by(self.model.name.desc()).all()
+            columns = self.model.__table__.columns
+
+            if order == IOrderEnum.ascendent:
+                order_bys = [columns[order_by].asc() for order_by in order_bys]
+            else:
+                order_bys = [columns[order_by].desc() for order_by in order_bys]
+
+            items = session.query(self.model).order_by(*order_bys).all()
             return items
 
     # def paginate(self):

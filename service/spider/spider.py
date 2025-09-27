@@ -4,8 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import List
 
-from dao.collect.category import CategoryService
 from dao.collect.multiple_source import save_site_play_list
+from model.collect.MacType import mac_type_dao
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource, film_source_dao
 from model.system.failure_record import FailureRecord, failure_record_dao
 from service.spider.spider_core import get_category_tree, get_page_count, get_film_detail
@@ -77,7 +77,9 @@ class SpiderService:
         """
         # 主站点先采集分类树
         if film_source.grade == SourceGrade.MasterCollect and film_source.state:
-            if not CategoryService.exists_category_tree():
+
+            items = mac_type_dao.query_all(['type_name'])
+            if len(items) == 0:
                 SpiderService.collect_category(film_source)
         # 组装请求参数
         params = {}
@@ -122,9 +124,4 @@ class SpiderService:
         影视分类采集，对应 Go 端 CollectCategory。
         :param s: FilmSource对象，需包含uri等字段
         """
-        try:
-            category_tree = get_category_tree(s)
-        except Exception as err:
-            logging.info(f"GetCategoryTree Error: {err}")
-            return
-        CategoryService.save_category_tree(category_tree)
+        get_category_tree(s)

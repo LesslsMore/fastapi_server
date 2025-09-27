@@ -88,11 +88,11 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
         raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
     try:
         film_list_page = json.loads(resp_bytes)
-        cl = film_list_page.get('class', [])
+        class_list = film_list_page.get('class', [])
         # 假设有 GenCategoryTree、SaveFilmClass 方法
-        tree = CategoryService.gen_category_tree(cl)
+        mac_type_list = CategoryService.save_mac_type(class_list)
 
-        return tree
+        return mac_type_list
     except Exception as e:
         logging.error(f"解析分类树失败: {e}")
         raise Exception(f'解析分类树失败: {e}')

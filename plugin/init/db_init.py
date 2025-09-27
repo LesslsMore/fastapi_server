@@ -7,7 +7,7 @@ from model.system.manage import BasicConfig, Banner
 # FilmSourceInit 初始化预存站点信息，提供一些预存采集连Api链接
 def film_source_init():
     # 首先获取filmSourceList数据, 如果存在则直接返回
-    items = film_source_dao.query_all()
+    items = film_source_dao.query_all(['name'])
     if len(items) > 0:
         return
     db_view_init('sql/init.sql')

@@ -11,7 +11,6 @@ from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_m
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.MacVod import mac_vod_dao
-from model.collect.category import CategoryTree
 from model.collect.collect_source import SourceGrade, film_source_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
@@ -28,9 +27,10 @@ class IndexLogic:
             return info
         info = {}
         # 1. 分类信息
-        tree = CategoryTree(**{"id": 0, "name": "分类信息"})
-        sys_tree = CategoryService.get_category_tree()
-        tree.children = [c for c in sys_tree.children if c.show]
+
+        tree = CategoryService.get_category_tree_by_db()
+        tree.children = CategoryService.get_nav_category(tree)
+
         info["category"] = tree.model_dump()
         # 2. 首页内容
         content = []
@@ -65,31 +65,6 @@ class IndexLogic:
         return info
 
     @staticmethod
-    def get_category_info() -> Dict[str, Any]:
-        nav = {}
-        tree = CategoryService.get_category_tree()
-        for t in tree.children:
-            name = t.category.name
-            if name in ["动漫", "动漫片"]:
-                nav["cartoon"] = t.dict()
-            elif name in ["电影", "电影片"]:
-                nav["film"] = t.dict()
-            elif name in ["连续剧", "电视剧"]:
-                nav["tv"] = t.dict()
-            elif name in ["综艺", "综艺片"]:
-                nav["variety"] = t.dict()
-        return nav
-
-    @staticmethod
-    def get_nav_category() -> List[Dict[str, Any]]:
-        tree = CategoryService.get_category_tree()
-        cl = []
-        for c in tree.children:
-            if c.show:
-                cl.append(c.model_dump())
-        return cl
-
-    @staticmethod
     def search_mac_vod_info(keyword: str, page: Page) -> list:
         """
         根据关键字和分页参数检索影片基本信息列表
@@ -115,7 +90,7 @@ class IndexLogic:
     def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
         if pid == 0:
             pid = 4
-        tree = CategoryService.get_category_tree()
+        tree = CategoryService.get_category_tree_by_db()
         for t in tree.children:
             if t.id == pid:
                 return t.dict()
