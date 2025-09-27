@@ -1,11 +1,12 @@
 import argparse
 import os
 import sys
-from dotenv import load_dotenv, find_dotenv
 from functools import lru_cache
+from typing import Literal
+
+from dotenv import load_dotenv, find_dotenv
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
-from typing import Literal
 
 
 class AppSettings(BaseSettings):
@@ -39,6 +40,14 @@ class DanmuSettings(BaseSettings):
     DANMU_APP_ID: str = ''
     DANMU_APP_SECRET: str = ''
     TARGET_SERVER: str = "https://api.dandanplay.net"
+
+
+class S3Settings(BaseSettings):
+    S3_AK: str = ''
+    S3_SK: str = ''
+    S3_URL: str = ''
+    S3_BUCKET: str = ''
+    S3_STATIC: str = ''
 
 
 class DataBaseSettings(BaseSettings):
@@ -260,3 +269,4 @@ DataBaseConfig = DataBaseSettings()
 # Redis配置
 RedisConfig = RedisSettings()
 DanmuConfig = DanmuSettings()
+S3Config = S3Settings()
