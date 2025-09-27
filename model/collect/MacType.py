@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlmodel import Field, SQLModel
 
 from dao.base_dao import BaseDao
@@ -31,3 +33,8 @@ class MacType(MacTypeBase, table=True):
 
 
 mac_type_dao = BaseDao(MacType)
+
+
+class MacTypeDto(SQLModel):
+    id: int
+    show: Optional[bool] = None

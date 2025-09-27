@@ -12,7 +12,7 @@ router = APIRouter(prefix='/record', tags=["记录"])
 @router.get("/list", summary="获取采集失败记录列表")
 def FailureRecordList(vo: RecordRequestVo = Query(...)):
     failure_record_list = FailureRecordService.failure_record_list()
-    collect_source_list = film_source_dao.query_all()
+    collect_source_list = film_source_dao.query_all(['name'])
     vo.paging = vo
     vo.beginTime = "0001-01-01T00:00:00Z"
     vo.endTime = "0001-01-01T00:00:00Z"

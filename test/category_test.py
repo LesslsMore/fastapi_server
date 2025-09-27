@@ -1,24 +1,232 @@
 import json
 import logging
 
-from model.collect.category import CategoryTree
-from dao.collect.kv_dao import KVModel
 from dao.collect.category import CategoryService
+from dao.collect.kv_dao import KVModel
+from model.collect.MacType import mac_type_dao
 
 
-def test_save_category_tree():
-    category_tree = CategoryTree(**json.loads('''
-    {"id":0,"pid":-1,"name":"分类信息","show":true,"children":[{"id":1,"pid":0,"name":"电影片","show":true,"children":[{"id":6,"pid":1,"name":"动作片","show":true,"children":null},{"id":7,"pid":1,"name":"喜剧片","show":true,"children":null},{"id":8,"pid":1,"name":"爱情片","show":true,"children":null},{"id":9,"pid":1,"name":"科幻片","show":true,"children":null},{"id":10,"pid":1,"name":"恐怖片","show":true,"children":null},{"id":11,"pid":1,"name":"剧情片","show":true,"children":null},{"id":12,"pid":1,"name":"战争片","show":true,"children":null},{"id":20,"pid":1,"name":"记录片","show":true,"children":null},{"id":34,"pid":1,"name":"伦理片","show":true,"children":null},{"id":45,"pid":1,"name":"预告片","show":true,"children":null}]},{"id":2,"pid":0,"name":"连续剧","show":true,"children":[{"id":13,"pid":2,"name":"国产剧","show":true,"children":null},{"id":14,"pid":2,"name":"香港剧","show":true,"children":null},{"id":15,"pid":2,"name":"韩国剧","show":true,"children":null},{"id":16,"pid":2,"name":"欧美剧","show":true,"children":null},{"id":21,"pid":2,"name":"台湾剧","show":true,"children":null},{"id":22,"pid":2,"name":"日本剧","show":true,"children":null},{"id":23,"pid":2,"name":"海外剧","show":true,"children":null},{"id":24,"pid":2,"name":"泰国剧","show":true,"children":null},{"id":46,"pid":2,"name":"短剧","show":true,"children":null}]},{"id":3,"pid":0,"name":"综艺片","show":true,"children":[{"id":25,"pid":3,"name":"大陆综艺","show":true,"children":null},{"id":26,"pid":3,"name":"港台综艺","show":true,"children":null},{"id":27,"pid":3,"name":"日韩综艺","show":true,"children":null},{"id":28,"pid":3,"name":"欧美综艺","show":true,"children":null}]},{"id":4,"pid":0,"name":"动漫片","show":true,"children":[{"id":29,"pid":4,"name":"国产动漫","show":true,"children":null},{"id":30,"pid":4,"name":"日韩动漫","show":true,"children":null},{"id":31,"pid":4,"name":"欧美动漫","show":true,"children":null},{"id":32,"pid":4,"name":"港台动漫","show":true,"children":null},{"id":33,"pid":4,"name":"海外动漫","show":true,"children":null}]},{"id":35,"pid":0,"name":"电影解说","show":true,"children":null},{"id":36,"pid":0,"name":"体育","show":true,"children":[{"id":37,"pid":36,"name":"足球","show":true,"children":null},{"id":38,"pid":36,"name":"篮球","show":true,"children":null},{"id":39,"pid":36,"name":"网球","show":true,"children":null},{"id":40,"pid":36,"name":"斯诺克","show":true,"children":null}]},{"id":41,"pid":0,"name":"演员","show":true,"children":null},{"id":42,"pid":0,"name":"新闻资讯","show":true,"children":[{"id":43,"pid":42,"name":"电影资讯","show":true,"children":null},{"id":44,"pid":42,"name":"娱乐新闻","show":true,"children":null}]}]}
-    '''))
-    CategoryService.save_category_tree(category_tree)
+def test_gen_category_tree():
+    class_list = json.loads("""
+    [
+{
+"type_id": 1,
+"type_pid": 0,
+"type_name": "国产动漫"
+},
+{
+"type_id": 2,
+"type_pid": 0,
+"type_name": "日韩动漫"
+},
+{
+"type_id": 3,
+"type_pid": 0,
+"type_name": "欧美动漫"
+},
+{
+"type_id": 4,
+"type_pid": 0,
+"type_name": "港台动漫"
+},
+{
+"type_id": 5,
+"type_pid": 0,
+"type_name": "动漫电影"
+},
+{
+"type_id": 6,
+"type_pid": 0,
+"type_name": "里番动漫"
+},
+{
+"type_id": 7,
+"type_pid": 0,
+"type_name": "电影"
+},
+{
+"type_id": 8,
+"type_pid": 0,
+"type_name": "连续剧"
+},
+{
+"type_id": 9,
+"type_pid": 0,
+"type_name": "综艺"
+},
+{
+"type_id": 10,
+"type_pid": 7,
+"type_name": "动作片"
+},
+{
+"type_id": 11,
+"type_pid": 7,
+"type_name": "喜剧片"
+},
+{
+"type_id": 12,
+"type_pid": 7,
+"type_name": "爱情片"
+},
+{
+"type_id": 13,
+"type_pid": 7,
+"type_name": "科幻片"
+},
+{
+"type_id": 14,
+"type_pid": 7,
+"type_name": "恐怖片"
+},
+{
+"type_id": 15,
+"type_pid": 7,
+"type_name": "剧情片"
+},
+{
+"type_id": 16,
+"type_pid": 7,
+"type_name": "战争片"
+},
+{
+"type_id": 17,
+"type_pid": 7,
+"type_name": "惊悚片"
+},
+{
+"type_id": 18,
+"type_pid": 7,
+"type_name": "家庭片"
+},
+{
+"type_id": 19,
+"type_pid": 7,
+"type_name": "古装片"
+},
+{
+"type_id": 20,
+"type_pid": 7,
+"type_name": "历史片"
+},
+{
+"type_id": 21,
+"type_pid": 7,
+"type_name": "悬疑片"
+},
+{
+"type_id": 22,
+"type_pid": 7,
+"type_name": "犯罪片"
+},
+{
+"type_id": 23,
+"type_pid": 7,
+"type_name": "灾难片"
+},
+{
+"type_id": 24,
+"type_pid": 7,
+"type_name": "记录片"
+},
+{
+"type_id": 25,
+"type_pid": 7,
+"type_name": "短片"
+},
+{
+"type_id": 26,
+"type_pid": 8,
+"type_name": "国产剧"
+},
+{
+"type_id": 27,
+"type_pid": 8,
+"type_name": "香港剧"
+},
+{
+"type_id": 28,
+"type_pid": 8,
+"type_name": "韩国剧"
+},
+{
+"type_id": 29,
+"type_pid": 8,
+"type_name": "欧美剧"
+},
+{
+"type_id": 30,
+"type_pid": 8,
+"type_name": "台湾剧"
+},
+{
+"type_id": 31,
+"type_pid": 8,
+"type_name": "日本剧"
+},
+{
+"type_id": 32,
+"type_pid": 8,
+"type_name": "海外剧"
+},
+{
+"type_id": 33,
+"type_pid": 8,
+"type_name": "泰国剧"
+},
+{
+"type_id": 34,
+"type_pid": 9,
+"type_name": "大陆综艺"
+},
+{
+"type_id": 35,
+"type_pid": 9,
+"type_name": "港台综艺"
+},
+{
+"type_id": 36,
+"type_pid": 9,
+"type_name": "日韩综艺"
+},
+{
+"type_id": 37,
+"type_pid": 9,
+"type_name": "欧美综艺"
+},
+{
+"type_id": 38,
+"type_pid": 8,
+"type_name": "短剧"
+},
+{
+"type_id": 39,
+"type_pid": 7,
+"type_name": "伦理片"
+}
+]
+    """)
+    tree = CategoryService.save_mac_type(class_list)
+    print(tree)
+    assert tree
+
+
+def test_delete_items():
+    mac_type_dao.delete_items()
+    print('')
+    assert True
+
+
+def test_query_all():
+    items = mac_type_dao.query_all(['type_name'])
+    print(items)
+    assert len(items) == 0
+
 
 def test_get_category_tree():
-    category_tree = CategoryService.get_category_tree()
+    category_tree = CategoryService.get_category_tree_by_db()
     logging.info(category_tree)
 
-def test_exists_category_tree():
-    res = CategoryService.exists_category_tree()
-    logging.info(res)
 
 def test_get_children_tree():
     res = CategoryService.get_children_tree(4)

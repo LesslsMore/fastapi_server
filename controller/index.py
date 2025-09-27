@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from config.data_config import INDEX_CACHE_KEY
+from dao.collect.category import CategoryService
 from dao.collect.kv_dao import KVDao
 from dao.system.manage import ManageService
 from service.index_logic import IndexLogic
@@ -23,7 +24,8 @@ def site_basic_config():
 
 @router.get("/navCategory", summary="导航分类")
 def category_info():
-    data = IndexLogic.get_nav_category()
+    tree = CategoryService.get_category_tree_by_db()
+    data = CategoryService.get_nav_category(tree)
     if not data:
         return ResponseUtil.error(msg="暂无分类信息")
     return ResponseUtil.success(data=data, msg="分类信息获取成功")

@@ -3,6 +3,31 @@ GET {{url}}/api/manage/spider/class/cover
 Content-Type: application/json
 auth-token: {{auth_token}}
 
+### 分类树
+GET {{url}}/api/manage/film/class/tree
+Content-Type: application/json
+auth-token: {{auth_token}}
+
+### 分类树
+POST {{url}}/api/manage/film/class/update
+Content-Type: application/json
+auth-token: {{auth_token}}
+
+{
+  "id": 1,
+  "show": false
+}
+
+### 分类树
+GET {{url}}/api/manage/film/class/find?id=4
+Content-Type: application/json
+auth-token: {{auth_token}}
+
+### 分类树
+GET {{url}}/api/manage/film/class/del?id=42
+Content-Type: application/json
+auth-token: {{auth_token}}
+
 ### 海报管理
 GET {{url}}/api/manage/banner/list
 
@@ -10,8 +35,7 @@ GET {{url}}/api/manage/banner/list
 GET {{url}}/api/cache/del
 
 
-### 分类树
-GET {{url}}/api/manage/film/class/tree
+
 
 ### 影视信息
 GET {{url}}/api/manage/film/search/list?name=&pid=0&cid=0&plot=&area=&language=&year=&remarks=&beginTime=&endTime=&current=1&pageSize=10
