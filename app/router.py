@@ -12,6 +12,7 @@ from controller.manage import router as manage_controller
 from controller.record import router as record_controller
 from controller.spider import router as spider_controller
 from controller.user import router as user_controller
+from controller.category import router as category_controller
 
 
 def app_router(app: FastAPI):
@@ -32,6 +33,8 @@ def app_router(app: FastAPI):
     manage_controller.include_router(cron_controller)
     # 数据采集
     manage_controller.include_router(spider_controller)
+    # 影视分类
+    film_controller.include_router(category_controller)
     # 影视管理
     manage_controller.include_router(film_controller)
     app.include_router(prefix=pre, router=manage_controller)
