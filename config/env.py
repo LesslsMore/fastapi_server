@@ -256,13 +256,7 @@ class GetConfig:
 # # 上传配置
 # UploadConfig = get_config.get_upload_config()
 
-env_file = '.env.dev'
-# env_file = '.env.neon'
-# env_file = '.env.render'
-# 运行环境不为空时按命令行参数加载对应.env文件
 
-# 加载配置
-load_dotenv(find_dotenv(env_file))
 
 # 数据库配置
 DataBaseConfig = DataBaseSettings()

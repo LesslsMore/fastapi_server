@@ -62,8 +62,8 @@ class SpiderService:
     @staticmethod
     def batch_collect(h: int, ids: List[str]):
         with ThreadPoolExecutor() as executor:
-            for id in ids:
-                film_source = film_source_dao.query_item(filter_dict={"id": id})
+            for pk in ids:
+                film_source = film_source_dao.query_item(filter_dict={"id": pk})
                 if film_source and film_source.state:
                     executor.submit(SpiderService.handle_collect, h, film_source)
 
