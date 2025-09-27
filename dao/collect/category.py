@@ -12,7 +12,7 @@ class CategoryService:
         cate_list = []
         for child in tree.children:
             if child.show:
-                cate_list.append(child.model_dump())
+                cate_list.append(child)
         return cate_list
 
     @staticmethod
