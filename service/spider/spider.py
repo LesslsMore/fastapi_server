@@ -50,7 +50,7 @@ class SpiderService:
                 updated_at=datetime.now()
             )
 
-            failure_record_dao.upsert(fr)
+            failure_record_dao.upsert_item(fr)
 
             logging.error(f"GetMovieDetail Error: {err}")
             return

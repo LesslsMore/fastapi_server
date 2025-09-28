@@ -5,13 +5,13 @@ from config.data_config import INDEX_CACHE_KEY
 from dao.collect.category import CategoryService
 from dao.collect.kv_dao import KVDao
 from dao.collect.multiple_source import get_multiple_play
-from dao.system.manage import ManageService
 from dao.system.movies import generate_hash_key
 from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
-from model.collect.mac.vod import mac_vod_dao
 from model.collect.collect_source import SourceGrade, film_source_dao
+from model.collect.mac.vod import mac_vod_dao
+from model.system.manage import banner_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
 from model.system.virtual_object import PlayLinkVo
@@ -60,7 +60,8 @@ class IndexLogic:
             content.append(item)
         info["content"] = content
         # 3. 轮播
-        info["banners"] = [b.model_dump() for b in ManageService.get_banners()]
+        banner_list = banner_dao.query_all(['sort'])
+        info["banners"] = [banner.model_dump() for banner in banner_list]
         KVDao.set_value(INDEX_CACHE_KEY, info, 3600)
         return info
 

@@ -88,7 +88,7 @@ class BaseDao:
         self.engine = engine
 
     # 提取的公共方法
-    def upsert(self, item: SQLModel):
+    def upsert_item(self, item: SQLModel):
         with get_session() as session:
             values = item.model_dump()
             stmt = insert(self.model).values(**values)

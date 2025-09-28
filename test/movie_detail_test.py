@@ -204,7 +204,7 @@ def test_upsert_movie_detail():
 }
         '''
     ))
-    movie_detail_dao.upsert(movie_detail)
+    movie_detail_dao.upsert_item(movie_detail)
 
 
 

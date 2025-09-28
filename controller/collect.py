@@ -28,7 +28,7 @@ def FilmSourceUpdate(film_source: FilmSource):
     if not film_source.id:
         return ResponseUtil.error(msg="参数异常, 资源站标识不能为空")
 
-    film_source_dao.upsert(film_source)
+    film_source_dao.upsert_item(film_source)
     return ResponseUtil.success(msg="更新成功")
 
 
@@ -59,7 +59,7 @@ def FilmSourceChange(s: FilmSource):
             "state": s.state
         })
 
-        film_source_dao.upsert(updated_source)
+        film_source_dao.upsert_item(updated_source)
 
     return ResponseUtil.success(msg="更新成功")
 
@@ -107,7 +107,7 @@ def FilmSourceAdd(film_source: FilmSource):
     except Exception as e:
         return ResponseUtil.error(msg=f"资源接口测试失败, 请确认接口有效再添加: {e}")
     # 测试通过后将资源站信息添加到list
-    film_source_dao.upsert(film_source)
+    film_source_dao.upsert_item(film_source)
 
     return ResponseUtil.success(msg="添加成功")
 

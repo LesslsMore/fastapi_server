@@ -1,5 +1,10 @@
-from typing import List
 from pydantic import BaseModel
+from sqlalchemy import Column, Integer
+from sqlmodel import Field
+
+from dao.base_dao import BaseDao
+from demo.sql import BaseSQLModel
+
 
 class BasicConfig(BaseModel):
     siteName: str
@@ -10,8 +15,11 @@ class BasicConfig(BaseModel):
     state: bool
     hint: str
 
-class Banner(BaseModel):
-    id: str
+
+class Banner(BaseSQLModel, table=True):
+    __tablename__ = "banner"
+
+    id: int = Field(sa_column=Column(Integer, primary_key=True))
     mid: int
     name: str
     year: int
@@ -20,3 +28,5 @@ class Banner(BaseModel):
     picture: str
     remark: str
     sort: int
+
+banner_dao = BaseDao(Banner)
