@@ -8,7 +8,6 @@ config/config.yml
 /.env.render
 /.VSCodeCounter/
 /logs/
-/static/danmu/
 /.env.dev
 /.env.neon
 /.env.prod

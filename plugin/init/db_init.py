@@ -27,7 +27,7 @@ def basic_config_init():
     ManageService.save_site_basic(basic_config)
 
 
-def banners_init():
+def banner_init():
     # 首先获取filmSourceList数据, 如果存在则直接返回
     items = banner_dao.query_all(['sort'])
     if len(items) > 0:

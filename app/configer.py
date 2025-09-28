@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 
 from config.database import sync_engine
-from plugin.init.db_init import film_source_init, basic_config_init, banners_init
+from plugin.init.db_init import film_source_init, basic_config_init, banner_init
 
 from service.user import UserService
 from utils.get_scheduler import SchedulerUtil
@@ -16,10 +16,9 @@ async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(sync_engine)
 
     UserService.init_admin_account()
-
     film_source_init()
+    banner_init()
     basic_config_init()
-    banners_init()
 
     await SchedulerUtil.init_system_scheduler()
     yield
