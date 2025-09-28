@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from config.constant import IOrderEnum
 from dao.base_dao import ConfigPageQueryModel, FilterModel, SortModel, PageModel
-from model.collect.MacVod import mac_vod_dao
+from model.collect.mac.vod import mac_vod_dao
 from model.system.movies import MovieBasicInfo
 from model.system.response import Page, set_page
 from model.system.search import SearchInfo

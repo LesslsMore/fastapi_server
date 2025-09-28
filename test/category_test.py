@@ -3,7 +3,7 @@ import logging
 
 from dao.collect.category import CategoryService
 from dao.collect.kv_dao import KVModel
-from model.collect.MacType import mac_type_dao
+from model.collect.mac.type import mac_type_dao
 
 
 def test_gen_category_tree():

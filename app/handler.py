@@ -10,12 +10,6 @@ from config.env import DanmuConfig
 
 
 def app_handler(app: FastAPI):
-    global ping
-
-    @app.get("/ping")
-    def ping():
-        return {"message": "pong"}
-
     @app.api_route("/proxy/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
     async def proxy(full_path: str, request: Request):
         # 从环境变量读取敏感信息（需提前配置）
@@ -52,8 +46,22 @@ def app_handler(app: FastAPI):
                 return Response(content=f"Error: {str(exc)}", status_code=500)
 
     # 捕获 404 异常并返回前端入口文件
-    @app.exception_handler(404)
-    async def spa_fallback(request: Request, exc: HTTPException):
-        return FileResponse("static/dist/index.html")
+    # @app.exception_handler(404)
+    # async def spa_fallback(request: Request, exc: HTTPException):
+    #     return FileResponse("static/dist/index.html")
 
-        # return FileResponse("static/danmu/index.html")
+        return FileResponse("static/danmu/index.html")
+
+#     # 为每个SPA项目添加一个捕获所有请求的路由，返回其index.html
+#     @app.api_route("/danmu/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+#     async def proxy(full_path: str, request: Request):
+#         # 这里需要逻辑来确定rest_of_path属于哪个项目，然后返回对应的index.html
+#         # 这种方法通常需要更多的路径解析逻辑，不如中间件方案清晰。
+#         return FileResponse("static/danmu/index.html")
+#
+# def app_handler_static(app: FastAPI):
+#     @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+#     async def proxy(full_path: str, request: Request):
+#         # 这里需要逻辑来确定rest_of_path属于哪个项目，然后返回对应的index.html
+#         # 这种方法通常需要更多的路径解析逻辑，不如中间件方案清晰。
+#         return FileResponse("static/dist/index.html")

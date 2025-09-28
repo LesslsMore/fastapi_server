@@ -3,6 +3,8 @@ import os
 import uvicorn
 from dotenv import find_dotenv, load_dotenv
 
+from plugin.middleware.spa import SpaMiddleware
+
 env_file = '.env.dev'
 # env_file = '.env.neon'
 # env_file = '.env.render'
@@ -32,15 +34,19 @@ app_handler(app_api)
 
 app_router(app_api)
 
+# app_handler_static(app_api)
+
 app_config(app_api)
+
+app_api.add_middleware(SpaMiddleware)
 
 # app_cms = FastAPI()
 # app_play = FastAPI()
 
-# app_play.mount("/", StaticFiles(directory=os.path.join(static, "danmu")), name="danmu")
+# app_api.mount("/", StaticFiles(directory=os.path.join(static, "danmu")), name="danmu")
 
 
-app_api.mount("/", StaticFiles(directory=os.path.join(static, "dist")), name="dist")
+# app_api.mount("/", StaticFiles(directory=os.path.join(static, "dist")), name="dist")
 
 # app.mount("/", app_api)
 # # app.mount("/danmu", app_play)

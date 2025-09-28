@@ -10,7 +10,7 @@ from dao.system.movies import generate_hash_key
 from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid
 from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
     get_relate_mac_vod_basic_info, get_search_tag_by_stat
-from model.collect.MacVod import mac_vod_dao
+from model.collect.mac.vod import mac_vod_dao
 from model.collect.collect_source import SourceGrade, film_source_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page

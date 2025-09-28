@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 
 from pydantic import TypeAdapter
 
-from model.collect.MacType import MacType, mac_type_dao
+from model.collect.mac.type import MacType, mac_type_dao
 from model.collect.category import CategoryTree
 
 

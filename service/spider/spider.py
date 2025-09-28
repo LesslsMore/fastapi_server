@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List
 
 from dao.collect.multiple_source import save_site_play_list
-from model.collect.MacType import mac_type_dao
+from model.collect.mac.type import mac_type_dao
 from model.collect.collect_source import SourceGrade, ResourceType, FilmSource, film_source_dao
 from model.system.failure_record import FailureRecord, failure_record_dao
 from service.spider.spider_core import get_category_tree, get_page_count, get_film_detail
@@ -79,17 +79,18 @@ class SpiderService:
         if film_source.grade == SourceGrade.MasterCollect and film_source.state:
 
             items = mac_type_dao.query_all(['type_name'])
-            if len(items) == 0:
-                SpiderService.collect_category(film_source)
+            # if len(items) == 0:
+            SpiderService.collect_category(film_source)
         # 组装请求参数
         params = {}
         if h > 0:
             params['h'] = str(h)
         if 'jkun资源' in film_source.name:
-            params.update({
-                "t": 3,
-                "wd": "mide",
-            })
+            # params.update({
+            #     "t": 3,
+            #     "wd": "mide",
+            # })
+            pass
             # params.update({
             #     "wd": "高橋聖子",
             # })

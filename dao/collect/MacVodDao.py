@@ -4,7 +4,7 @@ from sqlalchemy import text, func
 from sqlmodel import select
 
 from demo.sql import get_session
-from model.collect.MacVod import MacVod
+from model.collect.mac.vod import MacVod
 from model.system.movies import MovieUrlInfo
 
 

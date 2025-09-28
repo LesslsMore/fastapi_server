@@ -5,7 +5,7 @@ from datetime import datetime
 from dao.collect.MacVodDao import gen_film_play_list
 from model.system.movies import MovieDetail, MovieDescriptor, MovieBasicInfo
 from typing import List
-from model.collect.MacVod import MacVod
+from model.collect.mac.vod import MacVod
 from model.system.search import SearchInfo
 
 

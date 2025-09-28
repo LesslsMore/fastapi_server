@@ -48,14 +48,11 @@ async def star_spider(params: CollectParams):
     logging.info(
         f"开始采集任务, 采集时长: {params.time}, 资源站Id: {params.id}, 资源站Ids: {params.ids}, 批量采集: {params.batch}")
 
-    try:
-        if params.batch:
-            SpiderService.batch_collect(params.time, params.ids)
-        else:
-            SpiderService.batch_collect(params.time, [params.id])
-        return ResponseUtil.success(msg="采集任务已成功开启!!!")
-    except Exception as e:
-        return ResponseUtil.error(msg=f"采集任务开启失败: {str(e)}")
+    if params.batch:
+        SpiderService.batch_collect(params.time, params.ids)
+    else:
+        SpiderService.batch_collect(params.time, [params.id])
+    return ResponseUtil.success(msg="采集任务已成功开启!!!")
 
 
 @router.get("/class/cover", summary="影视分类信息重置")

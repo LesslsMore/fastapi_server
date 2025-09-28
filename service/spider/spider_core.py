@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 import requests
 
 from dao.collect.category import CategoryService
-from model.collect.MacVod import MacVod, mac_vod_dao
+from model.collect.mac.vod import MacVod, mac_vod_dao
 from model.collect.collect_source import FilmSource, CollectResultModel
 
 
@@ -17,8 +17,8 @@ def api_get(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] 
         if headers:
             default_headers.update(headers)
         resp = requests.get(uri, params=params, headers=default_headers, timeout=timeout)
-        if resp.status_code in [200] + list(range(300, 400)) and resp.content:
-            return resp.content
+        if resp.status_code in [200] + list(range(300, 400)):
+            return resp.json()
         return None
     except Exception as e:
         logging.error(f"API请求失败: {e}")
@@ -30,24 +30,18 @@ def get_film_detail(uri: str, params: Dict[str, Any], headers: Optional[Dict[str
     params = params.copy()
     params['ac'] = 'detail'
     logging.info(f"请求详情页: {uri}, 参数: {params}")
-    resp_bytes = api_get(uri, params, headers, timeout)
-    if not resp_bytes:
-        return [], '请求失败或无响应'
-    try:
-        detail_page = json.loads(resp_bytes)
-        # detail_page 应包含 'list' 字段，对应 FilmDetailLPage 结构
-        film_detail_list = detail_page.get('list', [])
-        # 保存原始详情到 redis
-        mac_vod_list = [MacVod(**item) for item in film_detail_list]
-        mac_vod_dao.upsert_items(mac_vod_list)
+    resp = api_get(uri, params, headers, timeout)
 
-        logging.info(f"保存原始详情成功: {len(mac_vod_list)}")
-        # 转换为业务 MovieDetail
-        # movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])
-        return mac_vod_list, None
-    except Exception as e:
-        logging.error(f"解析详情失败: {e}")
-        return [], f'解析失败: {e}'
+    # detail_page 应包含 'list' 字段，对应 FilmDetailLPage 结构
+    film_detail_list = resp.get('list', [])
+    # 保存原始详情到 redis
+    mac_vod_list = [MacVod(**item) for item in film_detail_list]
+    mac_vod_dao.upsert_items(mac_vod_list)
+
+    logging.info(f"保存原始详情成功: {len(mac_vod_list)}")
+    # 转换为业务 MovieDetail
+    # movie_detail_list = mac_vod_list_to_movie_detail_list([MacVod(**item) for item in film_detail_list])
+    return mac_vod_list, None
 
 
 def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str, str]] = None,
@@ -60,18 +54,10 @@ def get_page_count(uri: str, params: Dict[str, Any], headers: Optional[Dict[str,
         params['ac'] = 'detail'
     params['pg'] = '1'
     logging.info(f"请求分页数: {uri}, 参数: {params}")
-    resp_bytes = api_get(uri, params, headers, timeout)
-    if not resp_bytes:
-        logging.error('response is empty')
-        raise Exception('response is empty')
-    try:
-        res = json.loads(resp_bytes)
-        page_count = int(res.get('pagecount', 0) or res.get('pageCount', 0) or 0)
-        logging.info(f"获取分页数: {page_count}")
-        return page_count
-    except Exception as e:
-        logging.error(f"解析分页数失败: {e}")
-        raise Exception(f'解析分页数失败: {e}')
+    resp = api_get(uri, params, headers, timeout)
+    page_count = int(resp.get('pagecount', 0) or resp.get('pageCount', 0) or 0)
+    logging.info(f"获取分页数: {page_count}")
+    return page_count
 
 
 def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
@@ -82,60 +68,13 @@ def get_category_tree(film_source: FilmSource, params: Dict[str, Any] = None, he
     params = params.copy() if params else {}
     params['ac'] = 'list'
     params['pg'] = '1'
-    resp_bytes = api_get(film_source.uri, params, headers, timeout)
-    if not resp_bytes:
-        logging.error('filmListPage 数据获取异常 : Resp Is Empty')
-        raise Exception('filmListPage 数据获取异常 : Resp Is Empty')
-    try:
-        film_list_page = json.loads(resp_bytes)
-        class_list = film_list_page.get('class', [])
-        # 假设有 GenCategoryTree、SaveFilmClass 方法
-        mac_type_list = CategoryService.save_mac_type(class_list)
+    resp = api_get(film_source.uri, params, headers, timeout)
 
-        return mac_type_list
-    except Exception as e:
-        logging.error(f"解析分类树失败: {e}")
-        raise Exception(f'解析分类树失败: {e}')
+    class_list = resp.get('class', [])
+    # 假设有 GenCategoryTree、SaveFilmClass 方法
+    mac_type_list = CategoryService.save_mac_type(class_list)
 
-
-def custom_search(uri: str, wd: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
-                  timeout: int = 10):
-    """
-    自定义搜索，支持影片名模糊搜索。
-    """
-    params = params.copy() if params else {}
-    params['ac'] = 'detail'
-    params['pg'] = '1'
-    params['wd'] = wd
-    resp_bytes = api_get(uri, params, headers, timeout)
-    if not resp_bytes:
-        return []
-    try:
-        detail_page = json.loads(resp_bytes)
-        detail_list = detail_page.get('list', [])
-        return [MacVod(**item) for item in detail_list]
-    except Exception:
-        return []
-
-
-def get_single_film(uri: str, ids: str, params: Dict[str, Any] = None, headers: Optional[Dict[str, str]] = None,
-                    timeout: int = 10):
-    """
-    获取单一影片信息。
-    """
-    params = params.copy() if params else {}
-    params['ac'] = 'detail'
-    params['pg'] = '1'
-    params['ids'] = ids
-    resp_bytes = api_get(uri, params, headers, timeout)
-    if not resp_bytes:
-        return None
-    try:
-        detail_page = json.loads(resp_bytes)
-        detail_list = detail_page.get('list', [])
-        return MacVod(**detail_list[0]) if detail_list else None
-    except Exception:
-        return None
+    return mac_type_list
 
 
 def collect_api_test(film_source: FilmSource) -> None:

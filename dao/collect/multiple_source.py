@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, Field, select
 
 from dao.system.movies import generate_hash_key
 from demo.sql import get_session
-from model.collect.MacVod import MacVod
+from model.collect.mac.vod import MacVod
 from model.system.movies import MovieUrlInfo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_detail_list
 

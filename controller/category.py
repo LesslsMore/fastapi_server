@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 
 from dao.collect.category import CategoryService
-from model.collect.MacType import mac_type_dao, MacTypeDto
+from model.collect.mac.type import mac_type_dao, MacTypeDto
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/class', tags=['分类'])

@@ -9,7 +9,7 @@ from config.constant import IOrderEnum
 from config.database import sync_engine
 from dao.base_dao import ConfigPageQueryModel, FilterModel, SortModel, PageModel
 from dao.system.search_tag import get_tags_by_title, handle_tag_str
-from model.collect.MacVod import MacVod, mac_vod_dao
+from model.collect.mac.vod import MacVod, mac_vod_dao
 from model.system.movies import MovieBasicInfo, MovieDetail
 from model.system.response import Page
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list
