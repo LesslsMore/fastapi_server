@@ -1,3 +1,4 @@
+import json
 import re
 from typing import List, Dict, Any, Optional
 
@@ -61,7 +62,12 @@ class IndexLogic:
         info["content"] = content
         # 3. 轮播
         banner_list = banner_dao.query_all(['sort'])
-        info["banners"] = [banner.model_dump() for banner in banner_list]
+        banners = []
+        for banner in banner_list:
+            banner_dict = banner.model_dump()
+            serialized_data = json.loads(json.dumps(banner_dict, default=str))
+            banners.append(serialized_data)
+        info["banners"] = banners
         KVDao.set_value(INDEX_CACHE_KEY, info, 3600)
         return info
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from dao.system.manage import ManageService
 from model.system.manage import BasicConfig
+from plugin.init.db_init import basic_config_init
 from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/config', tags=["配置"])
@@ -13,23 +14,28 @@ def site_basic_config():
     return ResponseUtil.success(data=data, msg="基础配置信息获取成功")
 
 
-# /manage/config/basic/update
 @router.post("/basic/update")
 def update_site_basic(config: BasicConfig):
     if not config.domain or not config.site_name:
         return ResponseUtil.error(msg="域名和网站名称不能为空")
-    try:
-        ManageService.save_site_basic(config)
-        return ResponseUtil.success(msg="更新成功")
-    except Exception as e:
-        return ResponseUtil.error(msg=f"网站配置更新失败: {e}")
+
+    ManageService.save_site_basic(config)
+    return ResponseUtil.success(msg="更新成功")
 
 
-# /manage/config/basic/reset
 @router.get("/basic/reset")
 def reset_site_basic():
-    try:
-        ManageLogic.reset_site_basic()
-        return ResponseUtil.success(msg="配置信息重置成功")
-    except Exception as e:
-        return ResponseUtil.error(msg=f"配置信息重置失败: {e}")
+    basic_config_init()
+    return ResponseUtil.success(msg="配置信息重置成功")
+
+
+@router.post("/export")
+def export_config():
+    data = ManageService.get_site_basic()
+    return ResponseUtil.success(data=data, msg="基础配置信息获取成功")
+
+
+@router.post("/import")
+def import_config():
+    data = ManageService.get_site_basic()
+    return ResponseUtil.success(data=data, msg="基础配置信息获取成功")
