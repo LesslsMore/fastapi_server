@@ -20,6 +20,9 @@ class SpaMiddleware(BaseHTTPMiddleware):
         if path.startswith("/api/"):
             return await call_next(request)
 
+        if path.startswith("/proxy/"):
+            return await call_next(request)
+
         # 2.2 定义Vue项目的路由前缀和对应的静态文件目录
         spa_roots = {
             "/danmu": os.path.join(STATIC_DIR, "danmu"),

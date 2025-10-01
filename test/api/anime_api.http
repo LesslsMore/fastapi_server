@@ -100,6 +100,10 @@ Content-Type: application/json
 ### 删除 AnimeVod 记录
 DELETE http://localhost:8000/api/anime/{{vod_id}}
 
+### 弹幕
+
+GET {{url}}/proxy/api/v2/comment/192480001?withRelated=true&chConvert=1
+
 ###
 
-GET http://localhost:8000/proxy/api/v2/comment/192480001?withRelated=true&chConvert=1
+GET {{url}}/proxy/api/v2/search/episodes?anime=%E5%87%A1%E4%BA%BA%E4%BF%AE%E4%BB%99%E4%BC%A0

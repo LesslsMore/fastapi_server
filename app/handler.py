@@ -16,14 +16,20 @@ def app_handler(app: FastAPI):
 
         # 构造目标 URL
         url = f"{DanmuConfig.TARGET_SERVER}/{full_path}"
-        logging.info("Proxying request to:", url)
+        logging.info(f"Proxying request to: {url}")
 
         # 读取请求体和请求头
         body = await request.body()
+
         headers = dict(request.headers)
+        # 添加这两行，明确要求不压缩
+        headers["Accept-Encoding"] = "identity"  # 告诉服务器不要压缩
+        headers.pop("accept-encoding", None)  # 移除可能的压缩头
+
+        # 其他头部设置保持不变
         headers["X-AppId"] = DanmuConfig.DANMU_APP_ID
         headers["X-AppSecret"] = DanmuConfig.DANMU_APP_SECRET
-        headers.pop("host", None)  # 避免 Host 被错误传递
+        headers.pop("host", None)
 
         # 创建异步客户端请求
         async with httpx.AsyncClient() as client:
@@ -45,10 +51,10 @@ def app_handler(app: FastAPI):
             except httpx.RequestError as exc:
                 return Response(content=f"Error: {str(exc)}", status_code=500)
 
-    # 捕获 404 异常并返回前端入口文件
-    # @app.exception_handler(404)
-    # async def spa_fallback(request: Request, exc: HTTPException):
-    #     return FileResponse("static/dist/index.html")
+        # 捕获 404 异常并返回前端入口文件
+        # @app.exception_handler(404)
+        # async def spa_fallback(request: Request, exc: HTTPException):
+        #     return FileResponse("static/dist/index.html")
 
         return FileResponse("static/danmu/index.html")
 
