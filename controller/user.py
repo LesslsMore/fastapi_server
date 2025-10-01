@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi import Request
 from pydantic import BaseModel, field_validator
 
@@ -40,6 +40,5 @@ async def user_info(request: Request):
     user_id = request.state.user_claims.user_id  # 这里需要根据实际情况从token中解析出用户ID
     # 获取用户信息
     user_info = UserService.get_user_info(user_id)
-    if not user_info:
-        raise HTTPException(status_code=404, detail="User not found")
+
     return ResponseUtil.success(data=user_info, msg="成功获取用户信息")

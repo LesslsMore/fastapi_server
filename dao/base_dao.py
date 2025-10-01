@@ -169,16 +169,8 @@ class BaseDao:
     def page_items(self, filter_dict: dict = {},
                    order_bys: list[str] = ["id"],
                    order: IOrderEnum = IOrderEnum.descendent,
-                   query_object: ConfigPageQueryModel = ConfigPageQueryModel(),
-                   is_page: bool = True):
-        """
-        根据查询参数获取参数配置列表信息
-
-        :param db: orm对象
-        :param query_object: 查询参数对象
-        :param is_page: 是否开启分页
-        :return: 参数配置列表信息对象
-        """
+                   page_num = 1,
+                   page_size = 10):
 
         with Session(self.engine) as session:
 
@@ -191,8 +183,8 @@ class BaseDao:
 
             query = select(self.model).filter_by(**filter_dict).order_by(*order_bys)
 
-            config_list = PageUtil.paginate(session, query, query_object.page_num, query_object.page_size,
-                                            is_page)
+            config_list = PageUtil.paginate(session, query, page_num, page_size,
+                                            True)
 
             return config_list
 

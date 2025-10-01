@@ -1,5 +1,6 @@
 from typing import Optional
 
+from fastapi import HTTPException
 
 from model.system.user import User
 from model.system.user import users_dao
@@ -24,7 +25,8 @@ class UserService:
                 "status": user.status
             }
             return user_info
-        return {}
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
 
     @staticmethod
     def user_login(account: str, password: str):

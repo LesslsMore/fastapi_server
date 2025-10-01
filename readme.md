@@ -1,4 +1,4 @@
-# fast_cms
+# fast-cms
 
 mac cms
 
@@ -23,6 +23,8 @@ alembic
 vercel
 
 onrender
+
+dnspod 监控保活
 
 neon
 

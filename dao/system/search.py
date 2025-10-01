@@ -74,34 +74,18 @@ def GetSearchPage(s: SearchVo) -> List[SearchInfo]:
     return search_info_list
 
 
-def get_movie_list_by_pid(pid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
+def get_movie_list(filter_dict, page: Page) -> Optional[List[MovieBasicInfo]]:
     """
     通过Pid分类ID获取对应影片的数据信息
     :param pid: 分类ID
     :param page: 分页参数
     :return: 影片基本信息列表
     """
-    page_items = mac_vod_dao.page_items({'type_id_1': pid}, ['vod_time'], IOrderEnum.descendent,
-                                        ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
+    page_items = mac_vod_dao.page_items(filter_dict, ['vod_time'], IOrderEnum.descendent,
+                                        page_num=page.current, page_size=page.pageSize)
 
     set_page(page, page_items)
 
-    mac_vod_list = page_items.rows
-
-    movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
-    return movie_basic_info_list
-
-
-def get_movie_list_by_cid(cid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
-    """
-    通过Cid查找对应的影片分页数据
-    :param cid: 分类ID
-    :param page: 分页参数
-    :return: 影片基本信息列表
-    """
-    page_items = mac_vod_dao.page_items({'type_id': cid}, ['vod_time'], IOrderEnum.descendent,
-                                        ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
-    set_page(page, page_items)
     mac_vod_list = page_items.rows
 
     movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)

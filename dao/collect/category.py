@@ -16,21 +16,34 @@ class CategoryService:
         return cate_list
 
     @staticmethod
-    def get_category_tree_by_db(filter_dict: dict = {'type_status': 1}):
+    def get_category_tree_by_db(filter_dict: dict = {'type_status': 1}) -> CategoryTree:
         mac_type_list: List[MacType] = mac_type_dao.query_items(filter_dict)
         cl = [mac_type.model_dump() for mac_type in mac_type_list]
         category_tree = CategoryService.gen_category_tree(cl)
         return category_tree
 
     @staticmethod
-    def get_category_tree():
+    def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
+        tree: CategoryTree = CategoryService.get_category_tree_by_db()
+        for t in tree.children:
+            if t.id == pid:
+                return t.model_dump()
+        return {
+            "id": -1,
+            "name": "",
+            "pid": -1,
+            "show": True,
+        }
+
+    @staticmethod
+    def get_category_tree() -> CategoryTree:
         mac_type_list: List[MacType] = mac_type_dao.query_all(['type_name'])
         cl = [mac_type.model_dump() for mac_type in mac_type_list]
         category_tree = CategoryService.gen_category_tree(cl)
         return category_tree
 
     @staticmethod
-    def gen_category_tree(class_list):
+    def gen_category_tree(class_list) -> CategoryTree:
         tree = CategoryTree(id=0, pid=-1, name="分类信息", show=True)
         temp = {tree.id: tree}
 

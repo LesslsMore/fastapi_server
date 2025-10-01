@@ -4,6 +4,8 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from starlette.requests import Request
 
+from dao.collect.category import CategoryService
+from dao.system.search_mac_vod import get_mac_vod_list_by_sort, get_relate_mac_vod_basic_info, get_search_tag_by_stat
 from model.collect.category import Category
 from model.system.movies import MovieDetail
 from model.system.response import Page
@@ -16,10 +18,13 @@ router = APIRouter(tags=["详情"])
 @router.get("/filmClassify", summary="分类数据")
 def film_classify(request: Request, category: Category = Query(...)):
     pid = category.pid if isinstance(category.pid, int) else category.Pid
-    title = IndexLogic.get_pid_category(pid)
-    page = {"pageSize": 21, "current": 1}
-    # content = IndexLogic.get_film_classify(pid, 1, 21)
-    content = IndexLogic.get_mac_vod_list_classify(pid, 1, 21)
+    title = CategoryService.get_pid_category(pid)
+    content = {
+        "news": get_mac_vod_list_by_sort(['vod_year', 'vod_time'], pid),
+        "top": get_mac_vod_list_by_sort(['vod_hits'], pid),
+        "recent": get_mac_vod_list_by_sort(['vod_time'], pid)
+    }
+
     data = {"title": title, "content": content}
     return ResponseUtil.success(data=data, msg="分类影片信息获取成功")
 
@@ -53,8 +58,11 @@ def film_tag_search(
     page = Page(pageSize=49, current=request.current)
     # film_list = IndexLogic.get_films_by_tags(params, page)
     film_list = IndexLogic.get_mac_vod_list_by_tags(params, page)
-    title = IndexLogic.get_pid_category(request.Pid) if IndexLogic.get_pid_category(request.Pid) else ""
-    search = IndexLogic.search_tags(request.Pid)
+    title = CategoryService.get_pid_category(request.Pid) if CategoryService.get_pid_category(request.Pid) else ""
+
+    pid = request.Pid
+    search = get_search_tag_by_stat(pid)
+
     params['Category'] = params.pop('Cid')
     data = {
         "title": title,
@@ -87,8 +95,11 @@ def search_film(
 @router.get("/filmDetail", summary="详情数据")
 def film_detail(id: int = Query(...)):
     detail = IndexLogic.get_film_detail(id)
+
     page = Page(**{"pageSize": 14, "current": 0})
-    relate = IndexLogic.relate_movie(MovieDetail(**detail), page)
+    movie_detail = MovieDetail(**detail)
+    relate = get_relate_mac_vod_basic_info(movie_detail, page)
+
     data = {"detail": detail, "relate": relate}
     return ResponseUtil.success(data=data, msg="影片详情信息获取成功")
 
@@ -107,8 +118,11 @@ def film_play_info(
         if v["id"] == playFrom:
             current_play = v["linkList"][episode] if episode < len(v["linkList"]) else None
             break
+
     page = Page(**{"pageSize": 14, "current": 0})
-    relate = IndexLogic.relate_movie(MovieDetail(**detail), page)
+    movie_detail = MovieDetail(**detail)
+    relate = get_relate_mac_vod_basic_info(movie_detail, page)
+
     data = {
         "detail": detail,
         "current": current_play,

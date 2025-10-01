@@ -211,26 +211,9 @@ def get_relate_mac_vod_basic_info(movie_detail: MovieDetail, page: Page) -> Opti
         return None
 
 
-def get_mac_vod_list_by_sort(sort_type: int, pid: int, page: Page) -> Optional[List[MovieBasicInfo]]:
-    """
-    根据排序类型返回对应分类的影片基本信息
-    :param sort_type: 排序类型 0-最新上映 1-热度排行 2-最近更新
-    :param pid: 分类ID
-    :param page: 分页参数
-    :param session: 数据库会话(通过依赖注入获取)
-    :return: 影片基本信息列表
-    """
-
-    # 根据排序类型添加排序条件
-    if sort_type == 0:
-        order_bys = ['vod_year', 'vod_time']
-    elif sort_type == 1:
-        order_bys = ['vod_hits']
-    elif sort_type == 2:
-        order_bys = ['vod_time']
-
+def get_mac_vod_list_by_sort(order_bys, pid: int, page_num=1, page_size=21) -> Optional[List[MovieBasicInfo]]:
     page_items = mac_vod_dao.page_items({'type_id_1': pid}, order_bys, IOrderEnum.descendent,
-                                        ConfigPageQueryModel(page_num=page.current, page_size=page.pageSize))
+                                        page_num, page_size)
 
     mac_vod_list = page_items.rows
 

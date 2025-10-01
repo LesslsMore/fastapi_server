@@ -1,19 +1,18 @@
 import json
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from config.data_config import INDEX_CACHE_KEY
 from dao.collect.category import CategoryService
 from dao.collect.kv_dao import KVDao
 from dao.collect.multiple_source import get_multiple_play
 from dao.system.movies import generate_hash_key
-from dao.system.search import get_movie_list_by_pid, get_hot_movie_by_pid, get_movie_list_by_cid
-from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_sort, get_mac_vod_list_by_tags, \
-    get_relate_mac_vod_basic_info, get_search_tag_by_stat
+from dao.system.search import get_movie_list, get_hot_movie_by_pid
+from dao.system.search_mac_vod import search_mac_vod_keyword, get_mac_vod_list_by_tags
 from model.collect.collect_source import SourceGrade, film_source_dao
 from model.collect.mac.vod import mac_vod_dao
 from model.system.manage import banner_dao
-from model.system.movies import MovieBasicInfo, MovieDetail
+from model.system.movies import MovieDetail
 from model.system.response import Page
 from model.system.virtual_object import PlayLinkVo
 from plugin.common.conver.mac_vod import mac_vod_list_to_movie_basic_info_list, mac_vod_to_movie_detail
@@ -38,13 +37,13 @@ class IndexLogic:
         for child in tree.children:
             page = Page(pageSize=14, current=1)
             if child.children:
-                movies = get_movie_list_by_pid(child.id, page)
+                movies = get_movie_list({'type_id_1': child.id}, page)
                 hot_movies = get_hot_movie_by_pid(child.id, page)
             else:
                 # movies = get_movie_list_by_pid(c.id, page)
                 # hot_movies = get_hot_movie_by_pid(c.id, page)
 
-                movies = get_movie_list_by_cid(child.id, page)
+                movies = get_movie_list({'type_id': child.id}, page)
                 # hot_movies = get_hot_movie_by_cid(c.id, page)
                 hot_movies = get_hot_movie_by_pid(child.id, page)
             movies_data = []
@@ -83,33 +82,6 @@ class IndexLogic:
         mac_vod_list = search_mac_vod_keyword(keyword, page)
         movie_basic_info_list = mac_vod_list_to_movie_basic_info_list(mac_vod_list)
         return movie_basic_info_list
-
-    @staticmethod
-    def get_film_category(id: int, id_type: str, page: int, pageSize: int) -> List[Dict[str, Any]]:
-        page_obj = Page(pageSize=pageSize, current=page)
-        if id_type == "pid":
-            return [m.dict() for m in get_movie_list_by_pid(id, page_obj)]
-        elif id_type == "cid":
-            return [m.dict() for m in get_movie_list_by_cid(id, page_obj)]
-        return []
-
-    @staticmethod
-    def get_pid_category(pid: int) -> Optional[Dict[str, Any]]:
-        if pid == 0:
-            pid = 4
-        tree = CategoryService.get_category_tree_by_db()
-        for t in tree.children:
-            if t.id == pid:
-                return t.dict()
-        return {
-            "id": -1,
-            "name": "",
-            "pid": -1,
-            "show": True,
-        }
-
-    # def search_tags(self, pid: int) -> Dict[str, Any]:
-    #     return SearchTagsVO.get_search_tag(self.db, pid)
 
     @staticmethod
     def multiple_source(detail: MovieDetail) -> List[Dict[str, Any]]:
@@ -156,25 +128,6 @@ class IndexLogic:
         return movie_basic_info_list
 
     @staticmethod
-    def search_tags(pid: int) -> Dict[str, Any]:
-        """
-        通过pid获取对应分类的搜索标签
-        :param pid: 分类ID
-        :return: 包含搜索标签的字典
-        """
-        # return get_search_tag(pid)
-        return get_search_tag_by_stat(pid)
-
-    @staticmethod
-    def get_mac_vod_list_classify(pid: int, page: int, pageSize: int) -> Dict[str, Any]:
-        page_obj = Page(**{"pageSize": pageSize, "current": page})
-        return {
-            "news": get_mac_vod_list_by_sort(0, pid, page_obj),
-            "top": get_mac_vod_list_by_sort(1, pid, page_obj),
-            "recent": get_mac_vod_list_by_sort(2, pid, page_obj)
-        }
-
-    @staticmethod
     def get_film_detail(vod_id: int) -> Dict[str, Any]:
         """
         获取影片详情信息
@@ -193,21 +146,3 @@ class IndexLogic:
         res = movie_detail.model_dump()
         res["list"] = play_list
         return res
-
-    @staticmethod
-    def relate_movie(movie_detail: MovieDetail, page: Page) -> List[MovieBasicInfo]:
-        """
-        根据当前影片信息匹配相关影片
-        :param movie_detail: 影片详情对象
-        :param page: 分页参数对象
-        :return: 相关影片的基本信息列表
-        """
-        # search = SearchInfo(
-        #     cid=movie_detail.cid,
-        #     name=movie_detail.name,
-        #     class_tag=movie_detail.descriptor.classTag,
-        #     area=movie_detail.descriptor.area,
-        #     language=movie_detail.descriptor.language,
-        # )
-        return get_relate_mac_vod_basic_info(movie_detail, page)
-        # return get_relate_movie_basic_info(search, page)

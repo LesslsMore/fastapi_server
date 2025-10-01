@@ -96,9 +96,9 @@ def search_anime_vod_by_name_and_episode(search_request: AnimeVodSearchRequest):
 # 获取所有 AnimeVod
 @router.post("/page", response_model=List[AnimeVod])
 async def get_anime_vods(
-        config_page_query: ConfigPageQueryModel
+        page: ConfigPageQueryModel
 ):
-    anime_vods = anime_vod_dao.page_items({}, ['vod_id'], IOrderEnum.descendent, config_page_query)
+    anime_vods = anime_vod_dao.page_items({}, ['vod_id'], IOrderEnum.descendent, page.page_num, page.page_size)
     # with get_session() as session:
     #     anime_vods = await AnimeDao.get_config_list(session, config_page_query, is_page=True)
     return ResponseUtil.success(data=anime_vods, msg="获取成功")
